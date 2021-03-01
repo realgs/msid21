@@ -6,7 +6,6 @@ def generate_random_array(size: int, start: int, end: int, useInts: bool):
 
 
 def bubble_sort(array):
-    array = array.copy()
     n = len(array)
 
     for i in range(n - 1):
@@ -18,7 +17,6 @@ def bubble_sort(array):
 
 
 def insert_sort(array):
-    array = array.copy()
     for i in range(1, len(array)):
         element = array[i]
         j = i - 1
@@ -32,15 +30,15 @@ def insert_sort(array):
 
 def test_sorting(size: int, start: int, end: int, useInts: bool):
     array = generate_random_array(size, start, end, useInts)
-    bubble_sorted_array = bubble_sort(array)
-    insert_sorted_array = insert_sort(array)
+    bubble_sorted_array = bubble_sort(array.copy())
+    insert_sorted_array = insert_sort(array.copy())
 
     print(bubble_sorted_array)
     print(insert_sorted_array)
 
 
 def auto_test(array, sorting_function, expected_outcome):
-    sorting_result = sorting_function(array)
+    sorting_result = sorting_function(array.copy())
     assert sorting_result == expected_outcome
 
     print('Array sorted successfully')
