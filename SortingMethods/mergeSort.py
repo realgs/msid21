@@ -2,6 +2,7 @@ def mergeSort(array):
 
     def merge(innerArray, leftArray, rightArray):
         leftArrayIndex = rightArrayIndex = innerArrayIndex = 0
+
         while leftArrayIndex < len(leftArray) and rightArrayIndex < len(rightArray):
             if leftArray[leftArrayIndex] < rightArray[rightArrayIndex]:
                 innerArray[innerArrayIndex] = leftArray[leftArrayIndex]
