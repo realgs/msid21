@@ -34,13 +34,15 @@ def quicksort(array, start, end):
     if(left < end):
         quicksort(array, left, end)    
 
-# Test
-numbersBubble = [10, 5, 2, 11, 200, -50, 10, 0, 1, -5]
-numbersQuick = [10, 5, 2, 11, 200, -50, 10, 0, 1, -5]
+def testSorting():
+    numbersBubble = [10, 5, 2, 11, 200, -50, 10, 0, 1, -5]
+    numbersQuick = [10, 5, 2, 11, 200, -50, 10, 0, 1, -5]
 
-bubblesort(numbersBubble)
-quicksort(numbersQuick, 0, len(numbersQuick) - 1)
+    bubblesort(numbersBubble)
+    quicksort(numbersQuick, 0, len(numbersQuick) - 1)
 
-print(numbersBubble)
-print(numbersQuick)
+    assert numbersBubble == [-50, -5, 0, 1, 2, 5, 10, 10, 11, 200], "Should be sorted ([-50, -5, 0, 1, 2, 5, 10, 10, 11, 200])"
+    assert numbersQuick == [-50, -5, 0, 1, 2, 5, 10, 10, 11, 200], "Should be sorted ([-50, -5, 0, 1, 2, 5, 10, 10, 11, 200])"
+    print("Tests passed!")
 
+testSorting()
