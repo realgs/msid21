@@ -40,8 +40,6 @@ def test_sorting(size: int, start: int, end: int, useInts: bool):
 
 
 def auto_test(array, sorting_function, expected_outcome):
-    array = array.copy()
-
     sorting_result = sorting_function(array)
     assert sorting_result == expected_outcome
 
