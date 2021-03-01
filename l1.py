@@ -38,7 +38,7 @@ def quicksort(array, start, end):
 numbersBubble = [10, 5, 2, 11, 200, -50, 10, 0, 1, -5]
 numbersQuick = [10, 5, 2, 11, 200, -50, 10, 0, 1, -5]
 
-quicksort(numbersBubble, 0, len(numbersBubble) - 1)
+bubblesort(numbersBubble)
 quicksort(numbersQuick, 0, len(numbersQuick) - 1)
 
 print(numbersBubble)
