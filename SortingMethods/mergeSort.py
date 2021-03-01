@@ -1,5 +1,4 @@
 def mergeSort(array):
-
     def merge(innerArray, leftArray, rightArray):
         leftArrayIndex = rightArrayIndex = innerArrayIndex = 0
 
