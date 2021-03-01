@@ -6,6 +6,9 @@ def main():
     print("INSERT SORT TESTS")
     test_sort_algorithm(insert_sort)
 
+    print("BUBBLE SORT TESTS")
+    test_sort_algorithm(bubble_sort)
+
 
 def insert_sort(array):
 
@@ -14,6 +17,15 @@ def insert_sort(array):
         while current_index > 0 and array[current_index] < array[current_index - 1]:
             swap(array, current_index, current_index - 1)
             current_index -= 1
+
+
+def bubble_sort(array):
+    length_of_array = len(array)
+
+    for i in range(length_of_array):
+        for j in range(length_of_array - i - 1):
+            if array[j] > array[j + 1]:
+                swap(array, j, j + 1)
 
 
 def swap(array, index1, index2):
