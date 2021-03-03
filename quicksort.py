@@ -1,4 +1,4 @@
-def quicksort(arr):
+def quick_sort(arr):
 	def quick(startIdx, endIdx): 
 		if startIdx+1 < endIdx:
 			part = partition(startIdx, endIdx)
@@ -32,17 +32,11 @@ def quicksort(arr):
 			
 	quick(0,len(arr))
 	return arr		
-			
-def printList(xs):
-    for i in range(len(xs)):
-        print(xs[i], end=" ")
-    print()
-		
-printList(quicksort([1,2,3,4,5,88,-1]))
-printList(quicksort([5,4,3,2,1]))
-printList(quicksort([1,2,3,4]))
-printList(quicksort([1,2,3,4,5,5]))
-printList(quicksort([1,2,3,4,5,5,4,3,2,1]))
-
+				
+print(quick_sort([1,2,3,4,5,88,-1]) == [-1,1,2,3,4,5,88])
+print(quick_sort([5,4,3,2,1]) == [1,2,3,4,5])
+print(quick_sort([1,2,3,4]) == [1,2,3,4])
+print(quick_sort([1,2,3,4,5,5]) == [1,2,3,4,5,5])
+print(quick_sort([1,2,3,4,5,5,4,3,2,1]) == [1,1,2,2,3,3,4,4,5,5])
 
 		
