@@ -1,5 +1,4 @@
 def insertionSort(arr):
-    
     size = len(arr)
     
     for i in range(1, size):
