@@ -34,20 +34,21 @@ def merge_sorted(xs: list) -> list:
 def radix_sort(xs: List[int]) -> None:
     """Accepts list of integers of the same sign"""
 
-    base = 10
-    n = 0
-    max_integer_length = len(str(max(xs)))
+    if xs:
+        base = 10
+        n = 0
+        max_integer_length = len(str(max(xs)))
 
-    while max_integer_length > n:
-        buckets: List[List[int]] = [[] for _ in range(10)]
+        while max_integer_length > n:
+            buckets: List[List[int]] = [[] for _ in range(10)]
 
-        for x in xs:
-            buckets[x // (base ** n) % 10].append(x)
+            for x in xs:
+                buckets[x // (base ** n) % 10].append(x)
 
-        i = 0
-        for bucket in buckets:
-            for x in bucket:
-                xs[i] = x
-                i += 1
+            i = 0
+            for bucket in buckets:
+                for x in bucket:
+                    xs[i] = x
+                    i += 1
 
-        n += 1
+            n += 1
