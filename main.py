@@ -17,10 +17,9 @@ def insert_sort(array):
         array[j+1] = current
 
 
-array = [1, 3, 0, 2, 5, 7, 9]
+array1 = [1, 3, 0, 2, 5, 7, 9]
 array2 = [1, 3, 0, 2, 5, 7, 9]
-bubble_sort(array)
+bubble_sort(array1)
 insert_sort(array2)
-print(array)
-print(array2)
-
+assert array1 == [0, 1, 2, 3, 5, 7, 9], "bubble sort test failed"
+assert array2 == [0, 1, 2, 3, 5, 7, 9], "insert sort test failed"
