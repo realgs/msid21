@@ -27,4 +27,4 @@ def show(array):
         print(array[i], end=" ")
     print()
 
-show(mergeSort([5,6,-7,12,7,-3,0,4,-7]))
+show(mergeSort([9,14,72,-3,0,81,4,2]))
