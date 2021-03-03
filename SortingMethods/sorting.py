@@ -1,7 +1,5 @@
 __all__ = ["merge_sorted", "radix_sort"]
 
-from typing import List
-
 
 def merge(left: list, right: list) -> list:
     result = []
@@ -31,7 +29,7 @@ def merge_sorted(xs: list) -> list:
     return merge(merge_sorted(left), merge_sorted(right))
 
 
-def radix_sort(xs: List[int]) -> None:
+def radix_sort(xs: list[int]) -> None:
     """Accepts list of integers of the same sign"""
 
     if xs:
@@ -40,7 +38,7 @@ def radix_sort(xs: List[int]) -> None:
         max_integer_length = len(str(max(xs)))
 
         while max_integer_length > n:
-            buckets: List[List[int]] = [[] for _ in range(10)]
+            buckets: list[list[int]] = [[] for _ in range(10)]
 
             for x in xs:
                 buckets[x // (base ** n) % 10].append(x)
