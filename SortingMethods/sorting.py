@@ -1,6 +1,3 @@
-__all__ = ["merge_sorted", "radix_sort"]
-
-
 def merge(left: list, right: list) -> list:
     result = []
     i, j = 0, 0

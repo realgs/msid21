@@ -1,4 +1,4 @@
-from sorting import *
+from sorting import merge_sorted, radix_sort
 from copy import copy
 
 LENGTH = 2 << 10
