@@ -1,16 +1,16 @@
 def insert_sort(array):
     for i in range(1, len(array)):
-        value = array[i]
+        temp = array[i]
         j = i
-        while j > 0 and value < array[j - 1]:
+        while j > 0 and temp < array[j - 1]:
             array[j] = array[j - 1]
             j -= 1
-        array[j] = value
+        array[j] = temp
 
 
 def bubble_sort(array):
-    for i in range(1, len(array)):
-        for left in range(0, len(array) - i):
+    for pass_ in range(1, len(array)):
+        for left in range(0, len(array) - pass_):
             right = left + 1
             if array[left] > array[right]:
                 temp = array[left]
