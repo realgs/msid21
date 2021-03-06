@@ -16,14 +16,14 @@ print(ar)
 
 def selectionSort(array):
     for i in range(len(array)):
-        max = i
+        min = i
         for j in range(i, len(array)):
-            if array[j] > array[max]:
-                max = j
+            if array[j] < array[min]:
+                min = j
         temp = array[i]
-        array[i] = array[max]
-        array[max] = temp
+        array[i] = array[min]
+        array[min] = temp
 
 ar = [80, 1, 500, -1000, 5, 123, 53]
-bubbleSort(ar)
+selectionSort(ar)
 print(ar)
