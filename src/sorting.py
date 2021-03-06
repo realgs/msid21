@@ -10,6 +10,20 @@ def bubbleSort(array):
 
                 change = True
 
-ar1 = [80, 1, 500, -1000, 5, 123, 53]
-bubbleSort(ar1)
-print(ar1)
+ar = [80, 1, 500, -1000, 5, 123, 53]
+bubbleSort(ar)
+print(ar)
+
+def selectionSort(array):
+    for i in range(len(array)):
+        max = i
+        for j in range(i, len(array)):
+            if array[j] > array[max]:
+                max = j
+        temp = array[i]
+        array[i] = array[max]
+        array[max] = temp
+
+ar = [80, 1, 500, -1000, 5, 123, 53]
+bubbleSort(ar)
+print(ar)
