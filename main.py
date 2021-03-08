@@ -37,10 +37,6 @@ def merge(array, l, r):
         k += 1
 
 
-array1 = [1, 2, 10, 16, 6, 3]
-print(merge_sort(array1))
-
-
 def selection_sort(array):
     j = 0
     while j < len(array):
@@ -53,3 +49,17 @@ def selection_sort(array):
         array[j], array[min_ind] = array[min_ind], array[j]
         j += 1
     return array
+
+
+# tests
+array1 = [5, 11, 21, 7, 12, 6]
+array2 = [4, 7, 3, 22, 12, 24, 8, 2]
+array3 = [21, 12, 17, 5]
+array4 = [1, 7, 2, 12, 11, 5, 5, 8, 3]
+
+print("Merge sort")
+print(merge_sort(array1))
+print(merge_sort(array2))
+print("Selection sort")
+print(selection_sort(array3))
+print(selection_sort(array4))
