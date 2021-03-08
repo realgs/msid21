@@ -39,3 +39,17 @@ def merge(array, l, r):
 
 array1 = [1, 2, 10, 16, 6, 3]
 print(merge_sort(array1))
+
+
+def selection_sort(array):
+    j = 0
+    while j < len(array):
+        i = j
+        min_ind = j
+        while i < len(array):
+            if array[i] < array[min_ind]:
+                min_ind = i
+            i += 1
+        array[j], array[min_ind] = array[min_ind], array[j]
+        j += 1
+    return array
