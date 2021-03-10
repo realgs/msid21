@@ -36,3 +36,6 @@ print(arr2)
 arr3 = [8, 7, 6, 5, 4, 3, 2, 1]
 counting_sort(arr3, 8)
 print(arr3)
+
+
+
