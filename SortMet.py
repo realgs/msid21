@@ -7,9 +7,7 @@ def bubble_sort(list):
     for i in range(l-1):
         for j in range(0, l -i-1 ):
             if list[j]>list[j+1]:
-                temp = list[j]
-                list[j]= list[j+1]
-                list[j+1] = temp
+                list[j], list[j+1] = list[j+1], list[j]
     return list
 
 print(bubble_sort(example))
