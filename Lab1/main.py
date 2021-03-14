@@ -4,6 +4,20 @@ if __name__ == '__main__':
     print("Hello World")
 
 
+def bubble_sort(arr):
+    n = len(arr)
+
+    for i in range(n - 1):
+        for j in range(0, n - i - 1):
+            if arr[j] > arr[j + 1]:
+                swap(arr, j, j + 1)
+
+
+def swap(arr, left, right):
+    if left != right:
+        arr[left], arr[right] = arr[right], arr[left]
+
+
 def quicksort(arr):
     quick(arr, 0, len(arr))
 
@@ -44,8 +58,3 @@ def partition(arr, n_from, n_to):
     swap(arr, idx_lower, n_from)
 
     return idx_lower
-
-
-def swap(arr, left, right):
-    if left != right:
-        arr[left], arr[right] = arr[right], arr[left]
