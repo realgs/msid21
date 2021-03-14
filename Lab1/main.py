@@ -2,7 +2,7 @@ import random
 
 
 def main():
-    test_bubble_sort()
+    # test_bubble_sort()
     test_quick_sort()
 
 
@@ -114,7 +114,7 @@ def partition(arr, n_from, n_to):
     idx_bigger = n_from + 1
     idx_lower = n_to - 1
 
-    condition = idx_bigger < idx_lower
+    condition = True
 
     while condition:
 
