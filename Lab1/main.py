@@ -2,7 +2,7 @@ import random
 
 
 def main():
-    # test_bubble_sort()
+    test_bubble_sort()
     test_quick_sort()
 
 
