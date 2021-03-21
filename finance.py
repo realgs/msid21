@@ -48,9 +48,9 @@ def _sellBuyDifference(transactions):
 
 def showPriceDifferenceStream(currencies, interval=5):
     while True:
-        print("\n", datetime.now().strftime("%H:%M:%S"), "Cena sprzedazy wzgledem ceny kupna w procentach: ")
+        print("\n", datetime.now().strftime("%H:%M:%S"), "Sell price compared to buy price in percents: ")
         for currency in currencies:
             transactions = _getApiResponse(currency)
             if transactions:
-                print(currency, ": Wskaznik = ", _sellBuyDifference(transactions))
+                print(currency, ": Rate = ", _sellBuyDifference(transactions))
         time.sleep(interval)
