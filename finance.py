@@ -1,7 +1,8 @@
 import requests
 from datetime import datetime
+import time
 
-
+# returns array of last <limit> transactions for <good> from bitbay.net public api
 def _getApiResponse(good, limit=50):
     url = "https://bitbay.net/API/Public/" + good + "/trades.json?sort=desc&limit=" + str(limit)
 
@@ -28,27 +29,28 @@ def showTransactionsForCurrencies(currencies, count):
         _getLastTransactions(curr, count)
 
 
-def calculateMean(arr):
+def _mean(arr):
     return sum(arr) / len(arr)
 
 
-def showPriceDifferenceStream(good):
-    transactions = _getApiResponse(good)
-    if transactions:
-        sellPrices = []
-        buyPrices = []
-        for tran in transactions:
-            if tran['type'] == 'sell':
-                sellPrices.append(tran['price'])
-            else:
-                buyPrices.append(tran['price'])
-        meanBuyPrice = calculateMean(buyPrices)
-        meanSellPrice = calculateMean(sellPrices)
-        diff = 1 - (meanBuyPrice - meanSellPrice) / meanSellPrice
-        print("Roznica kupno - sprzedaż = ", diff)
+def _sellBuyDifference(transactions):
+    sellPrices = []
+    buyPrices = []
+    for tran in transactions:
+        if tran['type'] == 'sell':
+            sellPrices.append(tran['price'])
+        else:
+            buyPrices.append(tran['price'])
+    meanBuyPrice = _mean(buyPrices)
+    meanSellPrice = _mean(sellPrices)
+    return 1 - (meanBuyPrice - meanSellPrice) / meanSellPrice
 
 
-myCurrencies = ["BTC", "ETH", "ZEC"]
-showTransactionsForCurrencies(myCurrencies, 10)
-
-showPriceDifferenceStream("BTC")
+def showPriceDifferenceStream(currencies, interval=5):
+    while True:
+        print("\n", datetime.now().strftime("%H:%M:%S"), "Cena sprzedazy wzgledem ceny kupna w procentach: ")
+        for currency in currencies:
+            transactions = _getApiResponse(currency)
+            if transactions:
+                print(currency, ": Wskaznik = ", _sellBuyDifference(transactions))
+        time.sleep(interval)
