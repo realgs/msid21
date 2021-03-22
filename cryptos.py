@@ -17,12 +17,11 @@ class Offer:
 def get_offerlist(markets):
     offers = []
     for market in markets:
-        market_json = requests.get('https://api.bittrex.com/api/v1.1/public/getorderbook?',
-                                           {'market': market, 'type': 'both'}).json()['result']
-        for transaction_type in ['buy', 'sell']:
-            for offer in market_json[transaction_type]:
-                offers.append(Offer(market=market, transaction_type=transaction_type, quantity=offer['Quantity'],
-                                    price=offer['Rate']))
+        market_json = requests.get(f'https://api.bittrex.com/v3/markets/{market}/orderbook?depth=25').json()
+        for transaction_type in ['bid', 'ask']:
+            for offer_json in market_json[transaction_type]:
+                offers.append(Offer(market=market, transaction_type=transaction_type,
+                                    quantity=float(offer_json['quantity']), price=float(offer_json['rate'])))
 
     return offers
 
@@ -36,13 +35,13 @@ def count_ratios(markets, offers):
     res_list = []
     for market_name in markets:
         temp_offer_list = list(filter(lambda offer: offer.market == market_name, offers))
-        buy_offer_list = list(filter(lambda offer: offer.transaction_type == 'buy', temp_offer_list))
-        sell_offer_list = list(filter(lambda offer: offer.transaction_type == 'sell', temp_offer_list))
-        counts_number = len(buy_offer_list) if len(buy_offer_list) <= len(sell_offer_list) else sell_offer_list
+        bid_offer_list = list(filter(lambda offer: offer.transaction_type == 'bid', temp_offer_list))
+        ask_offer_list = list(filter(lambda offer: offer.transaction_type == 'ask', temp_offer_list))
+        counts_number = len(bid_offer_list)
         for i in range(counts_number):
-            result = 1 - (sell_offer_list[i].price - buy_offer_list[i].price) / buy_offer_list[i].price
-            res_list.append(f'{market_name} buy - sell ratio: ' + '{:.1f}%'.format(result*100) +
-                            f' for sell price {sell_offer_list[i].price} and buy price {buy_offer_list[i].price}')
+            result = 1 - (ask_offer_list[i].price - bid_offer_list[i].price) / bid_offer_list[i].price
+            res_list.append(f'{market_name} buy - sell ratio: ' + '{:.1f}%'.format(result * 100) +
+                            f' for sell price {ask_offer_list[i].price} and buy price {bid_offer_list[i].price}')
 
     return res_list
 
