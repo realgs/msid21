@@ -1,16 +1,35 @@
-# This is a sample Python script.
+from pip._vendor import requests
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
-
-
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+REPLIES = 3
 
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
+def print_bids_asks():
+    data_btc = requests.get("https://bitbay.net/API/Public/BTCUSD/orderbook.json").json()
+    data_ltc = requests.get("https://bitbay.net/API/Public/LTCUSD/orderbook.json").json()
+    data_dash = requests.get("https://bitbay.net/API/Public/DASHUSD/orderbook.json").json()
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    print("BTC bids:")
+    for i in range(REPLIES):
+        print(data_btc['bids'][i])
+
+    print("BTC asks:")
+    for i in range(REPLIES):
+        print(data_btc['asks'][i])
+
+    print("LTC bids:")
+    for i in range(REPLIES):
+        print(data_ltc['bids'][i])
+
+    print("LTC asks:")
+    for i in range(REPLIES):
+        print(data_ltc['asks'][i])
+
+    print("DASH bids:")
+    for i in range(REPLIES):
+        print(data_dash['bids'][i])
+
+    print("DASH asks:")
+    for i in range(REPLIES):
+        print(data_dash['asks'][i])
+
+print_bids_asks()
