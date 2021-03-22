@@ -21,7 +21,7 @@ def getOrders(cryptocurrency, currency, limit=10):
     return None
 
 
-def printOrders(cryptocurrency, currency, limit = 4):
+def printOrders(cryptocurrency, currency, limit=10):
     orders = getOrders(cryptocurrency, currency, limit)
     if orders != None:
         sellOrders = orders['bids']
@@ -37,7 +37,8 @@ def printOrders(cryptocurrency, currency, limit = 4):
 
 
 def printOrder(cryptocurrency, currency, order):
-    print(f'{order[1]} {cryptocurrency} for {order[0] } {currency}')
+    print(
+        f'{order[1]} {cryptocurrency} for {(order[0] * order[1]):.2f} {currency}')
 
 
 def calculateProfit(cryptocurrency, currency, limit=5):
@@ -55,14 +56,15 @@ def calculateProfit(cryptocurrency, currency, limit=5):
 
         averageBuyPrice = sumOfBuyPrice/length
         averageSellPrice = sumOfSellPrice/length
-        profit = 1 - (averageSellPrice - averageBuyPrice) / averageBuyPrice * 100
-        print(f'Average profit on: {cryptocurrency} = {profit:.3}%')
+        profit = 1 - (averageSellPrice - averageBuyPrice) / \
+            averageBuyPrice * 100
+        print(f'Average profit on: {cryptocurrency} = {profit:.2f}%')
 
 
 def ex1():
-    printOrders('BTC', 'USD')
-    printOrders('LTC', 'USD')
-    printOrders('DASH', 'USD')
+    printOrders('BTC', 'USD', 4)
+    printOrders('LTC', 'USD', 4)
+    printOrders('DASH', 'USD', 4)
 
 
 def ex2():
