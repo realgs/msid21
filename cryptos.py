@@ -30,6 +30,3 @@ def print_orderlist(orderlist):
         print(order)
 
 
-market_list = ['USD-BTC', 'USD-LTC', 'USD-ETH']
-order_list = get_orderlist(market_list)
-print_orderlist(order_list)
