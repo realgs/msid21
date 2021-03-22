@@ -4,9 +4,8 @@ import time
 import json
 
 
-# returns array of last <limit> transactions for <good> in <currency> from bitbay.net public api
-def _getApiResponse(good, currency, limit=50):
-    url = "https://bitbay.net/API/Public/" + good + currency + "/trades.json?sort=desc&limit=" + str(limit)
+def _getApiResponse(path):
+    url = "https://api.bitbay.net/rest/trading/" + path
     headers = {'content-type': 'application/json'}
 
     try:
@@ -16,37 +15,38 @@ def _getApiResponse(good, currency, limit=50):
         print("Error while connecting to API.")
     except json.decoder.JSONDecodeError:
         print("Incorrect api response format. Please check url:", url)
-    return []
+    return None
 
 
-def _getLastTransactions(good, currency="USD", limit=50):
-    transactions = _getApiResponse(good, currency, limit)
+def _showLastTransactions(good, currency="USD", limit=50):
+    transactions = _getApiResponse("transactions/" + good + "-" + currency + "?limit=" + str(limit))
 
     if transactions:
         print("\n", "Last " + str(limit) + " transactions for " + good + " in " + currency + ":")
-        for tran in transactions:
-            print("Tid: ", tran['tid'], " -  Type: ", tran['type'], " -  Price: ", tran['price'], " -  Amount: ",
-                  tran['amount'], " -  Date: ", datetime.fromtimestamp(tran['date']))
+        for tran in transactions['items']:
+            value = float(tran['a']) * float(tran['r'])
+            print("Date: ", datetime.fromtimestamp(int(float(tran['t']) / 1000)), " -  Type: ", tran['ty'],
+                  " -  Value: ", value, " -  Price: ", tran['r'])
 
 
-def showTransactionsForCurrencies(goods, count):
+def showTransactions(goods, count):
     for good in goods:
-        _getLastTransactions(good[0], good[1], count)
+        _showLastTransactions(good[0], good[1], count)
 
 
 def _mean(arr):
     return sum(arr) / len(arr)
 
 
-def _sellBuyPercentageRate(transactions):
+def _sellBuyTransactionRate(transactions):
     sellPrices = []
     buyPrices = []
 
-    for tran in transactions:
-        if tran['type'] == 'sell':
-            sellPrices.append(tran['price'])
+    for tran in transactions['items']:
+        if tran['ty'] == 'Sell':
+            sellPrices.append(float(tran['r']))
         else:
-            buyPrices.append(tran['price'])
+            buyPrices.append(float(tran['r']))
     if not sellPrices or not buyPrices:
         return 'Cannot determine rate'
 
@@ -57,11 +57,27 @@ def _sellBuyPercentageRate(transactions):
     return rate * 100
 
 
-def showPriceDifferenceStream(goods, interval=5):
+def _minSellMaxBuyRate(data: object):
+    minSell = float(data['sell'][0]['ra'])
+    maxBuy = float(data['buy'][9]['ra'])
+    return 1 - (minSell - maxBuy) / maxBuy
+
+
+def _processRateStream(goods, pathPrefix, pathSuffix, interval, source, rateFunction):
     while True:
-        print("\n", datetime.now().strftime("%H:%M:%S"), "Sell price compared to buy price in percents: ")
+        print("\n", datetime.now().strftime("%H:%M:%S"), "Sell compared to buy based on " + source + " in percents: ")
         for good in goods:
-            transactions = _getApiResponse(good[0], good[1])
-            if transactions:
-                print(good[0], ": Rate = ", _sellBuyPercentageRate(transactions))
+            data = _getApiResponse(pathPrefix + good[0] + "-" + good[1] + pathSuffix)
+            if data and data['status'] == 'Ok':
+                print(good[0], ": Rate = ", rateFunction(data))
         time.sleep(interval)
+
+
+# fromTransactions - gives rate based on last performed transactions,
+# else - gives rate based on the highest buy and lowest sell price
+def showPriceDifferenceStream(goods, interval=5, fromTransactions=True):
+    if fromTransactions:
+        _processRateStream(goods, "transactions/", "?limit=50", interval, "transactions", _sellBuyTransactionRate)
+    else:
+        _processRateStream(goods, "orderbook-limited/", "/10", interval, "orders", _minSellMaxBuyRate)
+
