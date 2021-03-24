@@ -42,13 +42,13 @@ def getDataAboutCurrencies():
     currencyInfo = downloadData()
     for [currency, bid, ask] in currencyInfo:
         printCalc(currency, bid, ask)
-    print('//////////////////////////////////////////////////////')
 
 
 def main():
     while 1:
         getDataAboutCurrencies()
         time.sleep(delay)
+        print('//////////////////////////////////////////////////////')
 
 
 if __name__ == '__main__':
