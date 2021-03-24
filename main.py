@@ -31,8 +31,10 @@ def generate_list_float(length, range_start, range_stop):
 if __name__ == '__main__':
     list_int = generate_list_int(5, -10, 10)
     list_int_copy = list_int.copy()
+    list_int_test = list_int.copy()
     list_float = generate_list_float(5, -10, 10)
     list_float_copy = list_float.copy()
+    list_float_test = list_float.copy()
     print("Generated lists:")
     print(list_int)
     print(list_float)
@@ -52,8 +54,8 @@ if __name__ == '__main__':
     print(list_float_copy)
     print()
 
-    assert sorted(list_int), "Failed selection sort for int"
-    assert sorted(list_float), "Failed selection sort for float"
-    assert sorted(list_int_copy), "Failed insertion sort for int"
-    assert sorted(list_float_copy), "Failed insertion sort for float"
+    assert list_int == sorted(list_int_test), "Failed selection sort for int"
+    assert list_float == sorted(list_float_test), "Failed selection sort for float"
+    assert list_int_copy == sorted(list_int_test), "Failed insertion sort for int"
+    assert list_float_copy == sorted(list_float_test), "Failed insertion sort for float"
     print("All assertions passed.")
