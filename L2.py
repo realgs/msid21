@@ -3,10 +3,10 @@ import time
 import json
 from threading import Thread
 
-OFFERS_TO_PRINT = 4
+DEFAULT_OFFERS_COUNT = 4
 
 
-def get_data(url):
+def get_data_from_url(url):
     response = requests.get(url)
     data = json.loads(response.content)
     if response.status_code == 200:
@@ -15,17 +15,23 @@ def get_data(url):
         return None
 
 
-def show_currency_offers(cryptocurrency, snd_currency):
-    data = get_data(f"https://bitbay.net/API/Public/{cryptocurrency}{snd_currency}/orderbook.json")
+def show_currency_offers(cryptocurrency, snd_currency, offers_count=DEFAULT_OFFERS_COUNT):
+    data = get_data_from_url(f"https://bitbay.net/API/Public/{cryptocurrency}{snd_currency}/orderbook.json")
     if data is not None:
         print(f"\n{cryptocurrency}/{snd_currency}")
         print("Bids: ")
         bids = data["bids"]
-        for i in range(OFFERS_TO_PRINT):
+        display_range = offers_count
+        if len(bids) < offers_count:
+            display_range = len(bids)
+        for i in range(display_range):
             print(bids[i])
+
         print("\n Asks: ")
         asks = data["asks"]
-        for i in range(OFFERS_TO_PRINT):
+        if len(asks) < display_range:
+            display_range = len(asks)
+        for i in range(display_range):
             print(asks[i])
     else:
         print("Failed to get currency data")
@@ -33,7 +39,7 @@ def show_currency_offers(cryptocurrency, snd_currency):
 
 def show_currency_data(cryptocurrency, snd_currency):
     while True:
-        data = get_data(f"https://bitbay.net/API/Public/{cryptocurrency}{snd_currency}/orderbook.json")
+        data = get_data_from_url(f"https://bitbay.net/API/Public/{cryptocurrency}{snd_currency}/orderbook.json")
         if data is not None:
             bids = data["bids"]
             asks = data["asks"]
@@ -45,18 +51,18 @@ def show_currency_data(cryptocurrency, snd_currency):
 
 
 def ex1():
-    show_currency_offers("BTC", "USD")
+    show_currency_offers("BTC", "USD", 6)
     time.sleep(0.3)
     show_currency_offers("LTC", "USD")
     time.sleep(0.3)
-    show_currency_offers("DASH", "USD")
+    show_currency_offers("DASH", "USD", 2)
     time.sleep(0.3)
 
 
 def ex2():
     bg_thread = Thread(target=show_currency_data, args=("BTC", "USD"), daemon=True)
     bg_thread.start()
-    input("\nPress enter to exit\n")
+    input("\nType exit and press enter to exit program\n")
 
 
 def main():
