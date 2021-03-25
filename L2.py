@@ -4,6 +4,7 @@ import json
 from threading import Thread
 
 DEFAULT_OFFERS_COUNT = 4
+API = "https://bitbay.net/API/Public/"
 
 
 def get_data_from_url(url):
@@ -15,8 +16,12 @@ def get_data_from_url(url):
         return None
 
 
+def get_data_from_api(cryptocurrency, snd_currency):
+    return get_data_from_url(f"{API}{cryptocurrency}{snd_currency}/orderbook.json")
+
+
 def show_currency_offers(cryptocurrency, snd_currency, offers_count=DEFAULT_OFFERS_COUNT):
-    data = get_data_from_url(f"https://bitbay.net/API/Public/{cryptocurrency}{snd_currency}/orderbook.json")
+    data = get_data_from_api(cryptocurrency, snd_currency)
     if data is not None:
         print(f"\n{cryptocurrency}/{snd_currency}")
         print("Bids: ")
@@ -39,7 +44,7 @@ def show_currency_offers(cryptocurrency, snd_currency, offers_count=DEFAULT_OFFE
 
 def show_currency_data(cryptocurrency, snd_currency):
     while True:
-        data = get_data_from_url(f"https://bitbay.net/API/Public/{cryptocurrency}{snd_currency}/orderbook.json")
+        data = get_data_from_api(cryptocurrency, snd_currency)
         if data is not None:
             bids = data["bids"]
             asks = data["asks"]
