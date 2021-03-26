@@ -42,6 +42,8 @@ def printOffersFromBitBay(marketSymbols):
         print(f'Sale: {marketSymbols[0]} - {marketSymbols[1]}')
         for offer in asks:
             print(f'{offer[1]} {marketSymbols[0]} for {offer[0] * offer[1]} {marketSymbols[1]}')
+    else:
+        print("Couldn't get data about currencies")
 
 
 # zadanie 2
@@ -57,6 +59,8 @@ def calculateProfitabilityFromBitBay(marketSymbols):
 
             ratio = (1 - (sellOfferPrice - buyOfferPrice) / buyOfferPrice)
             print(f'Profitability for {marketSymbols[0]}: {ratio * 100} %')
+        else:
+            print("Couldn't get data about currencies")
 
         time.sleep(refreshTime)
 
