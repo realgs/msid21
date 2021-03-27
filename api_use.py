@@ -25,37 +25,37 @@ def get_response(cryptocurrency):
     return None
 
 
-def calculate_profit(cryptocurrency):
+def calculate_profit(cryptocurrency, limit):
     resp = get_response(cryptocurrency)
     resp_json = resp.json()
-    buy = avr_of_price(resp_json['bids'])
-    sell = avr_of_price(resp_json['asks'])
-    return 1-((sell-buy)/buy)
+    buy = avr_of_price(resp_json['bids'][:limit])
+    sell = avr_of_price(resp_json['asks'][:limit])
+    return 1-(sell-buy)/buy
 
 
 def avr_of_price(xs):
     sum_price = 0
-    sum_amount = 0
     for i in xs:
         sum_price += i[0]
-        sum_amount += i[1]
-    if sum_amount > 0:
-        return sum_price/sum_amount
+    if len(xs) > 0:
+        return sum_price/len(xs)
     return 0
 
 
-def update_profit(cryptocurrency, delay):
+def update_profit(cryptocurrency, delay, limit=50):
     while True:
-        print("Profit for", cryptocurrency, calculate_profit(cryptocurrency)*100, "%")
+        print("Profit for", cryptocurrency, calculate_profit(cryptocurrency, limit)*100, "%")
         time.sleep(delay)
 
 
 def main():
+    # task1
     print_trade(get_response('DASH'), "DASH")
     print_trade(get_response('BTC'), "BTC")
     print_trade(get_response('LTC'),  "LTC")
-    # update_profit('BTC', 5)
-    update_profit('LTC', 5)
+    # task2
+    update_profit('BTC', 5)
+    # update_profit('LTC', 5)
     # update_profit('DASH', 5)
 
 
