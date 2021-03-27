@@ -23,8 +23,9 @@ def get_bids_asks_difference(name, elements_to_average):
     if response:
         response_json = response.json()
 
-        if elements_to_average > min(len(response_json[BIDS]), len(response_json[ASKS])):
-            elements_to_average = min(len(response_json[BIDS]), len(response_json[ASKS]))
+        min_length = min(len(response_json[BIDS]), len(response_json[ASKS]))
+        if elements_to_average > min_length:
+            elements_to_average = min_length
 
         for i in range(0, elements_to_average):
             bids_sum += response_json[BIDS][i][0]
@@ -53,4 +54,6 @@ def main():
     print_updating_data('BTCUSD', 50, 5)
 
 
-main()
+if __name__ == '__main__':
+    main()
+
