@@ -11,12 +11,13 @@ def _getApiResponse(path):
     headers = {'content-type': 'application/json'}
 
     try:
-        response = requests.get(url, headers=headers)
-        return response.json()
-    except requests.exceptions.ConnectionError:
+        response = requests.get(url, headers=headers).json()
+        if response['status'] == 'Ok':
+            return response
+    except requests.exceptions.RequestException:
         print("Error while connecting to API.")
     except json.decoder.JSONDecodeError:
-        print("Incorrect api response format. Please check url:", url)
+        print("Incorrect api response format")
     return None
 
 
@@ -71,7 +72,7 @@ def _processRateStream(goods, pathPrefix, pathSuffix, interval, source, rateFunc
         print("\n", datetime.now().strftime("%H:%M:%S"), f"Sell compared to buy based on {source} in percents: ")
         for good in goods:
             data = _getApiResponse(pathPrefix + good[0] + "-" + good[1] + pathSuffix)
-            if data and data['status'] == 'Ok':
+            if data:
                 print(good[0], ": Rate = ", rateFunction(data))
         time.sleep(interval)
 
