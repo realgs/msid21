@@ -33,9 +33,10 @@ def calculateSpread(info):
 def main():
     while 1 > 0:
         for i in table():
-            for j in i:
-                print(str(j) + " ")
-            print("Spread = " + str(round(calculateSpread(i), 3)) + "%")
+            print(i[0])
+            print("BID -> " + str(i[1]) + " ")
+            print("ASK -> " + str(i[2]) + " ")
+            print("Spread -> " + str(round(calculateSpread(i), 3)) + "%")
             print()
         time.sleep(printDelay)
 
