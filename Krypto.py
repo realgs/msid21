@@ -3,6 +3,8 @@ import time
 
 API = "https://api.bittrex.com/api/v1.1/public/getticker?market="
 currencies = ['USD-BTC', 'USD-ETH', 'USD-LTC']
+printDelay = 5
+
 
 def downloadData(currency):
     try:
@@ -23,18 +25,19 @@ def table():
             print("Error, can not load " + curr + " data")
     return allData
 
+
 def calculateSpread(info):
-    return (((info[1]-info[2])/info[2])*-100)
+    return ((info[1] - info[2]) / info[2]) * -100
+
 
 def main():
-
-    while (1 > 0):
+    while 1 > 0:
         for i in table():
             for j in i:
                 print(str(j) + " ")
             print("Spread = " + str(round(calculateSpread(i), 3)) + "%")
             print()
-        time.sleep(5)
+        time.sleep(printDelay)
 
 
 if __name__ == '__main__':
