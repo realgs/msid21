@@ -3,9 +3,11 @@ from datetime import datetime
 import time
 import json
 
+API_BASE_URL = "https://api.bitbay.net/rest/trading/"
+
 
 def _getApiResponse(path):
-    url = "https://api.bitbay.net/rest/trading/" + path
+    url = API_BASE_URL + path
     headers = {'content-type': 'application/json'}
 
     try:
@@ -19,14 +21,17 @@ def _getApiResponse(path):
 
 
 def _showLastTransactions(good, currency="USD", limit=50):
-    transactions = _getApiResponse("transactions/" + good + "-" + currency + "?limit=" + str(limit))
+    transactions = _getApiResponse(f"transactions/{good}-{currency}?limit={str(limit)}")
 
     if transactions:
-        print("\n", "Last " + str(limit) + " transactions for " + good + " in " + currency + ":")
-        for tran in transactions['items']:
-            value = float(tran['a']) * float(tran['r'])
-            print("Date: ", datetime.fromtimestamp(int(float(tran['t']) / 1000)), " -  Type: ", tran['ty'],
-                  " -  Value: ", value, " -  Price: ", tran['r'])
+        if transactions['items']:
+            print("\n", f"Last {str(limit)} transactions for {good} in {currency}:")
+            for tran in transactions['items']:
+                value = float(tran['a']) * float(tran['r'])
+                print("Date: ", datetime.fromtimestamp(int(float(tran['t']) / 1000)), " -  Type: ", tran['ty'],
+                      " -  Value: ", value, " -  Price: ", tran['r'])
+        else:
+            print(f"Incorrect value of good: {good} or currency: {currency}")
 
 
 def showTransactions(goods, count):
@@ -39,8 +44,7 @@ def _mean(arr):
 
 
 def _sellBuyTransactionRate(transactions):
-    sellPrices = []
-    buyPrices = []
+    sellPrices, buyPrices = [], []
 
     for tran in transactions['items']:
         if tran['ty'] == 'Sell':
@@ -50,8 +54,7 @@ def _sellBuyTransactionRate(transactions):
     if not sellPrices or not buyPrices:
         return 'Cannot determine rate'
 
-    meanBuyPrice = _mean(buyPrices)
-    meanSellPrice = _mean(sellPrices)
+    meanBuyPrice, meanSellPrice = _mean(buyPrices), _mean(sellPrices)
 
     rate = 1 - (meanBuyPrice - meanSellPrice) / meanSellPrice
     return rate * 100
@@ -65,7 +68,7 @@ def _minSellMaxBuyRate(data: object):
 
 def _processRateStream(goods, pathPrefix, pathSuffix, interval, source, rateFunction):
     while True:
-        print("\n", datetime.now().strftime("%H:%M:%S"), "Sell compared to buy based on " + source + " in percents: ")
+        print("\n", datetime.now().strftime("%H:%M:%S"), f"Sell compared to buy based on {source} in percents: ")
         for good in goods:
             data = _getApiResponse(pathPrefix + good[0] + "-" + good[1] + pathSuffix)
             if data and data['status'] == 'Ok':
@@ -80,4 +83,3 @@ def showPriceDifferenceStream(goods, interval=5, fromTransactions=True):
         _processRateStream(goods, "transactions/", "?limit=50", interval, "transactions", _sellBuyTransactionRate)
     else:
         _processRateStream(goods, "orderbook-limited/", "/10", interval, "orders", _minSellMaxBuyRate)
-
