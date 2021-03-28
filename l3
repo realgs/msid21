@@ -1,0 +1,20 @@
+1. Analogicznie do zadania 2 z listy 2 znaleźć drugie API, połączyć się z nim i w odstępach 5 sekundowych pobierać z niego dane o kupnie / sprzedaży. 
+Dla wybranej pary zasobów, np. BTCUSD liczyć i printować procentowe różnice kursów:
+a) kupna
+b) sprzedaży
+c) kupna w miejscu 1 do sprzedaży w miejscu 2 (czyli o ile % różni się zakup danego zasobu w jednym miejscu od sprzedaży w drugim miejscu)
+
+AD c) badana jest tu możliwość zawarcia transakcji arbitrażu to jest zakup taniej w miejscu 1, sprzedaż drożej w miejscu 2. 
+Zwykle wartość ta powinna wychodzić ujemna, bo rynki w naturalny sposób są równoważone przez użytkowników, jednak przy zwiększonej zmienności występują momenty, w których staje się dodatnia.
+Oznacza to, że przykładowo możemy kupić zasób X za Y po kursie 1000 w miejscu 1, a sprzedać za 1010 w miejscu 2. 
+Innymi słowy najlepsza oferta sprzedaży w miejscu 1 ma kurs 1000, a najlepsza oferta kupna w miejscu 2 ma kurs 1010.
+
+(5pkt)
+
+2. Rozszerzyć punkt c. Sprawdzić opłacalność transakcji arbitrażu. Arbitraż staje się opłacalny dopiero gdy cała operacja, po uwzględnieniu wszystkich kosztów, wychodzi inplus.
+Uwzględnić koszty transakcyjne (prowizja danej giełdy, typ "taker") oraz koszty transferu ("transfer fee" w tabeli opłat dla danego zasobu) - czasem dostępna w API, czasem trzeba wpisać transfer fees NAZWA_GIEŁDY w Google, zależnie od źródła.
+Dodatkowo należy uwzględnić ilości. Jeśli na giełdzie 2 ktoś chce kupić po korzystnej cenie 1010 zasób, który my kupiliśmy na giełdzie 1 po cenie 1000 trzeba jeszcze sprawdzić ilości (wolumen tj. druga wartość z krotki oferty). Czyli ile ktoś chciał sprzedać w miejscu 1 i ile ktoś chciał kupić w miejscu 2.
+W wyniku realizacji zadania drugiego oprócz punktów a, b, c co 5 sekund printować informację o tym ile środków może zostać poddane arbitrażowi (do sprawdzenia wolumen), ile % jest do zarobienia (po odliczeniu kosztów prowizji i transferu) i ile jest to bezwzględnie w walucie bazowej.
+Jako walutę bazową proszę przyjąć drugą z pary - przykład dla BTCUSD jest to USD.
+
+(5pkt)
