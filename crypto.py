@@ -9,19 +9,16 @@ def connectToCryptoApi(currency1, currency2):
         return None
 
 
-def printCryptoOffers(jsonResponse, crypto, currency):
+def printCryptoOffers(jsonResponse, crypto, currency, limit=5):
     if jsonResponse is not None:
         print(crypto + '/' + currency + ', BUY OFFERS:')
         print('[RATE, AMOUNT]')
-        for buyOffer in jsonResponse['bids']:
+        for buyOffer in jsonResponse['bids'][:limit]:
             print(buyOffer)
         print(crypto + '/' + currency + ', SELL OFFERS:')
         print('[RATE, AMOUNT]')
-        for sellOffer in jsonResponse['asks']:
+        for sellOffer in jsonResponse['asks'][:limit]:
             print(sellOffer)
-
-
-
 
 
 def main():
