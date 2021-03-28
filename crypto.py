@@ -27,16 +27,12 @@ def printCryptoOffers(jsonResponse, crypto, currency, limit):
 
 def calculateDifferenceRatio(crypto, currency, limit):
     jsonResponse = connectToCryptoApi(crypto, currency)
-    sumOfBuyPrice = 0
-    sumOfSellPrice = 0
+    buyPrice = 0
+    sellPrice = 0
     if jsonResponse is not None:
-        for buyOffer in jsonResponse['bids'][:limit]:
-            sumOfBuyPrice = sumOfBuyPrice + buyOffer[0]
-        for sellOffer in jsonResponse['asks'][:limit]:
-            sumOfSellPrice = sumOfSellPrice + sellOffer[0]
-    averageOfBuyPrice = sumOfBuyPrice / limit
-    averageOfSellPrice = sumOfSellPrice / limit
-    differenceRatio = 1 - ((averageOfSellPrice - averageOfBuyPrice) / averageOfBuyPrice)
+            buyPrice = jsonResponse['bids'][0]
+            sellPrice = jsonResponse['asks'][0]
+    differenceRatio = 1 - ((sellPrice - buyPrice) / buyPrice)
     return differenceRatio
 
 
