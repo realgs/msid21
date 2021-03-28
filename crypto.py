@@ -52,9 +52,9 @@ def main():
     printCryptoOffers(connectToCryptoApi('LTC', 'USD'), 'LTC', 'USD', LIMIT)
     printCryptoOffers(connectToCryptoApi('DASH', 'USD'), 'DASH', 'USD', LIMIT)
 
-    #showProfit('BTC', 'USD', DELAY_OF_EXPLORING_DATA, 1)
+    # showProfit('BTC', 'USD', DELAY_OF_EXPLORING_DATA, 1)
     showProfit('LTC', 'USD', DELAY_OF_EXPLORING_DATA, 1)
-    #showProfit('DASH', 'USD', DELAY_OF_EXPLORING_DATA, 1)
+    # showProfit('DASH', 'USD', DELAY_OF_EXPLORING_DATA, 1)
 
 
 if __name__ == '__main__':
