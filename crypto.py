@@ -25,7 +25,7 @@ def printCryptoOffers(jsonResponse, crypto, currency, limit):
             print(sellOffer)
 
 
-def calculateProfit(crypto, currency, limit):
+def calculateDifferenceRatio(crypto, currency, limit):
     jsonResponse = connectToCryptoApi(crypto, currency)
     sumOfBuyPrice = 0
     sumOfSellPrice = 0
@@ -36,14 +36,14 @@ def calculateProfit(crypto, currency, limit):
             sumOfSellPrice = sumOfSellPrice + sellOffer[0]
     averageOfBuyPrice = sumOfBuyPrice / limit
     averageOfSellPrice = sumOfSellPrice / limit
-    profit = (1 - (averageOfSellPrice - averageOfBuyPrice) / averageOfBuyPrice) * 100
-    return profit
+    differenceRatio = 1 - ((averageOfSellPrice - averageOfBuyPrice) / averageOfBuyPrice)
+    return differenceRatio
 
 
-def showProfit(crypto, currency, delayOfExploringData, limit):
+def showDifferenceRatio(crypto, currency, delayOfExploringData, limit):
     while True:
-        profit = calculateProfit(crypto, currency, limit)
-        print('Profit: ' + crypto + '/' + currency + ': ', profit)
+        differenceRatio = calculateDifferenceRatio(crypto, currency, limit)
+        print('Difference ratio in %: ' + crypto + '/' + currency + ': ', differenceRatio)
         time.sleep(delayOfExploringData)
 
 
@@ -52,9 +52,9 @@ def main():
     printCryptoOffers(connectToCryptoApi('LTC', 'USD'), 'LTC', 'USD', LIMIT)
     printCryptoOffers(connectToCryptoApi('DASH', 'USD'), 'DASH', 'USD', LIMIT)
 
-    # showProfit('BTC', 'USD', DELAY_OF_EXPLORING_DATA, 1)
-    showProfit('LTC', 'USD', DELAY_OF_EXPLORING_DATA, 1)
-    # showProfit('DASH', 'USD', DELAY_OF_EXPLORING_DATA, 1)
+    # showDifferenceRatio('BTC', 'USD', DELAY_OF_EXPLORING_DATA, 1)
+    showDifferenceRatio('LTC', 'USD', DELAY_OF_EXPLORING_DATA, 1)
+    # showDifferenceRatio('DASH', 'USD', DELAY_OF_EXPLORING_DATA, 1)
 
 
 if __name__ == '__main__':
