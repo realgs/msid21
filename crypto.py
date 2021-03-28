@@ -25,7 +25,9 @@ def printCryptoOffers(jsonResponse, crypto, currency):
 
 
 def main():
-    printCryptoOffers(connectToCryptoApi('DASH', 'USD'), 'DASH', 'USD');
+    printCryptoOffers(connectToCryptoApi('BTC', 'USD'), 'BTC', 'USD')
+    printCryptoOffers(connectToCryptoApi('LTC', 'USD'), 'LTC', 'USD')
+    printCryptoOffers(connectToCryptoApi('DASH', 'USD'), 'DASH', 'USD')
 
 
 if __name__ == '__main__':
