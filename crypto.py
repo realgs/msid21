@@ -1,7 +1,7 @@
 import requests
 import time
 
-DELAY_OF_EXPLORING_DATA = 20
+DELAY_OF_EXPLORING_DATA = 5
 LIMIT = 5
 
 
@@ -25,21 +25,25 @@ def printCryptoOffers(jsonResponse, crypto, currency, limit):
             print(sellOffer)
 
 
-def calculateDifferenceRatio(crypto, currency, limit):
+def calculateDifferenceRatio(crypto, currency):
     jsonResponse = connectToCryptoApi(crypto, currency)
-    buyPrice = 0
-    sellPrice = 0
     if jsonResponse is not None:
-            buyPrice = jsonResponse['bids'][0]
-            sellPrice = jsonResponse['asks'][0]
-    differenceRatio = 1 - ((sellPrice - buyPrice) / buyPrice)
-    return differenceRatio
+        buyOffers = jsonResponse['bids']
+        sellOffers = jsonResponse['asks']
+        buyOffersCount = len(buyOffers)
+        sellOffersCount = len(sellOffers)
+        offersCount = min(buyOffersCount, sellOffersCount)
+        for offerIndex in range(offersCount):
+            buyPrice = buyOffers[offerIndex][0]
+            sellPrice = sellOffers[offerIndex][0]
+            differenceRatio = 1 - (sellPrice - buyPrice) / buyPrice
+            differenceRatio *= 100
+            print('Difference ratio in %: ' + crypto + '/' + currency + ': ', differenceRatio)
 
 
-def showDifferenceRatio(crypto, currency, delayOfExploringData, limit):
+def calcDifference(crypto, currency, delayOfExploringData):
     while True:
-        differenceRatio = calculateDifferenceRatio(crypto, currency, limit)
-        print('Difference ratio in %: ' + crypto + '/' + currency + ': ', differenceRatio)
+        calculateDifferenceRatio(crypto, currency)
         time.sleep(delayOfExploringData)
 
 
@@ -48,9 +52,9 @@ def main():
     printCryptoOffers(connectToCryptoApi('LTC', 'USD'), 'LTC', 'USD', LIMIT)
     printCryptoOffers(connectToCryptoApi('DASH', 'USD'), 'DASH', 'USD', LIMIT)
 
-    # showDifferenceRatio('BTC', 'USD', DELAY_OF_EXPLORING_DATA, 1)
-    showDifferenceRatio('LTC', 'USD', DELAY_OF_EXPLORING_DATA, 1)
-    # showDifferenceRatio('DASH', 'USD', DELAY_OF_EXPLORING_DATA, 1)
+    calcDifference('BTC', 'USD', DELAY_OF_EXPLORING_DATA)
+    # calcDifference('LTC', 'USD', DELAY_OF_EXPLORING_DATA)
+    # calcDifference('DASH', 'USD', DELAY_OF_EXPLORING_DATA)
 
 
 if __name__ == '__main__':
