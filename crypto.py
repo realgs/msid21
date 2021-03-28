@@ -13,13 +13,12 @@ def printCryptoOffers(jsonResponse, crypto, currency):
     if jsonResponse is not None:
         print(crypto + '/' + currency + ', BUY OFFERS:')
         print('[RATE, AMOUNT]')
-        for offer in jsonResponse['bids']:
-            print(offer)
+        for buyOffer in jsonResponse['bids']:
+            print(buyOffer)
         print(crypto + '/' + currency + ', SELL OFFERS:')
         print('[RATE, AMOUNT]')
-        for offer in jsonResponse['asks']:
-            print(offer)
-        print(offer)
+        for sellOffer in jsonResponse['asks']:
+            print(sellOffer)
 
 
 
