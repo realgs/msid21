@@ -58,5 +58,6 @@ def print_bids_asks_loop():
     print("Stop")
 
 
-print_bids_asks()
-print_bids_asks_loop()
+if __name__ == '__main__':
+    print_bids_asks()
+    print_bids_asks_loop()
