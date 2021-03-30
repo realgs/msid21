@@ -39,13 +39,16 @@ def getOrdersFromApi(api, cryptocurrency, currency, limit=10):
 
     return None
 
+
 def getOrdersFromMultipleApis(apis, cryptocurrency, currency, limitPerApi=10):
     buyOrders, sellOrders = [], []
     for api in apis:
-        orders = getOrdersFromApi(api, cryptocurrency, currency, limitPerApi)
+        orders = getOrdersFromApi(api['api'], cryptocurrency, currency, limitPerApi)
         if orders != None:
-            buyOrders += orders['asks']
-            sellOrders += orders['bids']
+            if  api['asks'] == True:
+                buyOrders += orders['asks']
+            if  api['bids'] == True:
+                sellOrders += orders['bids']
 
     return {'bids': buyOrders, 'asks': sellOrders}
 
@@ -76,14 +79,17 @@ def getOrdersFromMultipleApis(apis, cryptocurrency, currency, limitPerApi=10):
 #             print(f'Profit on: {cryptocurrency} = {profit:.2f}%')
 
 
-
-
 def calculateProfit(minimal=1, maximal=1):
     return 1 - (minimal - maximal) / maximal * 100
 
 
 def main():
-    print(getOrdersFromMultipleApis([APIS.BITBAY, APIS.BITSTAMP], 'BTC', 'USD', 10))
+    print(getOrdersFromMultipleApis(
+        [
+            {'api': APIS.BITBAY, 'bids': True, 'asks': False}, 
+            {'api': APIS.BITSTAMP, 'bids': False, 'asks': True}
+        ],
+        'BTC', 'USD', 10))
 
 
 if __name__ == "__main__":
