@@ -43,54 +43,44 @@ def getOrdersFromApi(api, cryptocurrency, currency, limit=10):
 def getOrdersFromMultipleApis(apis, cryptocurrency, currency, limitPerApi=10):
     buyOrders, sellOrders = [], []
     for api in apis:
-        orders = getOrdersFromApi(api['api'], cryptocurrency, currency, limitPerApi)
+        orders = getOrdersFromApi(
+            api['api'], cryptocurrency, currency, limitPerApi)
         if orders != None:
-            if  api['asks'] == True:
+            if api['asks'] == True:
                 buyOrders += orders['asks']
-            if  api['bids'] == True:
+            if api['bids'] == True:
                 sellOrders += orders['bids']
 
-    return {'bids': buyOrders, 'asks': sellOrders}
-
-# def findProfit(cryptocurrency, currency, limit=5, average=False):
-#     orders = getOrders(cryptocurrency, currency, limit)
-#     if orders != None:
-#         sellOrders, buyOrders = orders['bids'], orders['asks']
-#         buyPrice, sellPrice = 0, 0
-#         if average:
-#             sumOfBuyPrice = 0
-#             sumOfSellPrice = 0
-#             length = min(len(buyOrders), len(sellOrders))
-
-#             for index in range(length):
-#                 sumOfBuyPrice = sumOfBuyPrice + (buyOrders[index][0])
-#                 sumOfSellPrice = sumOfSellPrice + (sellOrders[index][0])
-
-#             buyPrice = sumOfBuyPrice / length
-#             sellPrice = sumOfSellPrice / length
-#         else:
-#             buyPrice = max(buyOrders)[0]
-#             sellPrice = min(sellOrders)[0]
-
-#         profit = calculateProfit(sellPrice, buyPrice)
-#         if average:
-#             print(f'Average profit on: {cryptocurrency} = {profit:.2f}%')
-#         else:
-#             print(f'Profit on: {cryptocurrency} = {profit:.2f}%')
+    return {'asks': buyOrders, 'bids': sellOrders}
 
 
-def calculateProfit(minimal=1, maximal=1):
-    return 1 - (minimal - maximal) / maximal * 100
+def calculateProfit(minimalArray, maximalArray):
+    minimalValue, maximalValue = 1, 1
+    if len(minimalArray) > 0:
+        minimalValue = min(minimalArray)[0]
+    if len(maximalArray) > 0:
+        maximalValue = max(maximalArray)[0]
 
+    profit = (minimalValue - maximalValue) / maximalValue * 100
+    return profit
+
+
+def ex1a(tickers):
+    for ticker in tickers:
+        orders = getOrdersFromMultipleApis(
+            [{'api': APIS.BITSTAMP, 'bids': True, 'asks': False}], ticker[0], ticker[1], 10)
+        print(f'{calculateProfit(orders["bids"], orders["bids"])} %')
+
+def ex1b(tickers):
+    for ticker in tickers:
+        orders = getOrdersFromMultipleApis(
+            [{'api': APIS.BITSTAMP, 'bids': False, 'asks': True}], ticker[0], ticker[1], 10)
+        print(f'{calculateProfit(orders["asks"], orders["asks"])} %')
 
 def main():
-    print(getOrdersFromMultipleApis(
-        [
-            {'api': APIS.BITBAY, 'bids': True, 'asks': False}, 
-            {'api': APIS.BITSTAMP, 'bids': False, 'asks': True}
-        ],
-        'BTC', 'USD', 10))
-
+    tickers = [('BTC', 'USD')]
+    ex1a(tickers)
+    ex1b(tickers)
 
 if __name__ == "__main__":
     main()
