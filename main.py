@@ -1,5 +1,5 @@
 import requests
-from time import sleep
+from threading import Timer
 from enum import Enum
 
 BITBAY_API = "https://bitbay.net/API/Public/"
@@ -10,8 +10,10 @@ APIS = Enum('API', 'BITBAY BITSTAMP')
 
 def setInterval(func, interval):
     func()
-    sleep(5)
-    setInterval(func, interval)
+    def func_wrapper():
+        setInterval(func, interval)
+        
+    Timer(interval, func_wrapper).start()
 
 
 def requestAPI(url):
@@ -69,18 +71,23 @@ def ex1a(tickers):
     for ticker in tickers:
         orders = getOrdersFromMultipleApis(
             [{'api': APIS.BITSTAMP, 'bids': True, 'asks': False}], ticker[0], ticker[1], 10)
-        print(f'{calculateProfit(orders["bids"], orders["bids"])} %')
+        print(
+            f'Profit on {ticker[0]}: {calculateProfit(orders["bids"], orders["bids"]):.4f}%')
+
 
 def ex1b(tickers):
     for ticker in tickers:
         orders = getOrdersFromMultipleApis(
             [{'api': APIS.BITSTAMP, 'bids': False, 'asks': True}], ticker[0], ticker[1], 10)
-        print(f'{calculateProfit(orders["asks"], orders["asks"])} %')
+        print(
+            f'Profit on {ticker[0]}: {calculateProfit(orders["asks"], orders["asks"]):.4f}%')
+
 
 def main():
     tickers = [('BTC', 'USD')]
-    ex1a(tickers)
-    ex1b(tickers)
+    setInterval(lambda: ex1a(tickers), 10)
+    setInterval(lambda: ex1b(tickers), 10)
+
 
 if __name__ == "__main__":
     main()
