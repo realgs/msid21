@@ -55,16 +55,17 @@ def calculateProfit(cryptocurrency, currency, limit=5):
             sumOfBuyPrice = sumOfBuyPrice + (buyOrders[index][0])
             sumOfSellPrice = sumOfSellPrice + (sellOrders[index][0])
 
-        averageBuyPrice = sumOfBuyPrice/length
-        averageSellPrice = sumOfSellPrice/length
-        profit = 1 - (averageSellPrice - averageBuyPrice) / \
-            averageBuyPrice * 100
+        averageBuyPrice = sumOfBuyPrice / length
+        averageSellPrice = sumOfSellPrice / length
+        profit = 1 - (averageSellPrice - averageBuyPrice) / averageBuyPrice * 100
         print(f'Average profit on: {cryptocurrency} = {profit:.2f}%')
 
+
 def setInterval(func, interval):
-    func()  
+    func()
     sleep(5)
-    setInterval(func, interval) 
+    setInterval(func, interval)
+
 
 def ex1():
     printOrders('BTC', 'USD', 4)
@@ -87,3 +88,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
