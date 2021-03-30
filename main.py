@@ -1,4 +1,5 @@
 import requests
+from time import sleep
 
 API = "https://bitbay.net/API/Public/"
 
@@ -60,6 +61,10 @@ def calculateProfit(cryptocurrency, currency, limit=5):
             averageBuyPrice * 100
         print(f'Average profit on: {cryptocurrency} = {profit:.2f}%')
 
+def setInterval(func, interval):
+    func()  
+    sleep(5)
+    setInterval(func, interval) 
 
 def ex1():
     printOrders('BTC', 'USD', 4)
@@ -77,7 +82,7 @@ def main():
     print("Exercise 1:")
     ex1()
     print("Exercise 2:")
-    ex2()
+    setInterval(ex2, 5)
 
 
 if __name__ == "__main__":
