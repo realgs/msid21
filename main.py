@@ -42,24 +42,34 @@ def printOrder(cryptocurrency, currency, order):
         f'{order[1]} {cryptocurrency} for {(order[0] * order[1]):.2f} {currency}')
 
 
-def calculateProfit(cryptocurrency, currency, limit=5):
+def findProfit(cryptocurrency, currency, limit=5, average = False):
     orders = getOrders(cryptocurrency, currency, limit)
     if orders != None:
-        sellOrders = orders['bids']
-        buyOrders = orders['asks']
-        sumOfBuyPrice = 0
-        sumOfSellPrice = 0
-        length = min(len(buyOrders), len(sellOrders))
+        sellOrders, buyOrders = orders['bids'], orders['asks']
+        buyPrice, sellPrice = 0, 0
+        if average: 
+            sumOfBuyPrice = 0
+            sumOfSellPrice = 0
+            length = min(len(buyOrders), len(sellOrders))
 
-        for index in range(length):
-            sumOfBuyPrice = sumOfBuyPrice + (buyOrders[index][0])
-            sumOfSellPrice = sumOfSellPrice + (sellOrders[index][0])
+            for index in range(length):
+                sumOfBuyPrice = sumOfBuyPrice + (buyOrders[index][0])
+                sumOfSellPrice = sumOfSellPrice + (sellOrders[index][0])
 
-        averageBuyPrice = sumOfBuyPrice / length
-        averageSellPrice = sumOfSellPrice / length
-        profit = 1 - (averageSellPrice - averageBuyPrice) / averageBuyPrice * 100
-        print(f'Average profit on: {cryptocurrency} = {profit:.2f}%')
+            buyPrice = sumOfBuyPrice / length
+            sellPrice = sumOfSellPrice / length
+        else: 
+            buyPrice = max(buyOrders)[0]
+            sellPrice = min(sellOrders)[0]
 
+        profit = calculateProfit(sellPrice, buyPrice)
+        if average:
+            print(f'Average profit on: {cryptocurrency} = {profit:.2f}%')
+        else:
+            print(f'Profit on: {cryptocurrency} = {profit:.2f}%')
+
+def calculateProfit(sellPrice = 1, buyPrice = 1):
+    return 1 - (sellPrice - buyPrice) / buyPrice * 100
 
 def setInterval(func, interval):
     func()
@@ -74,9 +84,9 @@ def ex1():
 
 
 def ex2():
-    calculateProfit('BTC', 'USD')
-    calculateProfit('LTC', 'USD')
-    calculateProfit('DASH', 'USD')
+    findProfit('BTC', 'USD', 8)
+    findProfit('LTC', 'USD', 8)
+    findProfit('DASH', 'USD', 8)
 
 
 def main():
