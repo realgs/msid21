@@ -24,7 +24,7 @@ def requestAPI(url):
         return None
 
 
-def getOrders(api, cryptocurrency, currency, limit=10):
+def getOrdersFromApi(api, cryptocurrency, currency, limit=10):
     if api == APIS.BITBAY:
         url = f'{BITBAY_API}{cryptocurrency}{currency}/orderbook.json'
         orders = requestAPI(url)
@@ -39,6 +39,15 @@ def getOrders(api, cryptocurrency, currency, limit=10):
 
     return None
 
+def getOrdersFromMultipleApis(apis, cryptocurrency, currency, limitPerApi=10):
+    buyOrders, sellOrders = [], []
+    for api in apis:
+        orders = getOrdersFromApi(api, cryptocurrency, currency, limitPerApi)
+        if orders != None:
+            buyOrders += orders['asks']
+            sellOrders += orders['bids']
+
+    return {'bids': buyOrders, 'asks': sellOrders}
 
 # def findProfit(cryptocurrency, currency, limit=5, average=False):
 #     orders = getOrders(cryptocurrency, currency, limit)
@@ -67,13 +76,14 @@ def getOrders(api, cryptocurrency, currency, limit=10):
 #             print(f'Profit on: {cryptocurrency} = {profit:.2f}%')
 
 
-# def calculateProfit(sellPrice=1, buyPrice=1):
-#     return 1 - (sellPrice - buyPrice) / buyPrice * 100
+
+
+def calculateProfit(minimal=1, maximal=1):
+    return 1 - (minimal - maximal) / maximal * 100
 
 
 def main():
-    print(getOrders(APIS.BITBAY, "BTC", 'USD', 3))
-    print(getOrders(APIS.BITSTAMP, "BTC", 'USD', 3))
+    print(getOrdersFromMultipleApis([APIS.BITBAY, APIS.BITSTAMP], 'BTC', 'USD', 10))
 
 
 if __name__ == "__main__":
