@@ -18,7 +18,7 @@ def print_difference(name, bids_avg, asks_avg, diff):
     print(name, "Difference:", diff, "%")
 
 
-def get_and_print_bids_asks_difference(name, elements_to_average):
+def print_bids_asks_difference(name, elements_to_average):
     bids_sum = 0.0
     asks_sum = 0.0
     response = get_data(name)
@@ -37,22 +37,20 @@ def get_and_print_bids_asks_difference(name, elements_to_average):
         asks_avg = asks_sum / elements_to_average
         diff = (1 - (asks_avg - bids_avg) / bids_avg) * 100
         print_difference(name, bids_avg,  asks_avg, diff)
-        return diff
     else:
         print(name, ' data not found')
-        return None
 
 
 def print_updating_data(name, max_bound, delay):
     while True:
-        get_and_print_bids_asks_difference(name, max_bound)
+        print_bids_asks_difference(name, max_bound)
         time.sleep(delay)
 
 
 def main():
-    get_and_print_bids_asks_difference('BTCUSD', 80)
-    get_and_print_bids_asks_difference('DASHUSD', 50)
-    get_and_print_bids_asks_difference('LTCUSD', 50)
+    print_bids_asks_difference('BTCUSD', 80)
+    print_bids_asks_difference('DASHUSD', 50)
+    print_bids_asks_difference('LTCUSD', 50)
     print_updating_data('BTCUSD', 50, 5)
 
 
