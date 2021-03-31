@@ -32,6 +32,8 @@ def print_bids_asks_loop(curr1):
             print(str((1-((ask-bid)/bid))*100)+"%")
             time.sleep(5)
 
+    # print_loop()
+
     print("Printing bids and asks diff % for", curr1, "in a loop\nPress enter to exit the aplication")
     th = threading.Thread(target=print_loop)
     th.start()
@@ -43,10 +45,10 @@ def print_bids_asks_loop(curr1):
 
 
 def ex1():
-    replies = 3
-    print_bids_asks("BTC", "USD", replies)
-    print_bids_asks("LTC", "USD", replies)
-    print_bids_asks("DASH", "USD", replies)
+    REPLIES = 3
+    print_bids_asks("BTC", "USD", REPLIES)
+    print_bids_asks("LTC", "USD", REPLIES)
+    print_bids_asks("DASH", "USD", REPLIES)
 
 # ex1()
 
