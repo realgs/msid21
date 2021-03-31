@@ -1,5 +1,5 @@
 import finance
 
-cryptos = ("BTC", "ETH")
+cryptos = [("BTC", "ETH"), ("USD", "BTC"), ("BTC", "LTC")]
 
 finance.displayMarketsDifferenceRateStream(cryptos)

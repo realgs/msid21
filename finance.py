@@ -56,6 +56,17 @@ def _getTransactionData(buyOrder, sellOrder):
     return rate, quantity, profit
 
 
+def _printFullInfo(buyIn, sellIn, rate, quantity, profit, currency):
+    rateFixed = "{:.6f}".format(rate * 100)
+    quantityFixed = "{:.6f}".format(quantity)
+    if profit > 0:
+        colorPrefix, colorSuffix = '\x1b[6;30;42m', '\x1b[0m'
+    else:
+        colorPrefix, colorSuffix = '\x1b[6;30;41m', '\x1b[0m'
+    print(f"{colorPrefix}Buy in {buyIn}, sell in {sellIn}\t\tRate: {rateFixed},"
+          f"\t\tQuantity: {quantityFixed},\t\tFull profit: {profit} {currency}{colorSuffix}")
+
+
 def _displayCrossProfitRate(firstApiData, secondApiData, currency):
     firstApiBuy, firstApiSell = firstApiData['buy'], firstApiData['sell']
     secondApiBuy, secondApiSell = secondApiData['buy'], secondApiData['sell']
@@ -63,14 +74,9 @@ def _displayCrossProfitRate(firstApiData, secondApiData, currency):
     rate1, quantity1, profit1 = _getTransactionData(firstApiBuy, secondApiSell)
     rate2, quantity2, profit2 = _getTransactionData(secondApiBuy, firstApiSell)
 
-    rate1Fixed, rate2Fixed = "{:.6f}".format(rate1 * 100), "{:.6f}".format(rate2 * 100)
-    quantity1Fixed, quantity2Fixed = "{:.6f}".format(quantity1), "{:.6f}".format(quantity2)
-
     print("Profit percentage (100% - 0 profit):")
-    print(f"Buy in {FIRST_API_NAME}, sell in {SECOND_API_NAME}\t\tRate: {rate1Fixed},\t\tQuantity: {quantity1Fixed},"
-          f"\t\tFull profit: {profit1} {currency}")
-    print(f"Buy in {SECOND_API_NAME}, sell in {FIRST_API_NAME}\t\tRate: {rate2Fixed},\t\tQuantity: {quantity2Fixed},"
-          f"\t\tFull profit: {profit2} {currency}")
+    _printFullInfo(FIRST_API_NAME, SECOND_API_NAME, rate1, quantity1, profit1, currency)
+    _printFullInfo(SECOND_API_NAME, FIRST_API_NAME, rate2, quantity2, profit2, currency)
 
 
 def displayCrossProfitRate(cryptos):
@@ -83,17 +89,18 @@ def displayCrossProfitRate(cryptos):
         print("The profit rate cannot be calculated")
 
 
-def displayMarketsDifferenceRateStream(cryptos, interval=5):
+def displayMarketsDifferenceRateStream(allCryptos, interval=5):
     while True:
-        print("\n", datetime.now().strftime("%H:%M:%S"))
-        bestBittrex = bittrex.getBestOrders(cryptos)
-        bestBitbay = bitbay.getBestOrders(cryptos)
+        for cryptos in allCryptos:
+            print("\n", datetime.now().strftime("%H:%M:%S"), f"{cryptos[0]} -> {cryptos[1]}")
+            bestBittrex = bittrex.getBestOrders(cryptos)
+            bestBitbay = bitbay.getBestOrders(cryptos)
 
-        if bestBittrex['success'] and bestBitbay['success']:
-            _displayBuyRate(bestBittrex, bestBitbay)
-            _displaySellRate(bestBittrex, bestBitbay)
-            _displayCrossProfitRate(bestBittrex, bestBitbay, cryptos[1])
-        else:
-            print("The rate cannot be calculated")
-            break
+            if bestBittrex['success'] and bestBitbay['success']:
+                _displayBuyRate(bestBittrex, bestBitbay)
+                _displaySellRate(bestBittrex, bestBitbay)
+                _displayCrossProfitRate(bestBittrex, bestBitbay, cryptos[1])
+            else:
+                print("The rate cannot be calculated")
+                return
         time.sleep(interval)
