@@ -70,14 +70,13 @@ def print_ratios(markets, offers):
         ask_offer_list = list(filter(lambda offer: offer.transaction_type == 'ask', temp_offer_list))
         bid = bid_offer_list[0]
         ask = ask_offer_list[0]
-        print_ratio_info(bid, ask, count_ratio(bid, ask))
+        ratio = count_ratio(bid, ask)
+        print_ratio_info(bid, ask, ratio)
 
 
 def get_datastream(markets):
     while True:
         offers = get_offerlist(markets, 1)
-        print_list(offers)
-        print('\n')
         print_ratios(markets, offers)
         print('\n')
         time.sleep(5)

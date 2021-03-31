@@ -12,5 +12,5 @@ def test2():
     get_datastream(market_list)
 
 
-test1()
+# test1()
 test2()
