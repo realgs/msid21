@@ -1,6 +1,9 @@
 import requests
 import time
 
+TIME_TO_WAIT=5
+API="https://bitbay.net/API/Public/"
+
 #ZADANIE 1
 def jprint(obj, val):
     print("---"+val+"---")
@@ -15,16 +18,25 @@ def jprint(obj, val):
         print(obj["asks"][i])
         i+=1
 
+def getData(link: str):
+    response=requests.get(link)
+    if 200 <= response.status_code <= 299:
+        return response
+    else: return None
+
 def connect():
-    response1=requests.get("https://bitbay.net/API/Public/BTCUSD/orderbook.json")
-    response2 = requests.get("https://bitbay.net/API/Public/LTCUSD/orderbook.json")
-    response3 = requests.get("https://bitbay.net/API/Public/DASHUSD/orderbook.json")
-    return(response1, response2, response3)
+    response1=getData("https://bitbay.net/API/Public/BTCUSD/orderbook.json")
+    response2 = getData("https://bitbay.net/API/Public/LTCUSD/orderbook.json")
+    response3 = getData("https://bitbay.net/API/Public/DASHUSD/orderbook.json")
+    return (response1, response2, response3)
 
 def show(responses):
-    jprint((responses[0]).json(), "BTC")
-    jprint(responses[1].json(), "LTC")
-    jprint(responses[2].json(), "DASH")
+    if responses[0] is not None:
+        jprint((responses[0]).json(), "BTC")
+    if responses[1] is not None:
+        jprint(responses[1].json(), "LTC")
+    if responses[2] is not None:
+        jprint(responses[2].json(), "DASH")
 
 show(connect())
 
@@ -49,6 +61,6 @@ def update():
                 j+=1
             i+=1
             time.sleep(1)
-        time.sleep(5)
+        time.sleep(TIME_TO_WAIT)
 
 update()
