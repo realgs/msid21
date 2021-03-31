@@ -12,7 +12,7 @@ DASHUSD = ('DASH', 'USD')
 # zadanie 1
 def getApiResponse(url):
     response = requests.get(url)
-    if response.status_code == 200:
+    if response.status_code >= 200 or response.status_code <= 299:
         return response.json()
     else:
         print(response.reason)
