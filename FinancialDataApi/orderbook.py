@@ -52,13 +52,14 @@ def getOrders(market):
     else:
         return None
 
-def printOrdersForEachMarket(markets):
+def printOrdersForEach(markets):
     for market in markets:
         orders = getOrders(market)
         if orders:
+            print("\n")
             print(f"\tORDERBOOK FOR {market}:")
             printOrdersTable(orders)
         else:
             print(f"Something went wrong. Cannot get orders")
                 
-printOrdersForEachMarket(MARKETS)
+printOrdersForEach(MARKETS)
