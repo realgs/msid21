@@ -4,7 +4,7 @@ market_list = ['BTC-USD', 'LTC-USD', 'ETH-USD']
 
 
 def zad1test():
-    order_list = get_offerlist(market_list)
+    order_list = get_offerlist(market_list, 25)
     print_list(order_list)
 
 

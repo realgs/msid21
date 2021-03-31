@@ -14,10 +14,10 @@ class Offer:
         return f'{self.transaction_type} offer for {self.market}, quantity = {self.quantity}, price = {self.price}'
 
 
-def get_offerlist(markets):
+def get_offerlist(markets, how_many):
     offers = []
     for market in markets:
-        market_json = requests.get(f'https://api.bittrex.com/v3/markets/{market}/orderbook?depth=25').json()
+        market_json = requests.get(f'https://api.bittrex.com/v3/markets/{market}/orderbook?depth={how_many}').json()
         for transaction_type in ['bid', 'ask']:
             for offer_json in market_json[transaction_type]:
                 offers.append(Offer(market=market, transaction_type=transaction_type,
@@ -48,7 +48,7 @@ def count_ratios(markets, offers):
 
 def get_datastream(markets):
     while True:
-        offers = get_offerlist(markets)
+        offers = get_offerlist(markets, 1)
         print_list(offers)
         print('\n')
         ratios = count_ratios(markets, offers)
