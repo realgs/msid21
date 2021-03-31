@@ -48,8 +48,7 @@ def printOrders(orders, cryptocurrency, currency):
 
 
 def printOrder(cryptocurrency, currency, order):
-    print(
-        f'{order[1]} {cryptocurrency} for {(order[0] * order[1]):.2f} {currency}')
+    print(f'{order[1]} {cryptocurrency} for {(order[0] * order[1]):.2f} {currency}')
 
 
 def findProfit(orders, cryptocurrency, currency, average=False):
