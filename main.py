@@ -3,15 +3,24 @@ import requests
 from time import sleep
 from typing import Tuple, List
 
-apiUrl1 = 'https://bitbay.net/API/Public/'
+API_URL = 'https://bitbay.net/API/Public/'
 
 
 def loadDataFromApi(url: str):
     try:
         response = requests.get(url)
-        return json.loads(response.text)
+        if response.status_code in range(200, 299):
+            return json.loads(response.text)
+        else:
+            return None
     except requests.exceptions.ConnectionError:
         print("Error occured while connecting to the API.")
+        return None
+    except requests.exceptions.Timeout:
+        print("System timeout. Could not connect to the API.")
+        return None
+    except:
+        print("Unidentified error occured. Please contact an administrator.")
         return None
 
 
@@ -41,7 +50,8 @@ def getOffer(marketSymbol: Tuple[str, str], numberOfOffers: int, apiUrl: str):
 
 
 def presentOffers(offers, marketSymbol: Tuple[str, str]):
-    if len(offers) <= 0: raise Exception("No offers to display.")
+    if len(offers) <= 0:
+        raise Exception("No offers to display.")
 
     buyOffers = offers[1]  # ask
     sellOffers = offers[0]  # bid
@@ -54,8 +64,6 @@ def presentOffers(offers, marketSymbol: Tuple[str, str]):
     print('\nSELL Offers')
     displayOffers(marketSymbol, sellOffers)
 
-    return buyOffers, sellOffers
-
 
 def calculateDifference(marketSymbols: List[Tuple[str, str]], numberOfOffers: int, refreshDelay: int, apiUrl: str):
     while True:
@@ -64,7 +72,9 @@ def calculateDifference(marketSymbols: List[Tuple[str, str]], numberOfOffers: in
         for marketSymbol in marketSymbols:
             offers = getOffer(marketSymbol, numberOfOffers, apiUrl)
             if offers:
-                buyOffers, sellOffers = presentOffers(offers, marketSymbol)
+                presentOffers(offers, marketSymbol)
+                buyOffers = offers[1]
+                sellOffers = offers[0]
 
                 buyOffersLength = len(buyOffers)
                 sellOffersLength = len(sellOffers)
@@ -76,7 +86,8 @@ def calculateDifference(marketSymbols: List[Tuple[str, str]], numberOfOffers: in
                     sellOfferPrice = sellOffers[index][0]
 
                     differenceRatio = (1 - (sellOfferPrice - buyOfferPrice) / buyOfferPrice)
-                    print(f'Profit ratio for {marketSymbol}: ' + '{:.3f}'.format(differenceRatio) + ' (' + '{:.3f}'.format(differenceRatio * 100) + ' %)', sep="")
+                    print(f'Profit ratio for {marketSymbol}: ' + '{:.3f}'.format(
+                        differenceRatio) + ' (' + '{:.3f}'.format(differenceRatio * 100) + ' %)', sep="")
         sleep(refreshDelay)
 
 
@@ -93,11 +104,11 @@ def main():
         ('DASH', 'USD')
     ]
 
-    # showOffers(marketSymbols, 10, apiUrl1)
-    calculateDifference(marketSymbols, 15, 20, apiUrl1)
+    numberOfOffers = 15
+    refreshDelay = 20
+    showOffers(marketSymbols, numberOfOffers, API_URL)
+    # calculateDifference(marketSymbols, numberOfOffers, refreshDelay, API_URL)
 
 
 if __name__ == "__main__":
     main()
-
-
