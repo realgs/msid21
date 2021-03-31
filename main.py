@@ -69,7 +69,7 @@ def findProfit(cryptocurrency, currency, limit=5, average = False):
             print(f'Profit on: {cryptocurrency} = {profit:.2f}%')
 
 def calculateProfit(sellPrice = 1, buyPrice = 1):
-    return 1 - (sellPrice - buyPrice) / buyPrice * 100
+    return 1 - (sellPrice - buyPrice) / buyPrice
 
 def setInterval(func, interval):
     func()
