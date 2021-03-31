@@ -37,7 +37,7 @@ def calculateDifferenceRatio(crypto, currency):
     return differenceRatio
 
 
-def printCalcDifference(crypto, currency, delayOfExploringData):
+def printDifferenceRatio(crypto, currency, delayOfExploringData):
     while True:
         print('Difference ratio in %: ' + crypto + '/' + currency + ': ', calculateDifferenceRatio(crypto, currency))
         time.sleep(delayOfExploringData)
@@ -48,9 +48,9 @@ def main():
     printCryptoOffers(connectToCryptoApi('LTC', 'USD'), 'LTC', 'USD', LIMIT)
     printCryptoOffers(connectToCryptoApi('DASH', 'USD'), 'DASH', 'USD', LIMIT)
 
-    # printCalcDifference('BTC', 'USD', DELAY_OF_EXPLORING_DATA)
-    printCalcDifference('LTC', 'USD', DELAY_OF_EXPLORING_DATA)
-    # printCalcDifference('DASH', 'USD', DELAY_OF_EXPLORING_DATA)
+    # printDifferenceRatio('BTC', 'USD', DELAY_OF_EXPLORING_DATA)
+    printDifferenceRatio('LTC', 'USD', DELAY_OF_EXPLORING_DATA)
+    # printDifferenceRatio('DASH', 'USD', DELAY_OF_EXPLORING_DATA)
 
 
 if __name__ == '__main__':
