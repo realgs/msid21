@@ -7,8 +7,18 @@ REPLIES = 3
 BASE_CURRENCY = "USD"
 
 
+def get_data(curr1, curr2):
+    raw_data = requests.get("https://bitbay.net/API/Public/" + curr1 + curr2 + "/orderbook.json")
+    if raw_data.status_code > 299:
+        return None
+    return raw_data
+
+# getData()
+
+
 def print_bids_asks(curr1, curr2, replies):
-    data = requests.get("https://bitbay.net/API/Public/"+curr1+curr2+"/orderbook.json").json()
+
+    data = get_data(curr1, curr2).json()
 
     print(curr1, "bids:")
     for i in range(replies):
@@ -29,9 +39,9 @@ def print_bids_asks_loop(curr1):
         while True:
             if exit_event.isSet():
                 break
-            data_btc = requests.get("https://bitbay.net/API/Public/"+curr1+BASE_CURRENCY+"/orderbook.json").json()
-            bid = data_btc['bids'][0][0]
-            ask = data_btc['asks'][0][0]
+            data = get_data(curr1, BASE_CURRENCY).json()
+            bid = data['bids'][0][0]
+            ask = data['asks'][0][0]
 
             print(str((1-((ask-bid)/bid))*100)+"%")
             time.sleep(SLEEP)
