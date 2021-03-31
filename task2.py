@@ -4,10 +4,12 @@ import requests
 
 BIDS = 'bids'
 ASKS = 'asks'
+ADDRESS_BITBAY = 'https://bitbay.net/API/Public/'
+ADDRESS_ORDERBOOK = '/orderbook.json'
 
 
 def get_data(name):
-    address = 'https://bitbay.net/API/Public/' + name + '/orderbook.json'
+    address = ADDRESS_BITBAY + name + ADDRESS_ORDERBOOK
     return requests.get(address)
 
 
@@ -16,7 +18,7 @@ def print_difference(name, bids_avg, asks_avg, diff):
     print(name, "Difference:", diff, "%")
 
 
-def get_bids_asks_difference(name, elements_to_average):
+def get_and_print_bids_asks_difference(name, elements_to_average):
     bids_sum = 0.0
     asks_sum = 0.0
     response = get_data(name)
@@ -43,14 +45,14 @@ def get_bids_asks_difference(name, elements_to_average):
 
 def print_updating_data(name, max_bound, delay):
     while True:
-        get_bids_asks_difference(name, max_bound)
+        get_and_print_bids_asks_difference(name, max_bound)
         time.sleep(delay)
 
 
 def main():
-    get_bids_asks_difference('BTCUSD', 80)
-    get_bids_asks_difference('DASHUSD', 50)
-    get_bids_asks_difference('LTCUSD', 50)
+    get_and_print_bids_asks_difference('BTCUSD', 80)
+    get_and_print_bids_asks_difference('DASHUSD', 50)
+    get_and_print_bids_asks_difference('LTCUSD', 50)
     print_updating_data('BTCUSD', 50, 5)
 
 

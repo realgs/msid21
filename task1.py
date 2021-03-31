@@ -2,6 +2,8 @@ import requests
 
 BIDS = 'bids'
 ASKS = 'asks'
+ADDRESS_BITBAY = 'https://bitbay.net/API/Public/'
+ADDRESS_ORDERBOOK = '/orderbook.json'
 
 
 def print_category(category, cat_limit):
@@ -15,7 +17,7 @@ def print_category(category, cat_limit):
 
 def print_orderbook(resources, bids_limit, asks_limit):
     for name in resources:
-        address = 'https://bitbay.net/API/Public/' + name + '/orderbook.json'
+        address = ADDRESS_BITBAY + name + ADDRESS_ORDERBOOK
         response = requests.get(address)
         if response:
             response_json = response.json()
