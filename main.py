@@ -5,7 +5,7 @@ API = "https://bitbay.net/API/Public/"
 BASE_CURRENCY = "USD"
 CRYPTOCURRENCIES = ["BTC", "LTC", "DASH"]
 INTERVAL = 5
-
+BASE_LIMIT = 20
 
 def setInterval(func, interval):
     func()
@@ -23,7 +23,7 @@ def requestAPI(url):
         return None
 
 
-def getOrders(cryptocurrency, currency, limit=10):
+def getOrders(cryptocurrency, currency, limit=BASE_LIMIT):
     url = f'{API}{cryptocurrency}{currency}/orderbook.json'
     orders = requestAPI(url)
     if orders != None:
@@ -31,7 +31,7 @@ def getOrders(cryptocurrency, currency, limit=10):
     return None
 
 
-def printOrders(cryptocurrency, currency, limit=10):
+def printOrders(cryptocurrency, currency, limit=BASE_LIMIT):
     orders = getOrders(cryptocurrency, currency, limit)
     if orders != None:
         sellOrders = orders['bids']
@@ -51,7 +51,7 @@ def printOrder(cryptocurrency, currency, order):
         f'{order[1]} {cryptocurrency} for {(order[0] * order[1]):.2f} {currency}')
 
 
-def findProfit(cryptocurrency, currency, limit=5, average=False):
+def findProfit(cryptocurrency, currency, limit=BASE_LIMIT, average=False):
     orders = getOrders(cryptocurrency, currency, limit)
     if orders != None:
         sellOrders, buyOrders = orders['bids'], orders['asks']
@@ -84,12 +84,12 @@ def calculateProfit(sellPrice=1, buyPrice=1):
 
 def ex1():
     for crypto in CRYPTOCURRENCIES:
-        printOrders(crypto, BASE_CURRENCY, 4)
+        printOrders(crypto, BASE_CURRENCY, 3)
 
 
 def ex2():
     for crypto in CRYPTOCURRENCIES:
-        findProfit(crypto, BASE_CURRENCY, 8)
+        findProfit(crypto, BASE_CURRENCY)
 
 
 def main():
