@@ -9,19 +9,19 @@ API = "https://bitbay.net/API/Public/"
 
 def get_data_from_url(url):
     response = requests.get(url)
-    data = json.loads(response.content)
-    if response.status_code == 200:
+    if 200 <= response.status_code <= 299:
+        data = json.loads(response.content)
         return data
     else:
         return None
 
 
-def get_data_from_api(cryptocurrency, snd_currency):
-    return get_data_from_url(f"{API}{cryptocurrency}{snd_currency}/orderbook.json")
+def get_data_from_api(api, cryptocurrency, snd_currency):
+    return get_data_from_url(f"{api}{cryptocurrency}{snd_currency}/orderbook.json")
 
 
 def show_currency_offers(cryptocurrency, snd_currency, offers_count=DEFAULT_OFFERS_COUNT):
-    data = get_data_from_api(cryptocurrency, snd_currency)
+    data = get_data_from_api(API, cryptocurrency, snd_currency)
     if data is not None:
         print(f"\n{cryptocurrency}/{snd_currency}")
         print("Bids: ")
@@ -44,7 +44,7 @@ def show_currency_offers(cryptocurrency, snd_currency, offers_count=DEFAULT_OFFE
 
 def show_currency_data(cryptocurrency, snd_currency):
     while True:
-        data = get_data_from_api(cryptocurrency, snd_currency)
+        data = get_data_from_api(API, cryptocurrency, snd_currency)
         if data is not None:
             bids = data["bids"]
             asks = data["asks"]
