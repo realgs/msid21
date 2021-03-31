@@ -24,13 +24,13 @@ def loadDataFromApi(url: str):
         return None
 
 
-def displayOffer(marketSymbol: Tuple[str, str], offer):
+def displayOffer(marketSymbol: Tuple[str, str], offer: Tuple[float, float]):
     print(f'Price (' + '{:.5f}'.format(offer[1]) + f' {marketSymbol[0]}):',
           '{:.5f}'.format(offer[1] * offer[0]) + f' {marketSymbol[1]}')
     print(f'Price (1 {marketSymbol[0]}):', f'{offer[0]} {marketSymbol[1]} \n')
 
 
-def displayOffers(marketSymbol: Tuple[str, str], offers):
+def displayOffers(marketSymbol: Tuple[str, str], offers: List[Tuple[float, float]]):
     for offer in offers:
         displayOffer(marketSymbol, offer)
 
@@ -49,7 +49,7 @@ def getOffers(marketSymbol: Tuple[str, str], numberOfOffers: int, apiUrl: str):
         raise Exception(f'Unable to load a market for {marketSymbol[0]}-{marketSymbol[1]}.')
 
 
-def presentOffers(offers, marketSymbol: Tuple[str, str]):
+def presentOffers(offers: List[List[Tuple[float, float]]], marketSymbol: Tuple[str, str]):
     if len(offers) <= 0:
         raise Exception("No offers to display.")
 
@@ -69,18 +69,18 @@ def findPriceDif(marketSymbol: Tuple[str, str], buyOffers: List[Tuple[str, float
     buyOffersLength = len(buyOffers)
     sellOffersLength = len(sellOffers)
 
-    numberOfComparisions = sellOffersLength if buyOffersLength >= sellOffersLength else buyOffersLength
+    numberOfComparisons = sellOffersLength if buyOffersLength >= sellOffersLength else buyOffersLength
 
-    for index in range(numberOfComparisions):
-        buyOfferPrice = buyOffers[index][0]
-        sellOfferPrice = sellOffers[index][0]
+    for index in range(numberOfComparisons):
+        buyOfferPrice = float(buyOffers[index][0])
+        sellOfferPrice = float(sellOffers[index][0])
 
         differenceRatio = (1 - (sellOfferPrice - buyOfferPrice) / buyOfferPrice)
         print(f'Profit ratio for {marketSymbol}: ' + '{:.5f}'.format(
             differenceRatio) + ' (' + '{:.5f}'.format(differenceRatio * 100) + ' %)', sep="")
 
 
-def calculateDifference(marketSymbols: List[Tuple[str, str]], numberOfOffers: int, refreshDelay: int, apiUrl: str):
+def checkPriceDifference(marketSymbols: List[Tuple[str, str]], numberOfOffers: int, refreshDelay: int, apiUrl: str):
     while True:
         print()
 
@@ -110,10 +110,10 @@ def main():
         ('DASH', baseCurrency)
     ]
 
-    numberOfOffers = 15
+    numberOfOffers = 10
     refreshDelay = 20
     # showOffers(marketSymbols, numberOfOffers, API_URL)
-    calculateDifference(marketSymbols, numberOfOffers, refreshDelay, API_URL)
+    checkPriceDifference(marketSymbols, numberOfOffers, refreshDelay, API_URL)
 
 
 if __name__ == "__main__":
