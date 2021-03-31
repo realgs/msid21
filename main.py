@@ -2,7 +2,9 @@ import requests
 from time import sleep
 
 API = "https://bitbay.net/API/Public/"
-
+BASE_CURRENCY = "USD"
+CRYPTOCURRENCIES = ["BTC", "LTC", "DASH"]
+INTERVAL = 5
 
 def requestAPI(url):
     response = requests.get(url)
@@ -38,8 +40,7 @@ def printOrders(cryptocurrency, currency, limit=10):
 
 
 def printOrder(cryptocurrency, currency, order):
-    print(
-        f'{order[1]} {cryptocurrency} for {(order[0] * order[1]):.2f} {currency}')
+    print(f'{order[1]} {cryptocurrency} for {(order[0] * order[1]):.2f} {currency}')
 
 
 def findProfit(cryptocurrency, currency, limit=5, average = False):
@@ -78,22 +79,20 @@ def setInterval(func, interval):
 
 
 def ex1():
-    printOrders('BTC', 'USD', 4)
-    printOrders('LTC', 'USD', 4)
-    printOrders('DASH', 'USD', 4)
+    for crypto in CRYPTOCURRENCIES:
+        printOrders(crypto, BASE_CURRENCY, 4)
 
 
 def ex2():
-    findProfit('BTC', 'USD', 8)
-    findProfit('LTC', 'USD', 8)
-    findProfit('DASH', 'USD', 8)
+    for crypto in CRYPTOCURRENCIES:
+        findProfit(crypto, BASE_CURRENCY, 8)
 
 
 def main():
     print("Exercise 1:")
     ex1()
     print("Exercise 2:")
-    setInterval(ex2, 5)
+    setInterval(ex2, INTERVAL)
 
 
 if __name__ == "__main__":
