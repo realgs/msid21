@@ -1,10 +1,14 @@
 import requests
 import time
 import json
+import random
 from threading import Thread
 
 DEFAULT_OFFERS_COUNT = 4
-API = "https://bitbay.net/API/Public/"
+API_URL = "https://bitbay.net/API/Public/{0}{1}/{2}"
+REQUEST_TYPE_ORDERBOOK = "orderbook.json"
+BASE_CURRENCY = "USD"
+CRYPTOCURRENCIES = ["BTC", "LTC", "DASH", "XRP", "BCC"]
 
 
 def get_data_from_url(url):
@@ -16,12 +20,8 @@ def get_data_from_url(url):
         return None
 
 
-def get_data_from_api(api, cryptocurrency, snd_currency):
-    return get_data_from_url(f"{api}{cryptocurrency}{snd_currency}/orderbook.json")
-
-
 def show_currency_offers(cryptocurrency, snd_currency, offers_count=DEFAULT_OFFERS_COUNT):
-    data = get_data_from_api(API, cryptocurrency, snd_currency)
+    data = get_data_from_url(API_URL.format(cryptocurrency, snd_currency, REQUEST_TYPE_ORDERBOOK))
     if data is not None:
         print(f"\n{cryptocurrency}/{snd_currency}")
         print("Bids: ")
@@ -44,7 +44,7 @@ def show_currency_offers(cryptocurrency, snd_currency, offers_count=DEFAULT_OFFE
 
 def show_currency_data(cryptocurrency, snd_currency):
     while True:
-        data = get_data_from_api(API, cryptocurrency, snd_currency)
+        data = get_data_from_url(API_URL.format(cryptocurrency, snd_currency, REQUEST_TYPE_ORDERBOOK))
         if data is not None:
             bids = data["bids"]
             asks = data["asks"]
@@ -56,16 +56,13 @@ def show_currency_data(cryptocurrency, snd_currency):
 
 
 def ex1():
-    show_currency_offers("BTC", "USD", 6)
-    time.sleep(0.3)
-    show_currency_offers("LTC", "USD")
-    time.sleep(0.3)
-    show_currency_offers("DASH", "USD", 2)
-    time.sleep(0.3)
+    for crypto in CRYPTOCURRENCIES:
+        show_currency_offers(crypto, BASE_CURRENCY, random.randint(2, 6))
+        time.sleep(0.05)
 
 
 def ex2():
-    bg_thread = Thread(target=show_currency_data, args=("BTC", "USD"), daemon=True)
+    bg_thread = Thread(target=show_currency_data, args=("BTC", BASE_CURRENCY), daemon=True)
     bg_thread.start()
     input("\nType exit and press enter to exit program\n")
 
