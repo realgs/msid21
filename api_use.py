@@ -32,18 +32,9 @@ def get_response(cryptocurrency):
 def calculate_profit(cryptocurrency, limit):
     resp = get_response(cryptocurrency)
     resp_json = resp.json()
-    buy = avr_of_price(resp_json['bids'][:limit])
-    sell = avr_of_price(resp_json['asks'][:limit])
+    buy = resp_json['bids'][0][0]
+    sell = resp_json['asks'][0][0]
     return 1-(sell-buy)/buy
-
-
-def avr_of_price(xs):
-    sum_price = 0
-    for i in xs:
-        sum_price += i[0]
-    if len(xs) > 0:
-        return sum_price/len(xs)
-    return 0
 
 
 def update_profit(cryptocurrency, delay, limit=50):
