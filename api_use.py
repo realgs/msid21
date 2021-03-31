@@ -1,8 +1,12 @@
 import requests
 import time
 
+CRYPTOCURRENCIES = ['BTCUSD', 'LTCUSD', 'DASHUSD']
+DEFAULT_TIMEOUT: int = 3
 
-def print_trade(response, cryptocurrency):
+
+def print_trade(cryptocurrency):
+    response = get_response(cryptocurrency)
     if response is not None:
         print(cryptocurrency+" offers:")
         resp_json = response.json()
@@ -19,8 +23,8 @@ def print_offers(xs):
 
 
 def get_response(cryptocurrency):
-    resp = requests.get('https://bitbay.net/API/Public/'+cryptocurrency+'/orderbook.json', timeout=3)
-    if resp.status_code == 200:
+    resp = requests.get('https://bitbay.net/API/Public/'+cryptocurrency+'/orderbook.json', timeout=DEFAULT_TIMEOUT)
+    if 200 <= resp.status_code < 300:
         return resp
     return None
 
@@ -50,13 +54,13 @@ def update_profit(cryptocurrency, delay, limit=50):
 
 def main():
     # task1
-    print_trade(get_response('DASH'), "DASH")
-    print_trade(get_response('BTC'), "BTC")
-    print_trade(get_response('LTC'),  "LTC")
+    print_trade(CRYPTOCURRENCIES[0])
+    print_trade(CRYPTOCURRENCIES[1])
+    print_trade(CRYPTOCURRENCIES[2])
     # task2
-    update_profit('BTC', 5)
-    # update_profit('LTC', 5)
-    # update_profit('DASH', 5)
+    update_profit(CRYPTOCURRENCIES[0], 5)
+    # update_profit(CRYPTOCURRENCIES[1], 5)
+    # update_profit(CRYPTOCURRENCIES[2], 5)
 
 
 if __name__ == '__main__':
