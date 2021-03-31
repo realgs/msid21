@@ -16,7 +16,7 @@ def setInterval(func, interval):
 def requestAPI(url):
     response = requests.get(url)
 
-    if response.status_code == 200:
+    if response.status_code in range(200, 299):
         return response.json()
     else:
         print(response.reason)
