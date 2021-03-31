@@ -4,6 +4,12 @@ BIDS = 'bids'
 ASKS = 'asks'
 ADDRESS_BITBAY = 'https://bitbay.net/API/Public/'
 ADDRESS_ORDERBOOK = '/orderbook.json'
+BASE_CURRENCY = 'USD'
+
+
+def get_data(currencies):
+    address = ADDRESS_BITBAY + currencies + ADDRESS_ORDERBOOK
+    return requests.get(address)
 
 
 def print_category(category, cat_limit):
@@ -16,23 +22,23 @@ def print_category(category, cat_limit):
 
 
 def print_orderbook(resources, bids_limit, asks_limit):
-    for name in resources:
-        address = ADDRESS_BITBAY + name + ADDRESS_ORDERBOOK
-        response = requests.get(address)
+    for crypto_currency in resources:
+        currencies = crypto_currency + BASE_CURRENCY
+        response = get_data(currencies)
         if response:
             response_json = response.json()
 
-            print("\nBuy orders " + name + "\n")
+            print("\nBuy orders " + currencies + "\n")
             print_category(response_json[BIDS], bids_limit)
 
-            print("\nSell orders " + name + "\n")
+            print("\nSell orders " + currencies + "\n")
             print_category(response_json[ASKS], asks_limit)
         else:
-            print(name, ' data not found')
+            print(currencies, ' data not found')
 
 
 def main():
-    resources = ['BTCUSD', 'LTCUSD', 'DASHUSD']
+    resources = ['BTC', 'LTC', 'DASH']
     print_orderbook(resources, 5, 5)
     print_orderbook(resources, 50, 50)
 
