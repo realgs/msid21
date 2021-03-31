@@ -2,7 +2,7 @@ import requests
 import time
 
 TIME_TO_WAIT=5
-API="https://bitbay.net/API/Public/"
+API="https://bitbay.net/API/Public/{}{}/orderbook.json"
 
 #ZADANIE 1
 def jprint(obj, val):
@@ -25,9 +25,9 @@ def getData(link: str):
     else: return None
 
 def connect():
-    response1=getData("https://bitbay.net/API/Public/BTCUSD/orderbook.json")
-    response2 = getData("https://bitbay.net/API/Public/LTCUSD/orderbook.json")
-    response3 = getData("https://bitbay.net/API/Public/DASHUSD/orderbook.json")
+    response1=getData(API.format("BTC", "USD"))
+    response2 = getData(API.format("LTC","USD"))
+    response3 = getData(API.format("DASH", "USD"))
     return (response1, response2, response3)
 
 def show(responses):
