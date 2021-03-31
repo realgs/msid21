@@ -14,11 +14,15 @@ SECOND_API_NAME = "Bitbay"
 SECOND_MARKET_FEE = 0.001
 
 
-def _displayBuyRate(firstApiData, secondApiData):
-    firstApiBuy = firstApiData['buy']['price']
-    secondApiBuy = secondApiData['buy']['price']
+def _displayRate(firstApiData, secondApiData, source, message):
+    firstApiBuy = firstApiData[source]['price']
+    secondApiBuy = secondApiData[source]['price']
     rateFixed = "{:.6f}".format(firstApiBuy / secondApiBuy * 100)
-    print(f"Buy rate: {FIRST_API_NAME} / {SECOND_API_NAME} = {rateFixed} %")
+    print(f"{message}: {FIRST_API_NAME} / {SECOND_API_NAME} = {rateFixed} %")
+
+
+def _displayBuyRate(firstApiData, secondApiData):
+    _displayRate(firstApiData, secondApiData, 'buy', 'Buy rate')
 
 
 def displayBuyRate(cryptos):
@@ -32,10 +36,7 @@ def displayBuyRate(cryptos):
 
 
 def _displaySellRate(firstApiData, secondApiData):
-    firstApiSell = firstApiData['sell']['price']
-    secondApiSell = secondApiData['sell']['price']
-    rateFixed = "{:.6f}".format(firstApiSell / secondApiSell * 100)
-    print(f"Sell rate: {FIRST_API_NAME} / {SECOND_API_NAME} = {rateFixed} %")
+    _displayRate(firstApiData, secondApiData, 'sell', 'Sell rate')
 
 
 def displaySellRate(cryptos):
@@ -48,24 +49,22 @@ def displaySellRate(cryptos):
         print("The rate cannot be calculated")
 
 
+def _getTransactionData(buyOrder, sellOrder):
+    rate = buyOrder['price'] * (1 - FIRST_MARKET_FEE) / sellOrder['price'] * (1 - SECOND_MARKET_FEE)
+    quantity = min(buyOrder['quantity'], sellOrder['quantity'])
+    profit = (rate - 1) * quantity
+    return rate, quantity, profit
+
+
 def _displayCrossProfitRate(firstApiData, secondApiData, currency):
-    firstApiBuy = firstApiData['buy']  # bittrexBuy
-    firstApiSell = firstApiData['sell']  # bittrexSell
-    secondApiBuy = secondApiData['buy']  # bitbayBuy
-    secondApiSell = secondApiData['sell']  # bitbaySell
+    firstApiBuy, firstApiSell = firstApiData['buy'], firstApiData['sell']
+    secondApiBuy, secondApiSell = secondApiData['buy'], secondApiData['sell']
 
-    rate1 = firstApiBuy['price'] * (1 - FIRST_MARKET_FEE) / secondApiSell['price'] * (1 - SECOND_MARKET_FEE)
-    quantity1 = min(firstApiBuy['quantity'], secondApiSell['quantity'])
-    profit1 = (rate1 - 1)
+    rate1, quantity1, profit1 = _getTransactionData(firstApiBuy, secondApiSell)
+    rate2, quantity2, profit2 = _getTransactionData(secondApiBuy, firstApiSell)
 
-    rate2 = secondApiBuy['price'] * (1 - SECOND_MARKET_FEE) / firstApiSell['price'] * (1 - FIRST_MARKET_FEE)
-    quantity2 = min(secondApiBuy['price'], firstApiSell['quantity'])
-    profit2 = (rate2 - 1) * quantity2
-
-    rate1Fixed = "{:.6f}".format(rate1 * 100)
-    rate2Fixed = "{:.6f}".format(rate2 * 100)
-    quantity1Fixed = "{:.6f}".format(quantity1)
-    quantity2Fixed = "{:.6f}".format(quantity2)
+    rate1Fixed, rate2Fixed = "{:.6f}".format(rate1 * 100), "{:.6f}".format(rate2 * 100)
+    quantity1Fixed, quantity2Fixed = "{:.6f}".format(quantity1), "{:.6f}".format(quantity2)
 
     print("Profit percentage (100% - 0 profit):")
     print(f"Buy in {FIRST_API_NAME}, sell in {SECOND_API_NAME}\t\tRate: {rate1Fixed},\t\tQuantity: {quantity1Fixed},"
