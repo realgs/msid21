@@ -1,6 +1,8 @@
 import requests
 import time
 
+SLEEPTIME = 5
+
 def printPercentages(currencies):
     for currency in currencies:
         r = requests.get(f"https://bitbay.net/API/Public/{currency}/orderbook.json")
@@ -14,7 +16,7 @@ def setDaemon():
     while True:
         printPercentages(currencies)
         print()
-        time.sleep(5)
+        time.sleep(SLEEPTIME)
 
 # main
 setDaemon()
