@@ -65,6 +65,21 @@ def presentOffers(offers, marketSymbol: Tuple[str, str]):
     displayOffers(marketSymbol, sellOffers)
 
 
+def findPriceDif(marketSymbol: Tuple[str, str], buyOffers: List[Tuple[str, float]], sellOffers: List[Tuple[str, float]]):
+    buyOffersLength = len(buyOffers)
+    sellOffersLength = len(sellOffers)
+
+    numberOfComparisions = sellOffersLength if buyOffersLength >= sellOffersLength else buyOffersLength
+
+    for index in range(numberOfComparisions):
+        buyOfferPrice = buyOffers[index][0]
+        sellOfferPrice = sellOffers[index][0]
+
+        differenceRatio = (1 - (sellOfferPrice - buyOfferPrice) / buyOfferPrice)
+        print(f'Profit ratio for {marketSymbol}: ' + '{:.5f}'.format(
+            differenceRatio) + ' (' + '{:.5f}'.format(differenceRatio * 100) + ' %)', sep="")
+
+
 def calculateDifference(marketSymbols: List[Tuple[str, str]], numberOfOffers: int, refreshDelay: int, apiUrl: str):
     while True:
         print()
@@ -76,18 +91,8 @@ def calculateDifference(marketSymbols: List[Tuple[str, str]], numberOfOffers: in
                 buyOffers = offers[1]
                 sellOffers = offers[0]
 
-                buyOffersLength = len(buyOffers)
-                sellOffersLength = len(sellOffers)
+                findPriceDif(marketSymbol, buyOffers, sellOffers)
 
-                numberOfComparisions = sellOffersLength if buyOffersLength >= sellOffersLength else buyOffersLength
-
-                for index in range(numberOfComparisions):
-                    buyOfferPrice = buyOffers[index][0]
-                    sellOfferPrice = sellOffers[index][0]
-
-                    differenceRatio = (1 - (sellOfferPrice - buyOfferPrice) / buyOfferPrice)
-                    print(f'Profit ratio for {marketSymbol}: ' + '{:.5f}'.format(
-                        differenceRatio) + ' (' + '{:.5f}'.format(differenceRatio * 100) + ' %)', sep="")
         sleep(refreshDelay)
 
 
