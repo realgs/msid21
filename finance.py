@@ -4,6 +4,9 @@ import time
 import json
 
 API_BASE_URL = "https://api.bitbay.net/rest/trading/"
+USD = "USD"
+STATUS_OK = "Ok"
+SELL_TYPE = "Sell"
 
 
 def _getApiResponse(path):
@@ -12,7 +15,7 @@ def _getApiResponse(path):
 
     try:
         response = requests.get(url, headers=headers).json()
-        if response['status'] == 'Ok':
+        if response['status'] == STATUS_OK:
             return response
     except requests.exceptions.RequestException:
         print("Error while connecting to API.")
@@ -21,7 +24,7 @@ def _getApiResponse(path):
     return None
 
 
-def _showLastTransactions(good, currency="USD", limit=50):
+def _showLastTransactions(good, currency=USD, limit=50):
     transactions = _getApiResponse(f"transactions/{good}-{currency}?limit={str(limit)}")
 
     if transactions:
@@ -48,7 +51,7 @@ def _sellBuyTransactionRate(transactions):
     sellPrices, buyPrices = [], []
 
     for tran in transactions['items']:
-        if tran['ty'] == 'Sell':
+        if tran['ty'] == SELL_TYPE:
             sellPrices.append(float(tran['r']))
         else:
             buyPrices.append(float(tran['r']))
