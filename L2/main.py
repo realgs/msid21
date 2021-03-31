@@ -5,10 +5,11 @@ import requests
 SLEEP = 5
 REPLIES = 3
 BASE_CURRENCY = "USD"
+URL = "https://bitbay.net/API/Public/{}{}/orderbook.json"
 
 
 def get_data(curr1, curr2):
-    raw_data = requests.get("https://bitbay.net/API/Public/" + curr1 + curr2 + "/orderbook.json")
+    raw_data = requests.get(URL.format(curr1, curr2))
     if raw_data.status_code > 299:
         return None
     return raw_data
