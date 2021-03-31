@@ -76,7 +76,7 @@ def calculateDifference(marketSymbols: List[Tuple[str, str]], numberOfOffers: in
                     sellOfferPrice = sellOffers[index][0]
 
                     differenceRatio = (1 - (sellOfferPrice - buyOfferPrice) / buyOfferPrice)
-                    print(f'Profit ratio for {marketSymbol}: ' + '{:.3f}'.format(differenceRatio), sep="")
+                    print(f'Profit ratio for {marketSymbol}: ' + '{:.3f}'.format(differenceRatio) + ' (' + '{:.3f}'.format(differenceRatio * 100) + ' %)', sep="")
         sleep(refreshDelay)
 
 
