@@ -1,16 +1,16 @@
-from cryptos import get_offerlist, print_list, get_datastream, count_ratios
+from cryptos import get_offerlist, print_list, get_datastream
 
 market_list = ['BTC-USD', 'LTC-USD', 'ETH-USD']
 
 
-def zad1test():
+def test1():
     order_list = get_offerlist(market_list, 25)
     print_list(order_list)
 
 
-def zad2test():
+def test2():
     get_datastream(market_list)
 
 
-zad1test()
-zad2test()
+test1()
+test2()
