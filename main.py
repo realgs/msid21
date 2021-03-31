@@ -6,6 +6,13 @@ BASE_CURRENCY = "USD"
 CRYPTOCURRENCIES = ["BTC", "LTC", "DASH"]
 INTERVAL = 5
 
+
+def setInterval(func, interval):
+    func()
+    sleep(5)
+    setInterval(func, interval)
+
+
 def requestAPI(url):
     response = requests.get(url)
 
@@ -40,15 +47,16 @@ def printOrders(cryptocurrency, currency, limit=10):
 
 
 def printOrder(cryptocurrency, currency, order):
-    print(f'{order[1]} {cryptocurrency} for {(order[0] * order[1]):.2f} {currency}')
+    print(
+        f'{order[1]} {cryptocurrency} for {(order[0] * order[1]):.2f} {currency}')
 
 
-def findProfit(cryptocurrency, currency, limit=5, average = False):
+def findProfit(cryptocurrency, currency, limit=5, average=False):
     orders = getOrders(cryptocurrency, currency, limit)
     if orders != None:
         sellOrders, buyOrders = orders['bids'], orders['asks']
         buyPrice, sellPrice = 0, 0
-        if average: 
+        if average:
             sumOfBuyPrice = 0
             sumOfSellPrice = 0
             length = min(len(buyOrders), len(sellOrders))
@@ -59,7 +67,7 @@ def findProfit(cryptocurrency, currency, limit=5, average = False):
 
             buyPrice = sumOfBuyPrice / length
             sellPrice = sumOfSellPrice / length
-        else: 
+        else:
             buyPrice = max(buyOrders)[0]
             sellPrice = min(sellOrders)[0]
 
@@ -69,13 +77,9 @@ def findProfit(cryptocurrency, currency, limit=5, average = False):
         else:
             print(f'Profit on: {cryptocurrency} = {profit:.2f}%')
 
-def calculateProfit(sellPrice = 1, buyPrice = 1):
-    return 1 - (sellPrice - buyPrice) / buyPrice
 
-def setInterval(func, interval):
-    func()
-    sleep(5)
-    setInterval(func, interval)
+def calculateProfit(sellPrice=1, buyPrice=1):
+    return 1 - (sellPrice - buyPrice) / buyPrice
 
 
 def ex1():
@@ -97,4 +101,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
