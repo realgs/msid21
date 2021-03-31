@@ -65,3 +65,32 @@ def _getCrossProfitRate(firstApiData, secondApiData):
 
     return rate1 * 100, profit1, rate2 * 100, profit2
 
+
+def displayCrossProfitRate(cryptos):
+    bestBittrex = bittrex.getBestOrders(cryptos)
+    bestBitbay = bitbay.getBestOrders(cryptos)
+
+    if bestBittrex['success'] and bestBitbay['success']:
+        rate1, profit1, rate2, profit2 = _getCrossProfitRate(bestBittrex, bestBitbay)
+        print("Profit percentage (100% - 0 profit):")
+        print(f"Buy in {FIRST_API_NAME}, sell in {SECOND_API_NAME}: {rate1},\t Profit: {profit1} {cryptos[1]}")
+        print(f"Buy in {SECOND_API_NAME}, sell in {FIRST_API_NAME}: {rate2},\t Profit: {profit2} {cryptos[1]}")
+    else:
+        print("The profit rate cannot be calculated")
+
+
+def displayMarketsDifferenceRate(cryptos):
+    bestBittrex = bittrex.getBestOrders(cryptos)
+    bestBitbay = bitbay.getBestOrders(cryptos)
+
+    if bestBittrex['success'] and bestBitbay['success']:
+        print("Buy rate: ")
+        print(f"{FIRST_API_NAME} / {SECOND_API_NAME} = {_getBuyRate(bestBittrex, bestBitbay)}%", end="\n\n")
+        print("Sell rate: ")
+        print(f"{FIRST_API_NAME} / {SECOND_API_NAME} = {_getSellRate(bestBittrex, bestBitbay)}%", end="\n\n")
+        rate1, profit1, rate2, profit2 = _getCrossProfitRate(bestBittrex, bestBitbay)
+        print("Profit percentage (100% - 0 profit):")
+        print(f"Buy in {FIRST_API_NAME}, sell in {SECOND_API_NAME}: {rate1},\t Profit: {profit1} {cryptos[1]}")
+        print(f"Buy in {SECOND_API_NAME}, sell in {FIRST_API_NAME}: {rate2},\t Profit: {profit2} {cryptos[1]}")
+    else:
+        print("The rate cannot be calculated")
