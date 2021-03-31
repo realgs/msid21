@@ -1,5 +1,7 @@
 import bitbay
 import bittrex
+import time
+from _datetime import datetime
 
 # TODO: Check fee policy
 FIRST_API_NAME = "Bittrex"
@@ -11,10 +13,12 @@ SECOND_API_NAME = "Bitbay"
 # SECOND_MARKET_TRANSFER_FEE = 0.001
 SECOND_MARKET_FEE = 0.001
 
-def _getBuyRate(firstApiData, secondApiData):
+
+def _displayBuyRate(firstApiData, secondApiData):
     firstApiBuy = firstApiData['buy']['price']
     secondApiBuy = secondApiData['buy']['price']
-    return firstApiBuy / secondApiBuy * 100
+    rateFixed = "{:.6f}".format(firstApiBuy / secondApiBuy * 100)
+    print(f"Buy rate: {FIRST_API_NAME} / {SECOND_API_NAME} = {rateFixed} %")
 
 
 def displayBuyRate(cryptos):
@@ -22,17 +26,16 @@ def displayBuyRate(cryptos):
     bestBitbay = bitbay.getBestOrders(cryptos)
 
     if bestBittrex['success'] and bestBitbay['success']:
-        rate = _getBuyRate(bestBittrex, bestBitbay)
-        print("Sell rate: ")
-        print(f"{FIRST_API_NAME} / {SECOND_API_NAME} = {rate}%")
+        _displayBuyRate(bestBittrex, bestBitbay)
     else:
         print("The rate cannot be calculated")
 
 
-def _getSellRate(firstApiData, secondApiData):
+def _displaySellRate(firstApiData, secondApiData):
     firstApiSell = firstApiData['sell']['price']
     secondApiSell = secondApiData['sell']['price']
-    return firstApiSell / secondApiSell * 100
+    rateFixed = "{:.6f}".format(firstApiSell / secondApiSell * 100)
+    print(f"Sell rate: {FIRST_API_NAME} / {SECOND_API_NAME} = {rateFixed} %")
 
 
 def displaySellRate(cryptos):
@@ -40,32 +43,35 @@ def displaySellRate(cryptos):
     bestBitbay = bitbay.getBestOrders(cryptos)
 
     if bestBittrex['success'] and bestBitbay['success']:
-        rate = _getBuyRate(bestBittrex, bestBitbay)
-        print("Sell rate: ")
-        print(f"{FIRST_API_NAME} / {SECOND_API_NAME} = {rate}%")
+        _displayBuyRate(bestBittrex, bestBitbay)
     else:
         print("The rate cannot be calculated")
 
 
-def _getCrossProfitRate(firstApiData, secondApiData):
-    firstApiBuyPrice = firstApiData['buy']['price']  # bittrexBuyPrice
-    firstApiBuyQuantity = firstApiData['buy']['quantity']  # bittrexBuyQuantity
-    firstApiSellPrice = firstApiData['sell']['price']  # bittrexSellPrice
-    firstApiSellQuantity = firstApiData['sell']['quantity']  # bittrexSellQuantity
-    secondApiBuyPrice = secondApiData['buy']['price']  # bitbayBuyPrice
-    secondApiBuyQuantity = secondApiData['buy']['quantity']  # bitbayBuyQuantity
-    secondApiSellPrice = secondApiData['sell']['price']  # bitbaySellPrice
-    secondApiSellQuantity = secondApiData['sell']['quantity']  # bitbaySellQuantity
+def _displayCrossProfitRate(firstApiData, secondApiData, currency):
+    firstApiBuy = firstApiData['buy']  # bittrexBuy
+    firstApiSell = firstApiData['sell']  # bittrexSell
+    secondApiBuy = secondApiData['buy']  # bitbayBuy
+    secondApiSell = secondApiData['sell']  # bitbaySell
 
-    rate1 = firstApiBuyPrice * (1 - FIRST_MARKET_FEE) / secondApiSellPrice * (1 - SECOND_MARKET_FEE)
-    quantity1 = min(firstApiBuyQuantity, secondApiSellQuantity)
+    rate1 = firstApiBuy['price'] * (1 - FIRST_MARKET_FEE) / secondApiSell['price'] * (1 - SECOND_MARKET_FEE)
+    quantity1 = min(firstApiBuy['quantity'], secondApiSell['quantity'])
     profit1 = (rate1 - 1)
 
-    rate2 = secondApiBuyPrice * (1 - SECOND_MARKET_FEE) / firstApiSellPrice * (1 - FIRST_MARKET_FEE)
-    quantity2 = min(secondApiBuyQuantity, firstApiSellQuantity)
+    rate2 = secondApiBuy['price'] * (1 - SECOND_MARKET_FEE) / firstApiSell['price'] * (1 - FIRST_MARKET_FEE)
+    quantity2 = min(secondApiBuy['price'], firstApiSell['quantity'])
     profit2 = (rate2 - 1) * quantity2
 
-    return rate1 * 100, quantity1, profit1, rate2 * 100, quantity2, profit2
+    rate1Fixed = "{:.6f}".format(rate1 * 100)
+    rate2Fixed = "{:.6f}".format(rate2 * 100)
+    quantity1Fixed = "{:.6f}".format(quantity1)
+    quantity2Fixed = "{:.6f}".format(quantity2)
+
+    print("Profit percentage (100% - 0 profit):")
+    print(f"Buy in {FIRST_API_NAME}, sell in {SECOND_API_NAME}\t\tRate: {rate1Fixed},\t\tQuantity: {quantity1Fixed},"
+          f"\t\tFull profit: {profit1} {currency}")
+    print(f"Buy in {SECOND_API_NAME}, sell in {FIRST_API_NAME}\t\tRate: {rate2Fixed},\t\tQuantity: {quantity2Fixed},"
+          f"\t\tFull profit: {profit2} {currency}")
 
 
 def displayCrossProfitRate(cryptos):
@@ -73,30 +79,22 @@ def displayCrossProfitRate(cryptos):
     bestBitbay = bitbay.getBestOrders(cryptos)
 
     if bestBittrex['success'] and bestBitbay['success']:
-        rate1, quantity1, profit1, rate2, quantity2, profit2 = _getCrossProfitRate(bestBittrex, bestBitbay)
-        print("Profit percentage (100% - 0 profit):")
-        print(f"Buy in {FIRST_API_NAME}, sell in {SECOND_API_NAME}: {rate1},\t Profit: {profit1} {cryptos[1]}")
-        print(f"Buy in {SECOND_API_NAME}, sell in {FIRST_API_NAME}: {rate2},\t Profit: {profit2} {cryptos[1]}")
+        _displayCrossProfitRate(bestBittrex, bestBitbay, cryptos[1])
     else:
         print("The profit rate cannot be calculated")
 
 
-def displayMarketsDifferenceRate(cryptos):
-    bestBittrex = bittrex.getBestOrders(cryptos)
-    bestBitbay = bitbay.getBestOrders(cryptos)
+def displayMarketsDifferenceRateStream(cryptos, interval=5):
+    while True:
+        print("\n", datetime.now().strftime("%H:%M:%S"))
+        bestBittrex = bittrex.getBestOrders(cryptos)
+        bestBitbay = bitbay.getBestOrders(cryptos)
 
-    if bestBittrex['success'] and bestBitbay['success']:
-        print("Buy rate: ")
-        print(f"{FIRST_API_NAME} / {SECOND_API_NAME} = {_getBuyRate(bestBittrex, bestBitbay)}%", end="\n\n")
-        print("Sell rate: ")
-        print(f"{FIRST_API_NAME} / {SECOND_API_NAME} = {_getSellRate(bestBittrex, bestBitbay)}%", end="\n\n")
-        rate1, quantity1, profit1, rate2, quantity2, profit2 = _getCrossProfitRate(bestBittrex, bestBitbay)
-        print("Profit percentage (100% - 0 profit):")
-        rate1Fixed = "{:.6f}".format(rate1)
-        print(f"Buy in {FIRST_API_NAME}, sell in {SECOND_API_NAME}\t\tRate: {rate1Fixed},\t\tQuantity: {quantity1},"
-              f"\t\tFull profit: {profit1} {cryptos[1]}")
-        rate2Fixed = "{:.6f}".format(rate2)
-        print(f"Buy in {SECOND_API_NAME}, sell in {FIRST_API_NAME}\t\tRate: {rate2Fixed},\t\tQuantity: {quantity2},"
-              f"\t\tFull profit: {profit2} {cryptos[1]}")
-    else:
-        print("The rate cannot be calculated")
+        if bestBittrex['success'] and bestBitbay['success']:
+            _displayBuyRate(bestBittrex, bestBitbay)
+            _displaySellRate(bestBittrex, bestBitbay)
+            _displayCrossProfitRate(bestBittrex, bestBitbay, cryptos[1])
+        else:
+            print("The rate cannot be calculated")
+            break
+        time.sleep(interval)
