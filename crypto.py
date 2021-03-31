@@ -4,11 +4,12 @@ import time
 DELAY_OF_EXPLORING_DATA = 5
 LIMIT = 5
 RATE_AMOUNT_TEXT = '[RATE, AMOUNT]'
+ACCEPTABLE_API_RETURN_CODES = [200, 201, 202, 203, 204, 205, 206, 207, 208, 226]
 
 
 def connectToCryptoApi(crypto, currency):
     response = requests.get('https://bitbay.net/API/Public/' + crypto + currency + '/orderbook.json')
-    if response.status_code in (200, 299):
+    if response.status_code in ACCEPTABLE_API_RETURN_CODES:
         return response.json()
     else:
         return None
