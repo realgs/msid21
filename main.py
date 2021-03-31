@@ -5,12 +5,12 @@ import time
 API = 'https://bitbay.net/API/Public/'
 
 
-def get_data_request(cryptocurrency, currency):
+def data_request(cryptocurrency, currency):
     return requests.get(API+cryptocurrency+currency+'/orderbook.json')
 
 
 def get_data(cryptocurrency, currency):
-    response = get_data_request(cryptocurrency, currency)
+    response = data_request(cryptocurrency, currency)
     if response:
         return response.json()
     else:
@@ -28,13 +28,12 @@ def print_data(cryptocurrency, currency, limit):
             price = str(round(offer[0] * offer[1], 3))
             print(str(index)+'. ' + str(offer[1]) + '[' + cryptocurrency + ']' + ' = ' + price + '[' + currency + ']')
             index += 1
-
         index = 1
         print('\nOFERTY SPRZEDAŻY')
         print('-----------------------------------------')
         for offer in data['asks'][:limit]:
             price = str(round(offer[0] * offer[1], 3))
-            print(str(index)+'. ' + str(offer[1]) + '[' + cryptocurrency + ']' + " = " + price + '[' + currency + ']')
+            print(str(index) + '. ' + str(offer[1]) + '[' + cryptocurrency + ']' + " = " + price + '[' + currency + ']')
             index += 1
 
         print('\n')
