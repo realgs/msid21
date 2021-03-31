@@ -25,8 +25,8 @@ def loadDataFromApi(url: str):
 
 
 def displayOffer(marketSymbol: Tuple[str, str], offer):
-    print(f'Price (' + '{:.3f}'.format(offer[1]) + f' {marketSymbol[0]}):',
-          '{:.3f}'.format(offer[1] * offer[0]) + f' {marketSymbol[1]}')
+    print(f'Price (' + '{:.5f}'.format(offer[1]) + f' {marketSymbol[0]}):',
+          '{:.5f}'.format(offer[1] * offer[0]) + f' {marketSymbol[1]}')
     print(f'Price (1 {marketSymbol[0]}):', f'{offer[0]} {marketSymbol[1]} \n')
 
 
@@ -35,7 +35,7 @@ def displayOffers(marketSymbol: Tuple[str, str], offers):
         displayOffer(marketSymbol, offer)
 
 
-def getOffer(marketSymbol: Tuple[str, str], numberOfOffers: int, apiUrl: str):
+def getOffers(marketSymbol: Tuple[str, str], numberOfOffers: int, apiUrl: str):
     if numberOfOffers <= 0:
         raise Exception("Number of offers should be positive")
 
@@ -70,7 +70,7 @@ def calculateDifference(marketSymbols: List[Tuple[str, str]], numberOfOffers: in
         print()
 
         for marketSymbol in marketSymbols:
-            offers = getOffer(marketSymbol, numberOfOffers, apiUrl)
+            offers = getOffers(marketSymbol, numberOfOffers, apiUrl)
             if offers:
                 presentOffers(offers, marketSymbol)
                 buyOffers = offers[1]
@@ -86,28 +86,29 @@ def calculateDifference(marketSymbols: List[Tuple[str, str]], numberOfOffers: in
                     sellOfferPrice = sellOffers[index][0]
 
                     differenceRatio = (1 - (sellOfferPrice - buyOfferPrice) / buyOfferPrice)
-                    print(f'Profit ratio for {marketSymbol}: ' + '{:.3f}'.format(
-                        differenceRatio) + ' (' + '{:.3f}'.format(differenceRatio * 100) + ' %)', sep="")
+                    print(f'Profit ratio for {marketSymbol}: ' + '{:.5f}'.format(
+                        differenceRatio) + ' (' + '{:.5f}'.format(differenceRatio * 100) + ' %)', sep="")
         sleep(refreshDelay)
 
 
 def showOffers(marketSymbols: List[Tuple[str, str]], numberOfOffers: int, apiUrl: str):
     for marketSymbol in marketSymbols:
-        offers = getOffer(marketSymbol, numberOfOffers, apiUrl)
+        offers = getOffers(marketSymbol, numberOfOffers, apiUrl)
         presentOffers(offers, marketSymbol)
 
 
 def main():
+    baseCurrency = 'USD'
     marketSymbols: List[Tuple[str, str]] = [
-        ('BTC', 'USD'),
-        ('LTC', 'USD'),
-        ('DASH', 'USD')
+        ('BTC', baseCurrency),
+        ('LTC', baseCurrency),
+        ('DASH', baseCurrency)
     ]
 
     numberOfOffers = 15
     refreshDelay = 20
-    showOffers(marketSymbols, numberOfOffers, API_URL)
-    # calculateDifference(marketSymbols, numberOfOffers, refreshDelay, API_URL)
+    # showOffers(marketSymbols, numberOfOffers, API_URL)
+    calculateDifference(marketSymbols, numberOfOffers, refreshDelay, API_URL)
 
 
 if __name__ == "__main__":
