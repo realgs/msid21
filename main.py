@@ -3,6 +3,8 @@ import time
 
 
 API = 'https://bitbay.net/API/Public/'
+DELAY = 5
+LIMIT = 30
 
 
 def data_request(cryptocurrency, currency):
@@ -35,13 +37,15 @@ def print_data(cryptocurrency, currency, limit):
             price = str(round(offer[0] * offer[1], 3))
             print(str(index) + '. ' + str(offer[1]) + '[' + cryptocurrency + ']' + " = " + price + '[' + currency + ']')
             index += 1
-
         print('\n')
 
 
 def calculate_profit(cryptocurrency, currency, delay, limit):
     while True:
         data = get_data(cryptocurrency, currency)
+        if data is None:
+            print("get_data error")
+            return 2
         buyOffers = data['bids']
         sellOffers = data['asks']
         minimum = min(len(buyOffers), len(sellOffers))
@@ -60,13 +64,13 @@ def calculate_profit(cryptocurrency, currency, delay, limit):
 
 
 def exercise1():
-    print_data('BTC', 'USD', 20)
-    print_data('LTC', 'USD', 20)
-    print_data('DASH', 'USD', 20)
+    print_data('BTC', 'USD', LIMIT)
+    print_data('LTC', 'USD', LIMIT)
+    print_data('DASH', 'USD', LIMIT)
 
 
 def exercise2():
-    calculate_profit('BTC', 'USD', 5, 50)
+    calculate_profit('BTC', 'USD', DELAY, LIMIT)
 
 
 if __name__ == '__main__':
