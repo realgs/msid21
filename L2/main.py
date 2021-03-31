@@ -19,7 +19,11 @@ def get_data(curr1, curr2):
 
 def print_bids_asks(curr1, curr2, replies):
 
-    data = get_data(curr1, curr2).json()
+    try:
+        data = get_data(curr1, curr2).json()
+    except AttributeError:
+        print("API Error")
+        return
 
     print(curr1, "bids:")
     for i in range(replies):
@@ -40,7 +44,13 @@ def print_bids_asks_loop(curr1):
         while True:
             if exit_event.isSet():
                 break
-            data = get_data(curr1, BASE_CURRENCY).json()
+
+            try:
+                data = get_data(curr1, BASE_CURRENCY).json()
+            except AttributeError:
+                print("API Error")
+                return
+
             bid = data['bids'][0][0]
             ask = data['asks'][0][0]
 
@@ -49,7 +59,7 @@ def print_bids_asks_loop(curr1):
 
     # print_loop()
 
-    print("Printing bids and asks diff % for", curr1, "in a loop\nPress enter to exit the aplication")
+    print("Printing bids and asks diff % for", curr1, "in a loop\nPress enter to exit the application")
     th = threading.Thread(target=print_loop)
     th.start()
     input()
