@@ -3,6 +3,7 @@ import time
 
 TIME_TO_WAIT=5
 API="https://bitbay.net/API/Public/{}{}/orderbook.json"
+CURRENCY="USD"
 
 #ZADANIE 1
 def jprint(obj, val):
@@ -25,20 +26,18 @@ def getData(link: str):
     else: return None
 
 def connect():
-    response1=getData(API.format("BTC", "USD"))
-    response2 = getData(API.format("LTC","USD"))
-    response3 = getData(API.format("DASH", "USD"))
+    response1=getData(API.format("BTC", CURRENCY))
+    response2 = getData(API.format("LTC", CURRENCY))
+    response3 = getData(API.format("DASH", CURRENCY))
     return (response1, response2, response3)
 
-def show(responses):
-    if responses[0] is not None:
-        jprint((responses[0]).json(), "BTC")
-    if responses[1] is not None:
-        jprint(responses[1].json(), "LTC")
-    if responses[2] is not None:
-        jprint(responses[2].json(), "DASH")
+def show(response):
+    if response is not None:
+        jprint(response.json(), "BTC")
 
-show(connect())
+show(getData(API.format("BTC", CURRENCY)))
+show(getData(API.format("LTC", CURRENCY)))
+show(getData(API.format("DASH", CURRENCY)))
 
 #ZADANIE 2
 def compute(buy: float, sell: float):
