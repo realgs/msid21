@@ -3,10 +3,9 @@ import time
 
 BitBayApiURL = "https://bitbay.net/API/Public/"
 offersLimit = 5
-refreshTime = 5  # 5 seconds
-BTCUSD = ('BTC', 'USD')
-LTCUSD = ('LTC', 'USD')
-DASHUSD = ('DASH', 'USD')
+refreshTime = 5
+baseCurrency = "USD"
+cryptoCurrencies = ["BTC", "LTC", "DASH"]
 
 
 # zadanie 1
@@ -19,37 +18,36 @@ def getApiResponse(url):
         return None
 
 
-def getOffersFromBitBay(marketSymbols):
-    apiResponse = getApiResponse(f'{BitBayApiURL}{marketSymbols[0]}{marketSymbols[1]}/orderbook.json')
+def getOffersFromBitBay(base, crypto):
+    apiResponse = getApiResponse(f'{BitBayApiURL}{crypto}{base}/orderbook.json')
     if apiResponse is not None:
         return {'bids': apiResponse['bids'][:offersLimit], 'asks': apiResponse['asks'][:offersLimit]}
     else:
         return None
 
 
-def printOffersFromBitBay(marketSymbols):
-    offers = getOffersFromBitBay(marketSymbols)
+def printOffersFromBitBay(base, crypto):
+    offers = getOffersFromBitBay(base, crypto)
     if offers is not None:
         bids = offers['bids']
         asks = offers['asks']
 
-        print(f'Buy: {marketSymbols[0]} - {marketSymbols[1]}')
+        print(f'Buy: {base} - {crypto}')
         for offer in bids:
-            print(f'{offer[1]} {marketSymbols[0]} for {offer[0] * offer[1]} {marketSymbols[1]}')
+            print(f'{offer[1]} {base} for {offer[0] * offer[1]} {crypto}')
 
-        print()
-
-        print(f'Sale: {marketSymbols[0]} - {marketSymbols[1]}')
+        print(f'Sale: {base} - {crypto}')
         for offer in asks:
-            print(f'{offer[1]} {marketSymbols[0]} for {offer[0] * offer[1]} {marketSymbols[1]}')
+            print(f'{offer[1]} {base} for {offer[0] * offer[1]} {crypto}')
+        print()
     else:
-        print("Couldn't get data about currencies")
+        print("Couldn't get data about currencies\n")
 
 
 # zadanie 2
-def calculateProfitabilityFromBitBay(marketSymbols):
+def calculateSpreadFromBitBay(base, crypto):
     while True:
-        offers = getOffersFromBitBay(marketSymbols)
+        offers = getOffersFromBitBay(base, crypto)
         if offers is not None:
             bids = offers['bids']
             asks = offers['asks']
@@ -58,23 +56,18 @@ def calculateProfitabilityFromBitBay(marketSymbols):
             sellOfferPrice = asks[0][0]  # takes the best option
 
             ratio = (1 - (sellOfferPrice - buyOfferPrice) / buyOfferPrice)
-            print(f'Profitability for {marketSymbols[0]}: {ratio * 100} %')
+            print(f'Profitability for {base}: {ratio * 100} %')
         else:
-            print("Couldn't get data about currencies")
+            print("Couldn't get data about currencies\n")
 
         time.sleep(refreshTime)
 
 
 if __name__ == "__main__":
     # zadanie 1 results
-    printOffersFromBitBay(BTCUSD)
-    print()
-    printOffersFromBitBay(LTCUSD)
-    print()
-    printOffersFromBitBay(DASHUSD)
-    print()
+    for cryptoCurrency in cryptoCurrencies:
+        printOffersFromBitBay(baseCurrency, cryptoCurrency)
 
     # zadanie 2 results
-    # calculateProfitabilityFromBitBay(BTCUSD)  # endless loop
-    calculateProfitabilityFromBitBay(LTCUSD)  # endless loop
-    # calculateProfitabilityFromBitBay(DASHUSD)  # endless loop
+    calculateSpreadFromBitBay(baseCurrency, cryptoCurrencies[1])  # example - endless loop
+
