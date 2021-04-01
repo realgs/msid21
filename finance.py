@@ -4,14 +4,8 @@ import time
 from _datetime import datetime
 
 # TODO: Check fee policy
-FIRST_API_NAME = "Bittrex"
-# FIRST_MARKET_TAKER_FEE = 0.0025
-# FIRST_MARKET_TRANSFER_FEE = 0.0025
-FIRST_MARKET_FEE = 0.0025
-SECOND_API_NAME = "Bitbay"
-# SECOND_MARKET_TAKER_FEE = 0.001
-# SECOND_MARKET_TRANSFER_FEE = 0.001
-SECOND_MARKET_FEE = 0.001
+FIRST_API_NAME = bittrex.NAME
+SECOND_API_NAME = bitbay.NAME
 
 
 def _displayRate(firstApiData, secondApiData, source, message):
@@ -49,11 +43,13 @@ def displaySellRate(cryptos):
         print("The rate cannot be calculated")
 
 
-def _getTransactionData(buyOrder, sellOrder):
-    rate = buyOrder['price'] * (1 - FIRST_MARKET_FEE) / sellOrder['price'] * (1 - SECOND_MARKET_FEE)
+def _getTransactionData(buyOrder, sellOrder, firstMarketTakerFee, secondMarketTakerFee, secondMarketTransferFee):
+    rate = buyOrder['price'] * (1 - firstMarketTakerFee) / sellOrder['price'] * (1 - secondMarketTakerFee)
     quantity = min(buyOrder['quantity'], sellOrder['quantity'])
-    profit = (rate - 1) * quantity
-    return rate, quantity, profit
+    priceDiffer = (rate - 1) * quantity
+    exchangeProfit = priceDiffer - priceDiffer * (firstMarketTakerFee + secondMarketTakerFee)
+    withdrewProfit = exchangeProfit - secondMarketTransferFee
+    return rate, quantity, withdrewProfit
 
 
 def _printFullInfo(buyIn, sellIn, rate, quantity, profit, currency):
@@ -71,8 +67,8 @@ def _displayCrossProfitRate(firstApiData, secondApiData, currency):
     firstApiBuy, firstApiSell = firstApiData['buy'], firstApiData['sell']
     secondApiBuy, secondApiSell = secondApiData['buy'], secondApiData['sell']
 
-    rate1, quantity1, profit1 = _getTransactionData(firstApiBuy, secondApiSell)
-    rate2, quantity2, profit2 = _getTransactionData(secondApiBuy, firstApiSell)
+    rate1, quantity1, profit1 = _getTransactionData(firstApiBuy, secondApiSell, bittrex.getTakerFee(), bitbay.getTakerFee(), bitbay.getTransferFee(currency))
+    rate2, quantity2, profit2 = _getTransactionData(secondApiBuy, firstApiSell, bitbay.getTakerFee(), bittrex.getTakerFee(), bittrex.getTransferFee(currency))
 
     print("Profit percentage (100% - 0 profit):")
     _printFullInfo(FIRST_API_NAME, SECOND_API_NAME, rate1, quantity1, profit1, currency)
