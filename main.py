@@ -6,6 +6,24 @@ from enum import Enum
 BITBAY_API = "https://bitbay.net/API/Public/"
 BITSTAMP_API = "https://www.bitstamp.net/api/v2/"
 
+# Fees
+BITBAY_FEE = {
+    'transaction': 0.001,  # of the trade
+    'withdrawal': {  # static value
+        'BTC': 0.0005,
+        'ETH': 0.01,
+        'LTC': 0.001
+    }
+}
+BITSTAMP_FEE = {
+    'transaction': 0.0025,  # of the trade
+    'withdrawal': {  # static value
+        'BTC': 0.0005,
+        'ETH': 0.03,
+        'LTC': 0.001
+    }
+}
+
 # Enums
 API = Enum('API', 'BITBAY BITSTAMP')
 COMPARISON = Enum('Comparison', 'MIN MAX')
@@ -54,7 +72,7 @@ def getOrders(api, cryptocurrency, currency, limit=BASE_LIMIT):
     return None
 
 
-def getBestOrder(orders, comparison=COMPARISON.MAX):
+def getBestOrder(orders, comparison=COMPARISON.MIN):
     if comparison == COMPARISON.MAX:
         if len(orders) > 0:
             return max(orders)
@@ -69,15 +87,36 @@ def getBestOrder(orders, comparison=COMPARISON.MAX):
         raise ValueError("Wrong comparison type")
 
 
+def calculateFees(transactionApi, withdrawalApi, cryptocurrency, quantity):
+    fee = 0
+
+    # Transaction fee
+    if transactionApi == API.BITBAY:
+        fee += quantity * BITBAY_FEE['transaction']
+
+    elif transactionApi == API.BITSTAMP:
+        fee += quantity * BITSTAMP_FEE['transaction']
+
+    # Withdrawal fee
+    if withdrawalApi == API.BITBAY:
+        if(BITBAY_FEE['withdrawal'][cryptocurrency]):
+            fee += BITBAY_FEE['withdrawal'][cryptocurrency]
+
+    elif withdrawalApi == API.BITSTAMP:
+        if(BITBAY_FEE['withdrawal'][cryptocurrency]):
+            fee += BITBAY_FEE['withdrawal'][cryptocurrency]
+
+    return fee # Returns value in cryptocurency ex. 0,00015 BTC
+
+
 def calculateDifference(order1=[1, 1], order2=[1, 1], fees=0):
-    difference = order1[0] - order2[0] - fees
-    volume = min(order1[1], order2[1])
+    difference = order1[0] - order2[0]
+    volume = min(order1[1], order2[1]) - fees
     return [difference, volume]
 
 
-
-def calculatePercentageDifference(order1=[1, 1], order2=[1, 1], fees=0):
-    return (order1[0] - order2[0] - fees) / order2[0] * 100
+def calculatePercentageDifference(order1=[1, 1], order2=[1, 1]):
+    return (order1[0] - order2[0]) / order2[0] * 100
 
 
 def printPercentageDifference(profit, ticker, note):
@@ -97,7 +136,8 @@ def ex1a():
                 getBestOrder(bitbayOrders['asks']),
                 getBestOrder(bitstampOrders['asks']),
             )
-            printPercentageDifference(difference, crypto, "BITBAY:b vs BITSTAMP:b") # :b = buy, :s = sell
+            printPercentageDifference(
+                difference, crypto, "BITBAY:b vs BITSTAMP:b")  # :b = buy, :s = sell
 
 
 def ex1b():
@@ -110,7 +150,8 @@ def ex1b():
                 getBestOrder(bitbayOrders['bids'], COMPARISON.MAX),
                 getBestOrder(bitstampOrders['bids'], COMPARISON.MAX),
             )
-            printPercentageDifference(difference, crypto, "BITBAY:s vs BITSTAMP:s") # :b = buy, :s = sell
+            printPercentageDifference(
+                difference, crypto, "BITBAY:s vs BITSTAMP:s")  # :b = buy, :s = sell
 
 
 def ex1c():
@@ -120,48 +161,65 @@ def ex1c():
         bitstampOrders = getOrders(API.BITSTAMP, crypto, BASE_CURRENCY)
         if bitbayOrders and bitstampOrders:
             diff1 = calculatePercentageDifference(
-                getBestOrder(bitbayOrders['asks']), 
-                getBestOrder(bitstampOrders['bids'], COMPARISON.MAX)
+                getBestOrder(bitbayOrders['bids']),
+                getBestOrder(bitstampOrders['asks'], COMPARISON.MAX)
             )
-            printPercentageDifference(diff1, crypto, "BITBAY:b vs BITSTAMP:s") # :b = buy, :s = sell
+            printPercentageDifference(
+                diff1, crypto, "BITBAY:b vs BITSTAMP:s")  # :b = buy, :s = sell
 
             diff2 = calculatePercentageDifference(
-                getBestOrder(bitstampOrders['asks']),
-                getBestOrder(bitbayOrders['bids'], COMPARISON.MAX)
+                getBestOrder(bitstampOrders['bids']),
+                getBestOrder(bitbayOrders['asks'], COMPARISON.MAX)
             )
-            printPercentageDifference(diff2, crypto, "BITSTAMP:b vs BITBAY:s") # :b = buy, :s = sell
+            printPercentageDifference(
+                diff2, crypto, "BITSTAMP:b vs BITBAY:s")  # :b = buy, :s = sell
+
 
 def ex2():
+    trades = [[API.BITSTAMP, API.BITBAY], [
+        API.BITBAY, API.BITSTAMP]]  # [[from, to]]
+    orders = {}  # dictionary with already fetched orders
+
     print("Exercise 2: ")
     for crypto in CRYPTOCURRENCIES:
-        bitbayOrders = getOrders(API.BITBAY, crypto, BASE_CURRENCY)
-        bitstampOrders = getOrders(API.BITSTAMP, crypto, BASE_CURRENCY)
-        if bitbayOrders and bitstampOrders:
-            diff1 = calculateDifference(
-                getBestOrder(bitbayOrders['asks']), 
-                getBestOrder(bitstampOrders['bids'], COMPARISON.MAX)
-            )
-            diff1Percentage = calculatePercentageDifference(
-                getBestOrder(bitbayOrders['asks']), 
-                getBestOrder(bitstampOrders['bids'], COMPARISON.MAX)
-            )
-            printPercentageDifference(diff1Percentage, crypto, f"BITBAY:b vs BITSTAMP:s, volume: {diff1[1]:.6f}, profit: {diff1[0] * diff1[1]:.2f}{BASE_CURRENCY}") # :b = buy, :s = sell
+        for trade in trades:
+            # Checking if orders have already been fetched
+            if trade[0] not in orders:
+                orders[trade[0]] = getOrders(trade[0], crypto, BASE_CURRENCY)
+            if trade[1] not in orders:
+                orders[trade[1]] = getOrders(trade[1], crypto, BASE_CURRENCY)
 
-            diff2 = calculateDifference(
-                getBestOrder(bitstampOrders['asks']),
-                getBestOrder(bitbayOrders['bids'], COMPARISON.MAX)
-            )
-            diff2Percentage = calculatePercentageDifference(
-                getBestOrder(bitstampOrders['asks']),
-                getBestOrder(bitbayOrders['bids'], COMPARISON.MAX)
-            )
-            printPercentageDifference(diff2Percentage, crypto, f"BITSTAMP:b vs BITBAY:s, volume: {diff2[1]:.6f}, profit: {diff2[0] * diff2[1]:.2f}{BASE_CURRENCY}") # :b = buy, :s = sell
+            # Calculating difference (profit)
+            if trade[0] in orders and trade[1] in orders:
+                bestBuyOrder = getBestOrder(orders[trade[0]]['bids'])
+                bestSellOrder = getBestOrder(
+                    orders[trade[1]]['asks'], COMPARISON.MAX)
+                fees = calculateFees(trade[0], trade[1], crypto, min(
+                    bestBuyOrder[1], bestSellOrder[1]))
+
+                diff = calculateDifference(
+                    bestBuyOrder,
+                    bestSellOrder,
+                    fees
+                )
+                diffPercentage = calculatePercentageDifference(
+                    bestBuyOrder,
+                    bestSellOrder
+                )
+
+                printPercentageDifference(
+                    diffPercentage, 
+                    crypto, 
+                    f"{trade[0].name}:b -> {trade[1].name}:s, volume: {diff[1]:.6f}, profit: {diff[0] * diff[1]:.2f}{BASE_CURRENCY}"
+                )  # :b = buy, :s = sell
+
 
 def main():
     # setInterval(ex1a, BASE_INTERVAL)
     # setInterval(ex1b, BASE_INTERVAL)
     # setInterval(ex1c, BASE_INTERVAL)
     setInterval(ex2, BASE_INTERVAL)
+
 
 if __name__ == "__main__":
     main()
