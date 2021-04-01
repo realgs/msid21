@@ -1,58 +1,101 @@
 import requests
 import time
 
-cryptocurrencies_bittrex = ['USD-ETH', 'USD-LTC', 'USD-BTC']
-cryptocurrencies_bitbay = ['ETHUSD', 'LTCUSD', 'BTCUSD']
-types = ['bid', 'ask']
+CURRENCIES = ['ETH', 'LTC', 'BTC', 'USD']
+USD = 3
+BTC = 2
+DEFAULT_TIMEOUT = 3
+TYPES = ['buy', 'sell']
 APIs = ['bittrex', 'bitbay']
+API_FEES = {'bitbay': {'taker': 0.0042, 'transfer': [0.01, 0.001, 0.0005, 3]},
+            'bittrex': {'taker': 0.0075}, 'transfer': [0.006, 0.01, 0.0005, 0]}
+BITBAY = 1
+BITTREX = 0
+PATH_BITBAY = 'https://bitbay.net/API/Public/'
+BITBAY_REQUEST_CATEGORY = ['trades', 'orderbook', 'market', 'ticker', 'all']
+DEFAULT_FORMAT = 'json'
+PATH_BITTREX = 'https://api.bittrex.com/api/v1.1/public'
+BITTREX_REQUEST_CATEGORY = ['getorderbook', 'getticker']
+BITTREX_FORMAT = '&type=both'
 
 
-def bittrex_path(cryptocurrency_number):
-    if cryptocurrency_number < 0 or cryptocurrency_number >= len(cryptocurrencies_bittrex):
-        return None
-    return str('https://api.bittrex.com/api/v1.1/public/getticker?market=' +
-               cryptocurrencies_bittrex[cryptocurrency_number])
-
-
-def bitbay_path(cryptocurrency_number):
-    if cryptocurrency_number < 0 or cryptocurrency_number >= len(cryptocurrencies_bitbay):
-        return None
-    return str('https://bitbay.net/API/Public/' + cryptocurrencies_bitbay[cryptocurrency_number]+'/ticker.json')
+def get_api_path(currency_in_nbr, currency_out_nbr, category_nbr, api_nbr):
+    if 0 <= api_nbr < len(APIs) and 0 <= currency_in_nbr < len(CURRENCIES) and 0 <= currency_out_nbr < len(CURRENCIES):
+        if api_nbr == 0 and 0 <= category_nbr < len(BITTREX_REQUEST_CATEGORY):
+            return str('{0}/{1}?market={2}-{3}{4}'.format(PATH_BITTREX, BITTREX_REQUEST_CATEGORY[category_nbr],
+                                                          CURRENCIES[currency_in_nbr], CURRENCIES[currency_out_nbr],
+                                                          BITTREX_FORMAT))
+        elif api_nbr == 1 and 0 <= category_nbr < len(BITBAY_REQUEST_CATEGORY):
+            return str('{0}{1}{2}/{3}.{4}'.format(PATH_BITBAY, CURRENCIES[currency_out_nbr],
+                                                  CURRENCIES[currency_in_nbr], BITBAY_REQUEST_CATEGORY[category_nbr],
+                                                  DEFAULT_FORMAT))
+        else:
+            return None
+    return None
 
 
 def get_response(path):
     if path is not None:
-        resp = requests.get(path, timeout=3)
-        if resp.status_code == 200:
+        resp = requests.get(path, timeout=DEFAULT_TIMEOUT)
+        if 200 <= resp.status_code < 300:
             return resp
-        return None
+        else:
+            return None
     return None
 
 
-def get_rate(api, cryptocurrency_number):
-    rate = []
-    if api == APIs[0]:
-        resp = get_response(bittrex_path(cryptocurrency_number))
+def get_best_order(currency_in_nbr, currency_out_nbr, api_nbr):
+    rate_dict = {}
+    if api_nbr == BITTREX:
+        resp = get_response(get_api_path(currency_in_nbr, currency_out_nbr, 0, api_nbr))
         if resp is not None:
             resp_json = resp.json()
-            rate.append(float(resp_json['result']['Bid']))
-            rate.append(float(resp_json['result']['Ask']))
-        return rate
-    elif api == APIs[1]:
-        resp = get_response(bitbay_path(cryptocurrency_number))
+            rate_dict[TYPES[0]] = [resp_json['result']['sell'][0]['Rate'], resp_json['result']['sell'][0]['Quantity']]
+            rate_dict[TYPES[1]] = [resp_json['result']['buy'][0]['Rate'], resp_json['result']['buy'][0]['Quantity']]
+        return rate_dict
+    elif api_nbr == BITBAY:
+        resp = get_response(get_api_path(currency_in_nbr, currency_out_nbr, 1, api_nbr))
         if resp is not None:
             resp_json = resp.json()
-            rate.append(float(resp_json['bid']))
-            rate.append(float(resp_json['ask']))
-        return rate
+            rate_dict[TYPES[0]] = resp_json['asks'][0]
+            rate_dict[TYPES[1]] = resp_json['bids'][0]
+        return rate_dict
     else:
         return None
 
 
-def count_percent_diff_asks(cryptocurrency_number):
-    rate_1 = get_rate(APIs[0], cryptocurrency_number)
-    rate_2 = get_rate(APIs[1], cryptocurrency_number)
-    return ((rate_2[1] - rate_1[1]) / rate_1[1]) * 100
+def percent_diff_buy(currency_in_nbr, currency_out_nbr):
+    if 0 <= currency_in_nbr < len(CURRENCIES) and 0 <= currency_out_nbr < len(CURRENCIES):
+        rate_1 = get_best_order(currency_in_nbr, currency_out_nbr, BITTREX)['buy'][0]
+        rate_2 = get_best_order(currency_in_nbr, currency_out_nbr, BITBAY)['buy'][0]
+        return ((rate_2 - rate_1) / rate_1) * 100
+    return None
+
+
+def percent_diff_sell(currency_in_nbr, currency_out_nbr):
+    if 0 <= currency_in_nbr < len(CURRENCIES) and 0 <= currency_out_nbr < len(CURRENCIES):
+        rate_1 = get_best_order(currency_in_nbr, currency_out_nbr, BITTREX)['sell'][0]
+        rate_2 = get_best_order(currency_in_nbr, currency_out_nbr, BITBAY)['sell'][0]
+        return ((rate_2 - rate_1) / rate_1) * 100
+    return None
+
+
+def percent_diff_arbitrage(currency_in_nbr, currency_out_nbr, buy_api_nbr, sell_api_nbr, fees_on=False):
+    if 0 <= buy_api_nbr < len(APIs) and 0 <= sell_api_nbr < len(APIs):
+        if 0 <= currency_in_nbr < len(CURRENCIES) and 0 <= currency_out_nbr < len(CURRENCIES):
+            offer_buy = get_best_order(currency_in_nbr, currency_out_nbr, buy_api_nbr)['buy']
+            offer_sell = get_best_order(currency_in_nbr, currency_out_nbr, sell_api_nbr)['sell']
+            amount = min(offer_buy[1], offer_sell[1])
+            sum_pay = amount * offer_buy[0]
+            sum_get = amount * offer_sell[0]
+            if fees_on:
+                sum_pay = sum_pay * (1 + API_FEES[APIs[buy_api_nbr]]['taker'])
+                sum_get = (amount - API_FEES[APIs[buy_api_nbr]]['transfer'][currency_out_nbr]) * offer_sell[0]
+                sum_get = sum_get * (1 - API_FEES[APIs[sell_api_nbr]]['taker'])
+                profit = sum_get - sum_pay
+                print(profit, amount)
+            return (1 - (sum_pay - sum_get) / sum_get) * 100
+    return None
 
 
 def update_profit(cryptocurrency, delay, limit=50):
@@ -62,9 +105,10 @@ def update_profit(cryptocurrency, delay, limit=50):
 
 
 def main():
-    # task1
-    print(get_rate(APIs[0], 0), get_rate(APIs[1], 0))
-    print(count_percent_diff_asks(0))
+    print(percent_diff_buy(USD, BTC))
+    print(percent_diff_sell(USD, BTC))
+    print(percent_diff_arbitrage(USD, BTC, BITBAY, BITTREX))
+    print(percent_diff_arbitrage(USD, BTC, BITBAY, BITTREX, True))
 
 
 if __name__ == '__main__':
