@@ -12,7 +12,7 @@ COMPARISON = Enum('Comparison', 'MINMIN MAXMAX MINMAX MAXMIN')
 
 # Base variables
 BASE_INTERVAL = 10
-BASE_LIMIT = 5
+BASE_LIMIT = 3
 BASE_CURRENCY = "USD"
 
 # Tickers
@@ -52,18 +52,6 @@ def getOrders(api, cryptocurrency, currency, limit=BASE_LIMIT):
             return {'bids': list(map(lambda el: [float(el[0]), float(el[1])], orders['bids'][:limit])), 'asks': list(map(lambda el: [float(el[0]), float(el[1])], orders['asks'][:limit]))}
 
     return None
-
-
-def calculateDifference(minimalArray, maximalArray):
-    minimalValue, maximalValue = 1, 1
-    if len(minimalArray) > 0:
-        minimalValue = min(minimalArray)[0]
-    if len(maximalArray) > 0:
-        maximalValue = max(maximalArray)[0]
-
-    difference = (minimalValue - maximalValue) / maximalValue * 100
-    return difference
-
 
 def calculateDifference(arr1, arr2, comparison=COMPARISON.MINMAX):
     val1, val2 = 1, 1
