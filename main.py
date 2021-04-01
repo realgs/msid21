@@ -7,8 +7,8 @@ BITBAY_API = "https://bitbay.net/API/Public/"
 BITSTAMP_API = "https://www.bitstamp.net/api/v2/"
 
 # Enums
-APIS = Enum('API', 'BITBAY BITSTAMP')
-COMPARISON = Enum('Comparison', 'MINMIN MAXMAX MINMAX MAXMIN')
+API = Enum('API', 'BITBAY BITSTAMP')
+COMPARISON = Enum('Comparison', 'MIN MAX')
 
 # Base variables
 BASE_INTERVAL = 10
@@ -39,13 +39,13 @@ def requestAPI(url):
 
 
 def getOrders(api, cryptocurrency, currency, limit=BASE_LIMIT):
-    if api == APIS.BITBAY:
+    if api == API.BITBAY:
         url = f'{BITBAY_API}{cryptocurrency.upper()}{currency.upper()}/orderbook.json'
         orders = requestAPI(url)
         if orders != None:
             return {'bids': orders['bids'][:limit], 'asks': orders['asks'][:limit]}
 
-    elif api == APIS.BITSTAMP:
+    elif api == API.BITSTAMP:
         url = f'{BITSTAMP_API}order_book/{cryptocurrency.lower()}{currency.lower()}'
         orders = requestAPI(url)
         if orders != None:
@@ -53,39 +53,34 @@ def getOrders(api, cryptocurrency, currency, limit=BASE_LIMIT):
 
     return None
 
-def calculateDifference(arr1, arr2, comparison=COMPARISON.MINMAX):
-    val1, val2 = 1, 1
 
-    # Calculation is based on comparison method
-    if comparison == COMPARISON.MINMAX:
-        if len(arr1) > 0:
-            val1 = min(arr1)[0]
-        if len(arr2) > 0:
-            val2 = max(arr2)[0]
+def getBestOrder(orders, comparison=COMPARISON.MAX):
+    if comparison == COMPARISON.MAX:
+        if len(orders) > 0:
+            return max(orders)
+        return None
 
-    elif comparison == COMPARISON.MAXMIN:
-        if len(arr1) > 0:
-            val1 = max(arr1)[0]
-        if len(arr2) > 0:
-            val2 = min(arr2)[0]
-
-    elif comparison == COMPARISON.MINMIN:
-        if len(arr1) > 0:
-            val1 = min(arr1)[0]
-        if len(arr2) > 0:
-            val2 = min(arr2)[0]
-
-    elif comparison == COMPARISON.MAXMAX:
-        if len(arr1) > 0:
-            val1 = max(arr1)[0]
-        if len(arr2) > 0:
-            val2 = max(arr2)[0]
+    elif comparison == COMPARISON.MIN:
+        if len(orders) > 0:
+            return min(orders)
+        return None
 
     else:
         raise ValueError("Wrong comparison type")
 
-    difference = (val1 - val2) / val2 * 100
-    return difference
+
+def calculateDifference(order1=[1, 1], order2=[1, 1], fees=0, checkVolume=False):
+    difference = order1[0] - order2[0] - fees
+
+    if checkVolume:
+        volume = min(order1[1], order2[1])
+        return [difference, volume]
+
+    return [difference]
+
+
+def calculatePercentageDifference(order1=[1, 1], order2=[1, 1], fees=0):
+    return (order1[0] - order2[0] - fees) / order2[0] * 100
 
 
 def printDifference(profit, ticker, note):
@@ -96,32 +91,47 @@ def printDifference(profit, ticker, note):
 
 
 def ex1a():
+    print("Exercise 1a: ")
     for crypto in CRYPTOCURRENCIES:
-        bitbayOrders = getOrders(APIS.BITBAY, crypto, BASE_CURRENCY)
-        bitstampOrders = getOrders(APIS.BITSTAMP, crypto, BASE_CURRENCY)
+        bitbayOrders = getOrders(API.BITBAY, crypto, BASE_CURRENCY)
+        bitstampOrders = getOrders(API.BITSTAMP, crypto, BASE_CURRENCY)
         if bitbayOrders and bitstampOrders:
-            difference = calculateDifference(bitbayOrders['asks'], bitstampOrders['asks'], COMPARISON.MINMIN)
+            difference = calculatePercentageDifference(
+                getBestOrder(bitbayOrders['asks']),
+                getBestOrder(bitstampOrders['asks']),
+            )
             printDifference(difference, crypto, "BITBAY buy vs BITSTAMP buy")
 
 
 def ex1b():
+    print("Exercise 1b: ")
     for crypto in CRYPTOCURRENCIES:
-        bitbayOrders = getOrders(APIS.BITBAY, crypto, BASE_CURRENCY)
-        bitstampOrders = getOrders(APIS.BITSTAMP, crypto, BASE_CURRENCY)
+        bitbayOrders = getOrders(API.BITBAY, crypto, BASE_CURRENCY)
+        bitstampOrders = getOrders(API.BITSTAMP, crypto, BASE_CURRENCY)
         if bitbayOrders and bitstampOrders:
-            difference = calculateDifference(bitbayOrders['bids'], bitstampOrders['bids'], COMPARISON.MAXMAX)
+            difference = calculatePercentageDifference(
+                getBestOrder(bitbayOrders['bids'], COMPARISON.MAX),
+                getBestOrder(bitstampOrders['bids'], COMPARISON.MAX),
+            )
             printDifference(difference, crypto, "BITBAY sell vs BITSTAMP sell")
 
 
 def ex1c():
+    print("Exercise 1c: ")
     for crypto in CRYPTOCURRENCIES:
-        bitbayOrders = getOrders(APIS.BITBAY, crypto, BASE_CURRENCY)
-        bitstampOrders = getOrders(APIS.BITSTAMP, crypto, BASE_CURRENCY)
+        bitbayOrders = getOrders(API.BITBAY, crypto, BASE_CURRENCY)
+        bitstampOrders = getOrders(API.BITSTAMP, crypto, BASE_CURRENCY)
         if bitbayOrders and bitstampOrders:
-            diff1 = calculateDifference(bitbayOrders['asks'], bitstampOrders['bids'])
+            diff1 = calculatePercentageDifference(
+                getBestOrder(bitbayOrders['asks']), 
+                getBestOrder(bitstampOrders['bids'], COMPARISON.MAX)
+            )
             printDifference(diff1, crypto, "BITBAY buy vs BITSTAMP sell")
 
-            diff2 = calculateDifference(bitstampOrders['asks'], bitbayOrders['bids'])
+            diff2 = calculatePercentageDifference(
+                getBestOrder(bitstampOrders['asks']),
+                getBestOrder(bitbayOrders['bids'], COMPARISON.MAX)
+            )
             printDifference(diff2, crypto, "BITSTAMP buy vs BITBAY sell")
 
 
