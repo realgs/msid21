@@ -2,17 +2,26 @@ import requests
 from threading import Timer
 from enum import Enum
 
+# Api
 BITBAY_API = "https://bitbay.net/API/Public/"
 BITSTAMP_API = "https://www.bitstamp.net/api/"
-
 APIS = Enum('API', 'BITBAY BITSTAMP')
+
+# Base variables
+BASE_INTERVAL = 10
+BASE_LIMIT = 20
+BASE_CURRENCY = "USD"
+
+# Tickers
+CRYPTOCURRENCIES = ["BTC", "ETH", "LTC"]
 
 
 def setInterval(func, interval):
     func()
+
     def func_wrapper():
         setInterval(func, interval)
-        
+
     Timer(interval, func_wrapper).start()
 
 
@@ -26,7 +35,7 @@ def requestAPI(url):
         return None
 
 
-def getOrdersFromApi(api, cryptocurrency, currency, limit=10):
+def getOrders(api, cryptocurrency, currency, limit=BASE_LIMIT):
     if api == APIS.BITBAY:
         url = f'{BITBAY_API}{cryptocurrency}{currency}/orderbook.json'
         orders = requestAPI(url)
@@ -42,20 +51,6 @@ def getOrdersFromApi(api, cryptocurrency, currency, limit=10):
     return None
 
 
-def getOrdersFromMultipleApis(apis, cryptocurrency, currency, limitPerApi=10):
-    buyOrders, sellOrders = [], []
-    for api in apis:
-        orders = getOrdersFromApi(
-            api['api'], cryptocurrency, currency, limitPerApi)
-        if orders != None:
-            if api['asks'] == True:
-                buyOrders += orders['asks']
-            if api['bids'] == True:
-                sellOrders += orders['bids']
-
-    return {'asks': buyOrders, 'bids': sellOrders}
-
-
 def calculateProfit(minimalArray, maximalArray):
     minimalValue, maximalValue = 1, 1
     if len(minimalArray) > 0:
@@ -67,26 +62,25 @@ def calculateProfit(minimalArray, maximalArray):
     return profit
 
 
-def ex1a(tickers):
-    for ticker in tickers:
-        orders = getOrdersFromMultipleApis(
-            [{'api': APIS.BITSTAMP, 'bids': True, 'asks': False}], ticker[0], ticker[1], 10)
-        print(
-            f'Profit on {ticker[0]}: {calculateProfit(orders["bids"], orders["bids"]):.4f}%')
+def printProfit(profit, ticker):
+    print(f'Profit on {ticker}: {profit:.4f}%')
 
 
-def ex1b(tickers):
-    for ticker in tickers:
-        orders = getOrdersFromMultipleApis(
-            [{'api': APIS.BITSTAMP, 'bids': False, 'asks': True}], ticker[0], ticker[1], 10)
-        print(
-            f'Profit on {ticker[0]}: {calculateProfit(orders["asks"], orders["asks"]):.4f}%')
+def ex1a():
+    for crypto in CRYPTOCURRENCIES:
+        pass
+        # TODO: Implement loop logic
+
+
+def ex1b():
+    for crypto in CRYPTOCURRENCIES:
+        pass
+        # TODO: Implement loop logic
 
 
 def main():
-    tickers = [('BTC', 'USD')]
-    setInterval(lambda: ex1a(tickers), 10)
-    setInterval(lambda: ex1b(tickers), 10)
+    setInterval(ex1a, BASE_INTERVAL)
+    setInterval(ex1b, BASE_INTERVAL)
 
 
 if __name__ == "__main__":
