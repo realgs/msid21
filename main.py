@@ -5,7 +5,10 @@ from enum import Enum
 # Api
 BITBAY_API = "https://bitbay.net/API/Public/"
 BITSTAMP_API = "https://www.bitstamp.net/api/v2/"
+
+# Enums
 APIS = Enum('API', 'BITBAY BITSTAMP')
+COMPARISON = Enum('Comparison', 'MINMIN MAXMAX MINMAX MAXMIN')
 
 # Base variables
 BASE_INTERVAL = 10
@@ -62,29 +65,29 @@ def calculateDifference(minimalArray, maximalArray):
     return difference
 
 
-def calculateDifference(arr1, arr2, comparison="min/max"):
+def calculateDifference(arr1, arr2, comparison=COMPARISON.MINMAX):
     val1, val2 = 1, 1
 
     # Calculation is based on comparison method
-    if comparison == "min/max":
+    if comparison == COMPARISON.MINMAX:
         if len(arr1) > 0:
             val1 = min(arr1)[0]
         if len(arr2) > 0:
             val2 = max(arr2)[0]
 
-    elif comparison == "max/min":
+    elif comparison == COMPARISON.MAXMIN:
         if len(arr1) > 0:
             val1 = max(arr1)[0]
         if len(arr2) > 0:
             val2 = min(arr2)[0]
 
-    elif comparison == "min/min":
+    elif comparison == COMPARISON.MINMIN:
         if len(arr1) > 0:
             val1 = min(arr1)[0]
         if len(arr2) > 0:
             val2 = min(arr2)[0]
 
-    elif comparison == "max/max":
+    elif comparison == COMPARISON.MAXMAX:
         if len(arr1) > 0:
             val1 = max(arr1)[0]
         if len(arr2) > 0:
@@ -111,7 +114,7 @@ def ex1a():
         if bitbayOrders and bitstampOrders:
             bitbayBuys = bitbayOrders['asks']
             bitstampBuys = bitstampOrders['asks']
-            difference = calculateDifference(bitbayBuys, bitstampBuys, "min/min")
+            difference = calculateDifference(bitbayBuys, bitstampBuys, COMPARISON.MINMIN)
             printDifference(difference, crypto, "BITBAY buy vs BITSTAMP buy")
 
 
@@ -122,7 +125,7 @@ def ex1b():
         if bitbayOrders and bitstampOrders:
             bitbaySells = bitbayOrders['bids']
             bitstampSells = bitstampOrders['bids']
-            difference = calculateDifference(bitbaySells, bitstampSells, "max/max")
+            difference = calculateDifference(bitbaySells, bitstampSells, COMPARISON.MAXMAX)
             printDifference(difference, crypto, "BITBAY sell vs BITSTAMP sell")
 
 
