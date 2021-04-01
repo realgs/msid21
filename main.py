@@ -4,7 +4,7 @@ from enum import Enum
 
 # Api
 BITBAY_API = "https://bitbay.net/API/Public/"
-BITSTAMP_API = "https://www.bitstamp.net/api/"
+BITSTAMP_API = "https://www.bitstamp.net/api/v2/"
 APIS = Enum('API', 'BITBAY BITSTAMP')
 
 # Base variables
@@ -37,13 +37,13 @@ def requestAPI(url):
 
 def getOrders(api, cryptocurrency, currency, limit=BASE_LIMIT):
     if api == APIS.BITBAY:
-        url = f'{BITBAY_API}{cryptocurrency}{currency}/orderbook.json'
+        url = f'{BITBAY_API}{cryptocurrency.upper()}{currency.upper()}/orderbook.json'
         orders = requestAPI(url)
         if orders != None:
             return {'bids': orders['bids'][:limit], 'asks': orders['asks'][:limit]}
 
     elif api == APIS.BITSTAMP:
-        url = f'{BITSTAMP_API}order_book/{cryptocurrency}{currency}'
+        url = f'{BITSTAMP_API}order_book/{cryptocurrency.lower()}{currency.lower()}'
         orders = requestAPI(url)
         if orders != None:
             return {'bids': list(map(lambda el: [float(el[0]), float(el[1])], orders['bids'][:limit])), 'asks': list(map(lambda el: [float(el[0]), float(el[1])], orders['asks'][:limit]))}
@@ -51,31 +51,44 @@ def getOrders(api, cryptocurrency, currency, limit=BASE_LIMIT):
     return None
 
 
-def calculateProfit(minimalArray, maximalArray):
+def calculateDifference(minimalArray, maximalArray):
     minimalValue, maximalValue = 1, 1
     if len(minimalArray) > 0:
         minimalValue = min(minimalArray)[0]
     if len(maximalArray) > 0:
         maximalValue = max(maximalArray)[0]
 
-    profit = (minimalValue - maximalValue) / maximalValue * 100
-    return profit
+    difference = (minimalValue - maximalValue) / maximalValue * 100
+    return difference
 
 
-def printProfit(profit, ticker):
-    print(f'Profit on {ticker}: {profit:.4f}%')
+def printDifference(profit, ticker, note):
+    if note:
+        print(f'Difference on {ticker}[{note}]: {profit:.4f}%')
+    else:
+        print(f'Difference on {ticker}: {profit:.4f}%')
 
 
 def ex1a():
     for crypto in CRYPTOCURRENCIES:
-        pass
-        # TODO: Implement loop logic
+        bitbayOrders = getOrders(APIS.BITBAY, crypto, BASE_CURRENCY, 5)
+        bitstampOrders = getOrders(APIS.BITSTAMP, crypto, BASE_CURRENCY, 5)
+        if bitbayOrders and bitstampOrders:
+            bitbayBuys = bitbayOrders['asks']
+            bitstampBuys = bitstampOrders['asks']
+            difference = calculateDifference(bitbayBuys, bitstampBuys)
+            printDifference(difference, crypto, "BITBAY buy vs BITSTAMP buy")
 
 
 def ex1b():
-    for crypto in CRYPTOCURRENCIES:
-        pass
-        # TODO: Implement loop logic
+      for crypto in CRYPTOCURRENCIES:
+        bitbayOrders = getOrders(APIS.BITBAY, crypto, BASE_CURRENCY, 5)
+        bitstampOrders = getOrders(APIS.BITSTAMP, crypto, BASE_CURRENCY, 5)
+        if bitbayOrders and bitstampOrders:
+            bitbaySells = bitbayOrders['bids']
+            bitstampSells = bitstampOrders['bids']
+            difference = calculateDifference(bitbaySells, bitstampSells)
+            printDifference(difference, crypto, "BITBAY sell vs BITSTAMP sell")
 
 
 def main():
