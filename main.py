@@ -106,7 +106,7 @@ def calculateFees(transactionApi, withdrawalApi, cryptocurrency, quantity):
         if(BITBAY_FEE['withdrawal'][cryptocurrency]):
             fee += BITBAY_FEE['withdrawal'][cryptocurrency]
 
-    return fee # Returns value in cryptocurency ex. 0,00015 BTC
+    return fee  # Returns value in cryptocurency ex. 0,00015 BTC
 
 
 def calculateDifference(order1=[1, 1], order2=[1, 1], fees=0):
@@ -155,29 +155,39 @@ def ex1b():
 
 
 def ex1c():
+    trades = [
+        [API.BITSTAMP, API.BITBAY],
+        [API.BITBAY, API.BITSTAMP]
+    ]  # [[from, to]]
+    orders = {}  # dictionary with already fetched orders
+
     print("Exercise 1c: ")
     for crypto in CRYPTOCURRENCIES:
-        bitbayOrders = getOrders(API.BITBAY, crypto, BASE_CURRENCY)
-        bitstampOrders = getOrders(API.BITSTAMP, crypto, BASE_CURRENCY)
-        if bitbayOrders and bitstampOrders:
-            diff1 = calculatePercentageDifference(
-                getBestOrder(bitbayOrders['bids']),
-                getBestOrder(bitstampOrders['asks'], COMPARISON.MAX)
-            )
-            printPercentageDifference(
-                diff1, crypto, "BITBAY:b vs BITSTAMP:s")  # :b = buy, :s = sell
+        for trade in trades:
+            # Checking if orders have already been fetched
+            if trade[0] not in orders:
+                orders[trade[0]] = getOrders(trade[0], crypto, BASE_CURRENCY)
+            if trade[1] not in orders:
+                orders[trade[1]] = getOrders(trade[1], crypto, BASE_CURRENCY)
 
-            diff2 = calculatePercentageDifference(
-                getBestOrder(bitstampOrders['bids']),
-                getBestOrder(bitbayOrders['asks'], COMPARISON.MAX)
-            )
-            printPercentageDifference(
-                diff2, crypto, "BITSTAMP:b vs BITBAY:s")  # :b = buy, :s = sell
+            # Calculating difference (profit)
+            if trade[0] in orders and trade[1] in orders:
+                diff = calculatePercentageDifference(
+                    getBestOrder(orders[trade[0]]['bids']),
+                    getBestOrder(orders[trade[1]]['asks'], COMPARISON.MAX)
+                )
+                printPercentageDifference(
+                    diff, 
+                    crypto, 
+                    f"{trade[0].name}:b vs {trade[1].name}:s"
+                )  # :b = buy, :s = sell
 
 
 def ex2():
-    trades = [[API.BITSTAMP, API.BITBAY], [
-        API.BITBAY, API.BITSTAMP]]  # [[from, to]]
+    trades = [
+        [API.BITSTAMP, API.BITBAY],
+        [API.BITBAY, API.BITSTAMP]
+    ]  # [[from, to]]
     orders = {}  # dictionary with already fetched orders
 
     print("Exercise 2: ")
@@ -192,10 +202,8 @@ def ex2():
             # Calculating difference (profit)
             if trade[0] in orders and trade[1] in orders:
                 bestBuyOrder = getBestOrder(orders[trade[0]]['bids'])
-                bestSellOrder = getBestOrder(
-                    orders[trade[1]]['asks'], COMPARISON.MAX)
-                fees = calculateFees(trade[0], trade[1], crypto, min(
-                    bestBuyOrder[1], bestSellOrder[1]))
+                bestSellOrder = getBestOrder(orders[trade[1]]['asks'], COMPARISON.MAX)
+                fees = calculateFees(trade[0], trade[1], crypto, min(bestBuyOrder[1], bestSellOrder[1]))
 
                 diff = calculateDifference(
                     bestBuyOrder,
@@ -208,16 +216,16 @@ def ex2():
                 )
 
                 printPercentageDifference(
-                    diffPercentage, 
-                    crypto, 
+                    diffPercentage,
+                    crypto,
                     f"{trade[0].name}:b -> {trade[1].name}:s, volume: {diff[1]:.6f}, profit: {diff[0] * diff[1]:.2f}{BASE_CURRENCY}"
                 )  # :b = buy, :s = sell
 
 
 def main():
-    # setInterval(ex1a, BASE_INTERVAL)
-    # setInterval(ex1b, BASE_INTERVAL)
-    # setInterval(ex1c, BASE_INTERVAL)
+    setInterval(ex1a, BASE_INTERVAL)
+    setInterval(ex1b, BASE_INTERVAL)
+    setInterval(ex1c, BASE_INTERVAL)
     setInterval(ex2, BASE_INTERVAL)
 
 
