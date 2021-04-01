@@ -102,9 +102,9 @@ def calculateDifference(arr1, arr2, comparison=COMPARISON.MINMAX):
 
 def printDifference(profit, ticker, note):
     if note:
-        print(f'Difference on {ticker}[{note}]: {profit:.4f}%')
+        print(f'Difference on {ticker}[{note}]: {profit:.3f}%')
     else:
-        print(f'Difference on {ticker}: {profit:.4f}%')
+        print(f'Difference on {ticker}: {profit:.3f}%')
 
 
 def ex1a():
