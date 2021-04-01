@@ -69,25 +69,22 @@ def getBestOrder(orders, comparison=COMPARISON.MAX):
         raise ValueError("Wrong comparison type")
 
 
-def calculateDifference(order1=[1, 1], order2=[1, 1], fees=0, checkVolume=False):
+def calculateDifference(order1=[1, 1], order2=[1, 1], fees=0):
     difference = order1[0] - order2[0] - fees
+    volume = min(order1[1], order2[1])
+    return [difference, volume]
 
-    if checkVolume:
-        volume = min(order1[1], order2[1])
-        return [difference, volume]
-
-    return [difference]
 
 
 def calculatePercentageDifference(order1=[1, 1], order2=[1, 1], fees=0):
     return (order1[0] - order2[0] - fees) / order2[0] * 100
 
 
-def printDifference(profit, ticker, note):
+def printPercentageDifference(profit, ticker, note):
     if note:
-        print(f'Difference on {ticker}[{note}]: {profit:.3f}%')
+        print(f'Difference on {ticker}[{note}]: {profit:.2f}%')
     else:
-        print(f'Difference on {ticker}: {profit:.3f}%')
+        print(f'Difference on {ticker}: {profit:.2f}%')
 
 
 def ex1a():
@@ -100,7 +97,7 @@ def ex1a():
                 getBestOrder(bitbayOrders['asks']),
                 getBestOrder(bitstampOrders['asks']),
             )
-            printDifference(difference, crypto, "BITBAY buy vs BITSTAMP buy")
+            printPercentageDifference(difference, crypto, "BITBAY:b vs BITSTAMP:b") # :b = buy, :s = sell
 
 
 def ex1b():
@@ -113,7 +110,7 @@ def ex1b():
                 getBestOrder(bitbayOrders['bids'], COMPARISON.MAX),
                 getBestOrder(bitstampOrders['bids'], COMPARISON.MAX),
             )
-            printDifference(difference, crypto, "BITBAY sell vs BITSTAMP sell")
+            printPercentageDifference(difference, crypto, "BITBAY:s vs BITSTAMP:s") # :b = buy, :s = sell
 
 
 def ex1c():
@@ -126,20 +123,45 @@ def ex1c():
                 getBestOrder(bitbayOrders['asks']), 
                 getBestOrder(bitstampOrders['bids'], COMPARISON.MAX)
             )
-            printDifference(diff1, crypto, "BITBAY buy vs BITSTAMP sell")
+            printPercentageDifference(diff1, crypto, "BITBAY:b vs BITSTAMP:s") # :b = buy, :s = sell
 
             diff2 = calculatePercentageDifference(
                 getBestOrder(bitstampOrders['asks']),
                 getBestOrder(bitbayOrders['bids'], COMPARISON.MAX)
             )
-            printDifference(diff2, crypto, "BITSTAMP buy vs BITBAY sell")
+            printPercentageDifference(diff2, crypto, "BITSTAMP:b vs BITBAY:s") # :b = buy, :s = sell
 
+def ex2():
+    print("Exercise 2: ")
+    for crypto in CRYPTOCURRENCIES:
+        bitbayOrders = getOrders(API.BITBAY, crypto, BASE_CURRENCY)
+        bitstampOrders = getOrders(API.BITSTAMP, crypto, BASE_CURRENCY)
+        if bitbayOrders and bitstampOrders:
+            diff1 = calculateDifference(
+                getBestOrder(bitbayOrders['asks']), 
+                getBestOrder(bitstampOrders['bids'], COMPARISON.MAX)
+            )
+            diff1Percentage = calculatePercentageDifference(
+                getBestOrder(bitbayOrders['asks']), 
+                getBestOrder(bitstampOrders['bids'], COMPARISON.MAX)
+            )
+            printPercentageDifference(diff1Percentage, crypto, f"BITBAY:b vs BITSTAMP:s, volume: {diff1[1]:.6f}, profit: {diff1[0] * diff1[1]:.2f}{BASE_CURRENCY}") # :b = buy, :s = sell
+
+            diff2 = calculateDifference(
+                getBestOrder(bitstampOrders['asks']),
+                getBestOrder(bitbayOrders['bids'], COMPARISON.MAX)
+            )
+            diff2Percentage = calculatePercentageDifference(
+                getBestOrder(bitstampOrders['asks']),
+                getBestOrder(bitbayOrders['bids'], COMPARISON.MAX)
+            )
+            printPercentageDifference(diff2Percentage, crypto, f"BITSTAMP:b vs BITBAY:s, volume: {diff2[1]:.6f}, profit: {diff2[0] * diff2[1]:.2f}{BASE_CURRENCY}") # :b = buy, :s = sell
 
 def main():
-    setInterval(ex1a, BASE_INTERVAL)
-    setInterval(ex1b, BASE_INTERVAL)
-    setInterval(ex1c, BASE_INTERVAL)
-
+    # setInterval(ex1a, BASE_INTERVAL)
+    # setInterval(ex1b, BASE_INTERVAL)
+    # setInterval(ex1c, BASE_INTERVAL)
+    setInterval(ex2, BASE_INTERVAL)
 
 if __name__ == "__main__":
     main()
