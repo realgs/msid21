@@ -12,7 +12,7 @@ COMPARISON = Enum('Comparison', 'MINMIN MAXMAX MINMAX MAXMIN')
 
 # Base variables
 BASE_INTERVAL = 10
-BASE_LIMIT = 20
+BASE_LIMIT = 5
 BASE_CURRENCY = "USD"
 
 # Tickers
@@ -109,29 +109,38 @@ def printDifference(profit, ticker, note):
 
 def ex1a():
     for crypto in CRYPTOCURRENCIES:
-        bitbayOrders = getOrders(APIS.BITBAY, crypto, BASE_CURRENCY, 5)
-        bitstampOrders = getOrders(APIS.BITSTAMP, crypto, BASE_CURRENCY, 5)
+        bitbayOrders = getOrders(APIS.BITBAY, crypto, BASE_CURRENCY)
+        bitstampOrders = getOrders(APIS.BITSTAMP, crypto, BASE_CURRENCY)
         if bitbayOrders and bitstampOrders:
-            bitbayBuys = bitbayOrders['asks']
-            bitstampBuys = bitstampOrders['asks']
-            difference = calculateDifference(bitbayBuys, bitstampBuys, COMPARISON.MINMIN)
+            difference = calculateDifference(bitbayOrders['asks'], bitstampOrders['asks'], COMPARISON.MINMIN)
             printDifference(difference, crypto, "BITBAY buy vs BITSTAMP buy")
 
 
 def ex1b():
     for crypto in CRYPTOCURRENCIES:
-        bitbayOrders = getOrders(APIS.BITBAY, crypto, BASE_CURRENCY, 5)
-        bitstampOrders = getOrders(APIS.BITSTAMP, crypto, BASE_CURRENCY, 5)
+        bitbayOrders = getOrders(APIS.BITBAY, crypto, BASE_CURRENCY)
+        bitstampOrders = getOrders(APIS.BITSTAMP, crypto, BASE_CURRENCY)
         if bitbayOrders and bitstampOrders:
-            bitbaySells = bitbayOrders['bids']
-            bitstampSells = bitstampOrders['bids']
-            difference = calculateDifference(bitbaySells, bitstampSells, COMPARISON.MAXMAX)
+            difference = calculateDifference(bitbayOrders['bids'], bitstampOrders['bids'], COMPARISON.MAXMAX)
             printDifference(difference, crypto, "BITBAY sell vs BITSTAMP sell")
+
+
+def ex1c():
+    for crypto in CRYPTOCURRENCIES:
+        bitbayOrders = getOrders(APIS.BITBAY, crypto, BASE_CURRENCY)
+        bitstampOrders = getOrders(APIS.BITSTAMP, crypto, BASE_CURRENCY)
+        if bitbayOrders and bitstampOrders:
+            diff1 = calculateDifference(bitbayOrders['asks'], bitstampOrders['bids'])
+            printDifference(diff1, crypto, "BITBAY buy vs BITSTAMP sell")
+
+            diff2 = calculateDifference(bitstampOrders['asks'], bitbayOrders['bids'])
+            printDifference(diff2, crypto, "BITSTAMP buy vs BITBAY sell")
 
 
 def main():
     setInterval(ex1a, BASE_INTERVAL)
     setInterval(ex1b, BASE_INTERVAL)
+    setInterval(ex1c, BASE_INTERVAL)
 
 
 if __name__ == "__main__":
