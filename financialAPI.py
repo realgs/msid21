@@ -38,7 +38,8 @@ def calculate_difference(curr):
 
 
 def print_differences(curr):
-    print(calculate_difference(curr))
+    print("Difference between buying and selling: ")
+    print(f"{calculate_difference(curr)}%")
     time.sleep(5)
 
 
