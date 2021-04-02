@@ -9,7 +9,7 @@ DEFAULT_TIMEOUT = 3
 TYPES = ['buy', 'sell']
 APIs = ['bittrex', 'bitbay']
 API_FEES = {'bitbay': {'taker': 0.0042, 'transfer': [0.01, 0.001, 0.0005, 3]},
-            'bittrex': {'taker': 0.0075}, 'transfer': [0.006, 0.01, 0.0005, 0]}
+            'bittrex': {'taker': 0.0075, 'transfer': [0.006, 0.01, 0.0005, 0]}}
 BITBAY = 1
 BITTREX = 0
 FUNCTIONS = ['percent_diff_buy', 'percent_diff_sell', 'percent_diff_arbitrage']
@@ -32,8 +32,6 @@ def get_api_path(currency_in_nbr, currency_out_nbr, category_nbr, api_nbr):
                                                   CURRENCIES[currency_in_nbr],
                                                   API_OPTIONS[api]['request'][category_nbr],
                                                   API_OPTIONS[api]['format']))
-        else:
-            return None
     return None
 
 
@@ -42,8 +40,6 @@ def get_response(path):
         resp = requests.get(path, timeout=DEFAULT_TIMEOUT)
         if 200 <= resp.status_code < 300:
             return resp
-        else:
-            return None
     return None
 
 
@@ -67,11 +63,15 @@ def get_best_order(currency_in_nbr, currency_out_nbr, api_nbr):
         return None
 
 
+def count_percent_diff(arg1, arg2):
+    return ((arg2 - arg1)/arg1) * 100
+
+
 def percent_diff_buy(currency_in_nbr, currency_out_nbr):
     if 0 <= currency_in_nbr < len(CURRENCIES) and 0 <= currency_out_nbr < len(CURRENCIES):
         rate_1 = get_best_order(currency_in_nbr, currency_out_nbr, BITTREX)['buy'][0]
         rate_2 = get_best_order(currency_in_nbr, currency_out_nbr, BITBAY)['buy'][0]
-        return ((rate_2 - rate_1) / rate_1) * 100
+        return count_percent_diff(rate_1, rate_2)
     return None
 
 
@@ -79,7 +79,7 @@ def percent_diff_sell(currency_in_nbr, currency_out_nbr):
     if 0 <= currency_in_nbr < len(CURRENCIES) and 0 <= currency_out_nbr < len(CURRENCIES):
         rate_1 = get_best_order(currency_in_nbr, currency_out_nbr, BITTREX)['sell'][0]
         rate_2 = get_best_order(currency_in_nbr, currency_out_nbr, BITBAY)['sell'][0]
-        return ((rate_2 - rate_1) / rate_1) * 100
+        return count_percent_diff(rate_1, rate_2)
     return None
 
 
@@ -96,8 +96,8 @@ def percent_diff_arbitrage(currency_in_nbr, currency_out_nbr, buy_api_nbr, sell_
                 sum_get = (amount - API_FEES[APIs[buy_api_nbr]]['transfer'][currency_out_nbr]) * offer_sell[0]
                 sum_get = sum_get * (1 - API_FEES[APIs[sell_api_nbr]]['taker'])
                 profit = sum_get - sum_pay
-                return [(1 - (sum_pay - sum_get) / sum_get) * 100, profit, amount]
-            return [(1 - (sum_pay - sum_get) / sum_get) * 100]
+                return [count_percent_diff(sum_pay, sum_get), profit, amount]
+            return [count_percent_diff(sum_pay, sum_get)]
     return None
 
 
@@ -123,13 +123,14 @@ def run_and_print(task, *args):
 
 
 def main():
-    pool = Pool()
-    results = [pool.apply_async(update, [percent_diff_buy, USD, BTC]),
-               pool.apply_async(update, [percent_diff_sell, USD, BTC]),
-               pool.apply_async(update, [percent_diff_arbitrage, USD, BTC, BITBAY, BITTREX]),
-               pool.apply_async(update, [percent_diff_arbitrage, USD, BTC, BITBAY, BITTREX, True])]
-    for r in results:
-        r.get()
+    with Pool(processes=5) as pool:
+        results = [pool.apply_async(update, [percent_diff_buy, USD, BTC]),
+                   pool.apply_async(update, [percent_diff_sell, USD, BTC]),
+                   pool.apply_async(update, [percent_diff_arbitrage, USD, BTC, BITBAY, BITTREX]),
+                   pool.apply_async(update, [percent_diff_arbitrage, USD, BTC, BITBAY, BITTREX, True]),
+                   pool.apply_async(update, [percent_diff_arbitrage, USD, BTC, BITTREX, BITBAY, True])]
+        for r in results:
+            r.get()
 
 
 if __name__ == '__main__':
