@@ -1,5 +1,6 @@
 import requests
 import time
+from multiprocessing import Pool
 
 CURRENCIES = ['ETH', 'LTC', 'BTC', 'USD']
 USD = 3
@@ -11,24 +12,26 @@ API_FEES = {'bitbay': {'taker': 0.0042, 'transfer': [0.01, 0.001, 0.0005, 3]},
             'bittrex': {'taker': 0.0075}, 'transfer': [0.006, 0.01, 0.0005, 0]}
 BITBAY = 1
 BITTREX = 0
-PATH_BITBAY = 'https://bitbay.net/API/Public/'
-BITBAY_REQUEST_CATEGORY = ['trades', 'orderbook', 'market', 'ticker', 'all']
-DEFAULT_FORMAT = 'json'
-PATH_BITTREX = 'https://api.bittrex.com/api/v1.1/public'
-BITTREX_REQUEST_CATEGORY = ['getorderbook', 'getticker']
-BITTREX_FORMAT = '&type=both'
+FUNCTIONS = ['percent_diff_buy', 'percent_diff_sell', 'percent_diff_arbitrage']
+API_OPTIONS = {'bitbay': {'request': ['trades', 'orderbook', 'market', 'ticker', 'all'],
+                          'path': 'https://bitbay.net/API/Public/', 'format': 'json'},
+               'bittrex': {'request': ['getorderbook', 'getticker'],
+                           'path': 'https://api.bittrex.com/api/v1.1/public', 'format': '&type=both'}}
 
 
 def get_api_path(currency_in_nbr, currency_out_nbr, category_nbr, api_nbr):
     if 0 <= api_nbr < len(APIs) and 0 <= currency_in_nbr < len(CURRENCIES) and 0 <= currency_out_nbr < len(CURRENCIES):
-        if api_nbr == 0 and 0 <= category_nbr < len(BITTREX_REQUEST_CATEGORY):
-            return str('{0}/{1}?market={2}-{3}{4}'.format(PATH_BITTREX, BITTREX_REQUEST_CATEGORY[category_nbr],
+        api = APIs[api_nbr]
+        if api_nbr == BITTREX and 0 <= category_nbr < len(API_OPTIONS[api]['request']):
+            return str('{0}/{1}?market={2}-{3}{4}'.format(API_OPTIONS[api]['path'],
+                                                          API_OPTIONS[api]['request'][category_nbr],
                                                           CURRENCIES[currency_in_nbr], CURRENCIES[currency_out_nbr],
-                                                          BITTREX_FORMAT))
-        elif api_nbr == 1 and 0 <= category_nbr < len(BITBAY_REQUEST_CATEGORY):
-            return str('{0}{1}{2}/{3}.{4}'.format(PATH_BITBAY, CURRENCIES[currency_out_nbr],
-                                                  CURRENCIES[currency_in_nbr], BITBAY_REQUEST_CATEGORY[category_nbr],
-                                                  DEFAULT_FORMAT))
+                                                          API_OPTIONS[api]['format']))
+        elif api_nbr == BITBAY and 0 <= category_nbr < len(API_OPTIONS[api]['request']):
+            return str('{0}{1}{2}/{3}.{4}'.format(API_OPTIONS[api]['path'], CURRENCIES[currency_out_nbr],
+                                                  CURRENCIES[currency_in_nbr],
+                                                  API_OPTIONS[api]['request'][category_nbr],
+                                                  API_OPTIONS[api]['format']))
         else:
             return None
     return None
@@ -93,22 +96,40 @@ def percent_diff_arbitrage(currency_in_nbr, currency_out_nbr, buy_api_nbr, sell_
                 sum_get = (amount - API_FEES[APIs[buy_api_nbr]]['transfer'][currency_out_nbr]) * offer_sell[0]
                 sum_get = sum_get * (1 - API_FEES[APIs[sell_api_nbr]]['taker'])
                 profit = sum_get - sum_pay
-                print(profit, amount)
-            return (1 - (sum_pay - sum_get) / sum_get) * 100
+                return [(1 - (sum_pay - sum_get) / sum_get) * 100, profit, amount]
+            return [(1 - (sum_pay - sum_get) / sum_get) * 100]
     return None
 
 
-def update_profit(cryptocurrency, delay, limit=50):
+def update(task, *args, delay=5):
     while True:
-        # print("Profit for", cryptocurrency, calculate_profit(cryptocurrency, limit)*100, "%")
+        run_and_print(task, *args)
         time.sleep(delay)
 
 
+def run_and_print(task, *args):
+    result = task(*args)
+    if result is not None:
+        if task.__name__ == FUNCTIONS[0]:
+            print("Difference buy", result, "%")
+        elif task.__name__ == FUNCTIONS[1]:
+            print("Difference sell", result, "%")
+        elif task.__name__ == FUNCTIONS[2]:
+            if len(result) > 1:
+                print("Arbitrage percent", result[0], "% buy in", APIs[args[2]], "sell in", APIs[args[3]],
+                      "profit", result[1], CURRENCIES[args[0]], "amount", result[2], CURRENCIES[args[1]])
+            else:
+                print("Arbitrage percent", result[0], "% buy in", APIs[args[2]], "sell in", APIs[args[3]])
+
+
 def main():
-    print(percent_diff_buy(USD, BTC))
-    print(percent_diff_sell(USD, BTC))
-    print(percent_diff_arbitrage(USD, BTC, BITBAY, BITTREX))
-    print(percent_diff_arbitrage(USD, BTC, BITBAY, BITTREX, True))
+    pool = Pool()
+    results = [pool.apply_async(update, [percent_diff_buy, USD, BTC]),
+               pool.apply_async(update, [percent_diff_sell, USD, BTC]),
+               pool.apply_async(update, [percent_diff_arbitrage, USD, BTC, BITBAY, BITTREX]),
+               pool.apply_async(update, [percent_diff_arbitrage, USD, BTC, BITBAY, BITTREX, True])]
+    for r in results:
+        r.get()
 
 
 if __name__ == '__main__':
