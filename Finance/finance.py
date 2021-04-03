@@ -39,13 +39,18 @@ def calculateDifference(currency):
         time.sleep(refresh)
 
 
-print("BTC-USD: ")
-printJSON(getSellBuy(btcUsd, limit10))
-print("LTC-USD:")
-printJSON(getSellBuy(ltcUsd, limit10))
-print("DASH-USD: ")
-printJSON(getSellBuy(dashUsd, limit10))
+def main():
+    print("BTC-USD: ")
+    printJSON(getSellBuy(btcUsd, limit10))
+    print("LTC-USD:")
+    printJSON(getSellBuy(ltcUsd, limit10))
+    print("DASH-USD: ")
+    printJSON(getSellBuy(dashUsd, limit10))
 
-calculateDifference(btcUsd)
-# calculateDifference(ltcUsd)
-# calculateDifference(dashUsd)
+    calculateDifference(btcUsd)
+    # calculateDifference(ltcUsd)
+    # calculateDifference(dashUsd)
+
+
+if __name__ == "__main__":
+    main()
