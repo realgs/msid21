@@ -26,23 +26,27 @@ def main():
 
 def task1():
     for c in Cryptocurrency:
-        print_orders(Operation.BUY, c, Currency.USD)
-        print_orders(Operation.SELL, c, Currency.USD)
+        response = make_request(c, Currency.USD)
+        if response:
+            print_orders(response.json(), Operation.BUY, c, Currency.USD)
+            print_orders(response.json(), Operation.SELL, c, Currency.USD)
+        else:
+            print(f"Error {response.status_code} for {c}-USD request!")
 
 
-def print_orders(operation: Operation, cryptocurrency: Cryptocurrency, currency: Currency, limit: int = 5):
+def make_request(cryptocurrency: Cryptocurrency, currency: Currency):
     cryptocurrency = cryptocurrency.value
     currency = currency.value
-    response = requests.get(f"https://bitbay.net/API/Public/{cryptocurrency}{currency}/orderbook.json").json()
+    return requests.get(f"https://bitbay.net/API/Public/{cryptocurrency}{currency}/orderbook.json")
+
+
+def print_orders(response, operation: Operation, cryptocurrency: Cryptocurrency, currency: Currency, limit: int = 5):
+    cryptocurrency = cryptocurrency.value
+    currency = currency.value
 
     print(f"\n\n# {cryptocurrency}-{currency} {operation.name} ORDERS\n")
 
-    result_table = Texttable()
-    result_table.header(["No.", cryptocurrency, currency])
-    result_table.set_cols_dtype(["i", "t", "f"])
-    result_table.set_cols_align(["l", "r", "r"])
-    result_table.set_precision(2)
-    result_table.set_deco(Texttable.HEADER)
+    result_table = create_table(cryptocurrency, currency)
 
     for x, i in zip(response[operation.value], range(1, limit + 1)):
         amount = "{:.8f}".format(x[1])
@@ -50,6 +54,16 @@ def print_orders(operation: Operation, cryptocurrency: Cryptocurrency, currency:
         result_table.add_row([i, amount, price])
 
     print(result_table.draw())
+
+
+def create_table(cryptocurrency, currency):
+    table = Texttable()
+    table.header(["No.", cryptocurrency, currency])
+    table.set_cols_dtype(["i", "t", "f"])
+    table.set_cols_align(["l", "r", "r"])
+    table.set_precision(2)
+    table.set_deco(Texttable.HEADER)
+    return table
 
 
 def task2():
