@@ -70,7 +70,6 @@ def getOffers(marketSymbol: Tuple[str, str], numberOfOffers: int, apiObject: dic
 
         bids = tradeOffers["bids" if "bids" in tradeOffers else "bid"]
         asks = tradeOffers["asks" if "asks" in tradeOffers else "ask"]
-
         return {"bids": bids, "asks": asks}
     else:
         raise Exception(f'Unable to load a market for {marketSymbol[0]}-{marketSymbol[1]}.')
@@ -83,30 +82,49 @@ def displayOffers(marketSymbol: Tuple[str, str], offers: List[dict[str, float]])
         print(f'Price (1 {marketSymbol[0]}):', f'{offer["rate"]} {marketSymbol[1]} \n')
 
 
-def findPriceDifference(offers1: List[dict[str, float]], offers2: List[dict[str, float]]):
+def findPriceDifferences(offers1: List[dict[str, float]], offers2: List[dict[str, float]]):
     offersSize1 = len(offers1)
     offersSize2 = len(offers2)
     numberOfComparisons = offersSize2 if offersSize1 >= offersSize2 else offersSize1
-
+    priceDifferences = []
     for index in range(numberOfComparisons):
         offersPrice1 = offers1[index]["rate"]
         offersPrice2 = offers2[index]["rate"]
-
         difference = ((offersPrice1 - offersPrice2) / offersPrice1)
-        return difference
+        priceDifferences.append(difference)
+
+    return priceDifferences
 
 
 def printPriceDifference(marketSymbol: Tuple[str, str], tradeOffer: Tuple[dict, dict], operationType: str, difference: float):
     differencePercentage = (1 - difference) * 100
-    print(f'Difference for {marketSymbol}: ', end="")
+    operationWord = 'Buying from' if operationType == "BUY" else 'Selling on'
+
+    print(f'Difference ratio for {marketSymbol}: ', end="")
     print('{:.4f}'.format(differencePercentage) + '% (' + '{:.4f}'.format(difference * 100) + '%)', sep="")
+    print(f"{operationWord} {tradeOffer[0]['title']} instead of {tradeOffer[1]['title']} is", end="")
 
     if operationType == 'BUY':
-        print(
-            f"Buying from {tradeOffer[0]['title']} instead of {tradeOffer[1]['title']} is{'' if difference < 0 else ' not'} worth it as you would {'get additional' if difference < 0 else 'lose'} {'{:.4f}'.format(abs(difference * 100))}%.\n")
+        print(f"{'' if difference < 0 else ' not'} worth it as you would {'get additional' if difference < 0 else 'lose'}", end="")
     elif operationType == "SELL":
-        print(
-            f"Selling on {tradeOffer[0]['title']} instead of {tradeOffer[1]['title']} is{'' if difference > 0 else ' not'} worth it as you would {'get additional' if difference > 0 else 'lose'} {'{:.4f}'.format(abs(difference * 100))}%.\n")
+        print(f"{'' if difference > 0 else ' not'} worth it as you would {'get additional' if difference > 0 else 'lose'}", end="")
+
+    print(f" {'{:.4f}'.format(abs(difference * 100))}%.\n")
+
+
+def handlePriceDifferences(marketSymbol: Tuple[str, str], tradeOffer: Tuple[dict, dict], operationType: str, offers1: List[dict[str, float]], offers2: List[dict[str, float]]):
+    differences = findPriceDifferences(offers1, offers2)
+    for dif in differences:
+        printPriceDifference(marketSymbol, tradeOffer, operationType, dif)
+
+
+def printArbitrationDetails(marketSymbol: Tuple[str, str], tradeOffer: Tuple[dict, dict], buyRate: float, sellRate: float, difference: float):
+    differenceRatio = 1 - difference
+    print(f'The cheapest {marketSymbol[0]} buy rate on {tradeOffer[0]["title"]}: {buyRate}')
+    print(f'The most expensive {marketSymbol[0]} sell rate on {tradeOffer[1]["title"]}: {sellRate}')
+    print(f'Arbitration ratio for {marketSymbol[0]} -> {marketSymbol[1]}: ' + '{:.4f}'.format(differenceRatio * 100) + '%')
+    print(f"The transaction is{'' if difference > 0 else ' not'} worth it as you will have "
+          f"{'{:.3f}'.format((1 + difference) * 100)}% of your initial balance.")
 
 
 def calculateFees(takerApi: dict, transferApi: dict, marketSymbol: Tuple[str, str], volume: float):
@@ -115,76 +133,61 @@ def calculateFees(takerApi: dict, transferApi: dict, marketSymbol: Tuple[str, st
     return volume * takerFee + transferFee
 
 
-def calculateDifference(marketSymbol: Tuple[str, str], apis: Tuple[dict, dict], numberOfOffers: int, refreshDelay: int,
-                        operationType: str):
+def printAdvArbitrationDetails(marketSymbol: Tuple[str, str], transactionVolume: float, totalFee: float, volumeAfterFees: float, difference: float, differenceRatio: float, profit: float):
+    print(f'Transaction volume: {transactionVolume} {marketSymbol[0]}')
+    print(f'Total fee: ' + '{:.8f}'.format(totalFee) + f' {marketSymbol[0]}')
+    print(f'Transaction volume reduced by fees: ' + '{:.8f}'.format(volumeAfterFees) + f' {marketSymbol[0]}')
+
+    print(f'Arbitration rate: ' + '{:.3f}'.format(differenceRatio) + '% (' + '{:.3f}'.format(difference * 100) + '%)')
+    print(f'Profit: ' + '{:.3f}'.format(profit) + f' {marketSymbol[1]}')
+
+
+def calculateDifference(marketSymbol: Tuple[str, str], apis: Tuple[dict, dict], numberOfOffers: int, refreshDelay: int, operationType: str):
     while True:
         offers1 = getOffers(marketSymbol, numberOfOffers, apis[0])
         offers2 = getOffers(marketSymbol, numberOfOffers, apis[1])
         if offers1 and offers2:
-            buyOffers1 = offers1["asks"]
-            sellOffers1 = offers1["bids"]
-            buyOffers2 = offers2["asks"]
-            sellOffers2 = offers2["bids"]
+            buyOffers1, sellOffers1 = offers1["asks"], offers1["bids"]
+            buyOffers2, sellOffers2 = offers2["asks"], offers2["bids"]
 
             if operationType == "BUY":
-                difference = findPriceDifference(buyOffers1, buyOffers2)
-                print(difference)
-                printPriceDifference(marketSymbol, apis, operationType, difference)
+                handlePriceDifferences(marketSymbol, apis, operationType, buyOffers1, buyOffers2)
             elif operationType == "SELL":
-                difference = findPriceDifference(sellOffers1, sellOffers1)
-                printPriceDifference(marketSymbol, apis, operationType, difference)
-            elif operationType == "ARB":
-                # findPriceDifference(marketSymbol, apis, buyOffers1, buyOffers2, "BUY")
-                # findPriceDifference(marketSymbol, apis, sellOffers1, sellOffers2, "SELL")
+                handlePriceDifferences(marketSymbol, apis, operationType, sellOffers1, sellOffers2)
+            elif operationType == "ARB" or operationType == "ARB+":
+                handlePriceDifferences(marketSymbol, apis, "BUY", buyOffers1, buyOffers2)
+                handlePriceDifferences(marketSymbol, apis, "SELL", sellOffers1, sellOffers2)
 
                 cheapestBuy = min(filter(lambda val: val["rate"] is not None, buyOffers1), key=lambda val: val["rate"])
-                mostExpensiveSell = max(filter(lambda val: val["rate"] is not None, sellOffers2),
-                                        key=lambda val: val["rate"])
-                difference = (mostExpensiveSell["rate"] - cheapestBuy["rate"]) / cheapestBuy["rate"]
-                differenceRatio = (1 - difference)
-
-                print(f'The cheapest {marketSymbol[0]} buy rate on {apis[0]["title"]}: {cheapestBuy["rate"]}')
-                print(
-                    f'The most expensive {marketSymbol[0]} sell rate on {apis[1]["title"]}: {mostExpensiveSell["rate"]}')
-                print(f'Arbitration ratio for {marketSymbol[0]} -> {marketSymbol[1]}: '
-                      + '{:.3f}'.format(differenceRatio * 100) + '%')
-
-                print(f"The transaction is{'' if difference > 0 else ' not'} worth it as you will have "
-                      f"{'{:.3f}'.format((1 + difference) * 100)}% of your initial balance.")
-
-            else:
-                cheapestBuy = min(filter(lambda val: val["rate"] is not None, buyOffers1), key=lambda val: val["rate"])
-                mostExpensiveSell = max(filter(lambda val: val["rate"] is not None, sellOffers2),
-                                        key=lambda val: val["rate"])
-
-                transactionVolume = min(cheapestBuy["quantity"], mostExpensiveSell["quantity"])
-                totalFee = calculateFees(apis[0], apis[1], marketSymbol, transactionVolume)
-                print(f'Transaction volume: {transactionVolume} {marketSymbol[0]}')
-                print(f'Total fee: ' + '{:.8f}'.format(totalFee) + f' {marketSymbol[0]}')
-                transactionVolume -= totalFee
-                print(f'Transaction volume reduced by fees: {transactionVolume} {marketSymbol[0]}')
-
-                # percentage difference
+                mostExpensiveSell = max(filter(lambda val: val["rate"] is not None, sellOffers2), key=lambda val: val["rate"])
                 difference = (mostExpensiveSell["rate"] - cheapestBuy["rate"]) / cheapestBuy["rate"]
                 differenceRatio = (1 - difference) * 100
-                print(f'Arbitration rate: {differenceRatio}%')
-                # profit difference
-                profitDifference = cheapestBuy["rate"] - mostExpensiveSell["rate"]
-                profit = profitDifference * transactionVolume
-                print(f'Profit: {profit} {marketSymbol[1]}')
 
+                if operationType == "ARB":
+                    printArbitrationDetails(marketSymbol, apis, cheapestBuy["rate"], mostExpensiveSell["rate"], difference)
+                else:
+                    transactionVolume = min(cheapestBuy["quantity"], mostExpensiveSell["quantity"])
+                    totalFee = calculateFees(apis[0], apis[1], marketSymbol, transactionVolume)
+                    volumeAfterFees = transactionVolume - totalFee
+                    profitDifference = mostExpensiveSell["rate"] - cheapestBuy["rate"]
+                    profit = profitDifference * volumeAfterFees
+
+                    #print(cheapestBuy["rate"] * volumeAfterFees, mostExpensiveSell["rate"] * volumeAfterFees)
+
+                    printAdvArbitrationDetails(marketSymbol, transactionVolume, totalFee, volumeAfterFees, difference, differenceRatio, profit)
         sleep(refreshDelay)
 
 
 def main():
-    baseCurrency = 'ETH'
-    marketSymbol = ('XLM', baseCurrency)
-
+    baseCurrency = 'USD'
+    marketSymbol = ('ETH', baseCurrency)
     tradeOrder = (APIS[0], APIS[1])
     numberOfOffers = 5
     refreshDelay = 20
-    calculateDifference(marketSymbol, tradeOrder, numberOfOffers, refreshDelay, "BUY")
-    # calculateDifference(marketSymbol, tradeOrder, numberOfOffers, refreshDelay, "ARB+")
+
+    operationTypes = ['BUY', 'SELL', 'ARB', 'ARB+']
+    operationType = operationTypes[3]
+    calculateDifference(marketSymbol, tradeOrder, numberOfOffers, refreshDelay, operationType)
 
 
 if __name__ == "__main__":
