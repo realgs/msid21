@@ -1,5 +1,6 @@
 import requests
 from enum import Enum
+from texttable import Texttable
 
 
 class Operation(Enum):
@@ -34,12 +35,21 @@ def print_orders(operation: Operation, cryptocurrency: Cryptocurrency, currency:
     currency = currency.value
     response = requests.get(f"https://bitbay.net/API/Public/{cryptocurrency}{currency}/orderbook.json").json()
 
-    print(f"\n\n# {cryptocurrency}-{currency} {operation.name} orders\n")
+    print(f"\n\n# {cryptocurrency}-{currency} {operation.name} ORDERS\n")
+
+    result_table = Texttable()
+    result_table.header(["No.", cryptocurrency, currency])
+    result_table.set_cols_dtype(["i", "t", "f"])
+    result_table.set_cols_align(["l", "r", "r"])
+    result_table.set_precision(2)
+    result_table.set_deco(Texttable.HEADER)
 
     for x, i in zip(response[operation.value], range(1, limit + 1)):
         amount = "{:.8f}".format(x[1])
-        price = "{:.2f}".format(round(x[0] * x[1], 2))
-        print(f"{i}. {amount} {cryptocurrency} - {price} {currency}")
+        price = round(x[0] * x[1], 2)
+        result_table.add_row([i, amount, price])
+
+    print(result_table.draw())
 
 
 def task2():
