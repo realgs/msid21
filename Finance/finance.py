@@ -40,6 +40,9 @@ def calculateDifference(currency):
 
 
 def main():
+    print('Key - description: ')
+    print('ra - rate, ca - current amount of cryptocurrency, sa - starting amount')
+    print('pa - amount before last change, co - amount of orders')
     print("BTC-USD: ")
     printJSON(getSellBuy(btcUsd, limit10))
     print("LTC-USD:")
