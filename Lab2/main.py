@@ -17,11 +17,10 @@ class Cryptocurrency(Enum):
 
 class Currency(Enum):
     USD = "USD"
-    # PLN = "PLN"
 
 
 def main():
-    # task1()
+    task1()
     task2()
 
 
@@ -32,7 +31,7 @@ def task1():
             print_orders(response.json(), Operation.BUY, c, Currency.USD)
             print_orders(response.json(), Operation.SELL, c, Currency.USD)
         else:
-            print(f"Error {response.status_code} for {c}/USD request!")
+            print(f"Error {response.status_code} for {c.value}/USD request!")
 
 
 def make_request(cryptocurrency: Cryptocurrency, currency: Currency):
@@ -47,7 +46,7 @@ def print_orders(response, operation: Operation, cryptocurrency: Cryptocurrency,
 
     print(f"\n\n# {cryptocurrency}/{currency} {operation.name} ORDERS\n")
 
-    result_table = create_table(cryptocurrency, currency)
+    result_table = create_table(["No.", cryptocurrency, currency], ["l", "c", "c"], ["i", "t", "f"], ["l", "r", "r"])
 
     for x, i in zip(response[operation.value], range(1, limit + 1)):
         amount = "{:.8f}".format(x[1])
@@ -57,13 +56,14 @@ def print_orders(response, operation: Operation, cryptocurrency: Cryptocurrency,
     print(result_table.draw())
 
 
-def create_table(cryptocurrency, currency):
+def create_table(header, header_align, cols_dtype, cols_align, precision=2, deco=Texttable.HEADER):
     table = Texttable()
-    table.header(["No.", cryptocurrency, currency])
-    table.set_cols_dtype(["i", "t", "f"])
-    table.set_cols_align(["l", "r", "r"])
-    table.set_precision(2)
-    table.set_deco(Texttable.HEADER)
+    table.header(header)
+    table.set_header_align(header_align)
+    table.set_cols_dtype(cols_dtype)
+    table.set_cols_align(cols_align)
+    table.set_precision(precision)
+    table.set_deco(deco)
     return table
 
 
@@ -77,28 +77,22 @@ def task2():
                 responses.append(response.json())
                 currencies.append([c, Currency.USD])
             else:
-                print(f"Error {response.status_code} for {c}/USD request!")
+                print(f"Error {response.status_code} for {c.value}/USD request!")
 
         print_differences(responses, currencies)
         time.sleep(5)
 
 
 def print_differences(responses, currencies):
-    table = Texttable()
-    table.header(["CURRENCIES", "BID", "ASK", "%"])
-    table.set_cols_dtype(["t", "f", "f", "f"])
-    table.set_cols_align(["l", "r", "r", "r"])
-    table.set_precision(2)
-    table.set_deco(Texttable.HEADER)
+    differences_table = create_table(["CURRENCIES", "BID", "ASK", "%"], ["l", "c", "c", "c"], ["i", "f", "f", "f"], ["c", "r", "r", "r"])
 
     for r, c in zip(responses, currencies):
         bid = r["bids"][0][0]
         ask = r["asks"][0][0]
         result = (1 - (ask - bid) / bid) * 100
-        table.add_row([f"{c[0].value}/{c[1].value}", bid, ask, result])
+        differences_table.add_row([f"{c[0].value}/{c[1].value}", bid, ask, result])
 
-    print()
-    print(table.draw())
+    print("\n", differences_table.draw())
 
 
 if __name__ == '__main__':
