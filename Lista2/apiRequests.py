@@ -27,7 +27,7 @@ def print_offers(currency):
             print_category(offers["bids"])
         else:
             print("No bids for this one!")
-        print("Asks:")
+        print("\nAsks:")
         if offers.get("asks", None):
             print_category(offers["asks"])
         else:
@@ -67,7 +67,7 @@ def print_price_diffrence(currency):
             percentage = "{:.2%}".format(diffrence)
             print(f"Check No. {i + 1}: {percentage}")
         else:
-            print(f"Oops, something went wrong witch check No. {i + 1}")
+            print(f"Oops, selling and/or buying prices could not be read for check No. {i + 1}")
         time.sleep(WAITING_TIME)
         i += 1
     print()
