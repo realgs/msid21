@@ -5,7 +5,7 @@ API = "https://bitbay.net/API/Public/"
 BASE_CURRENCY = "USD"
 INSTRUMENTS = ["BTC", "ETH", "XLM"]
 TIMEOUT_SEC = 5.0
-DEFAULT_ORDER_NUM = 3
+DEFAULT_ORDER_NUM = 5
 
 
 def make_request(url):
@@ -17,7 +17,7 @@ def make_request(url):
         return response
 
 
-def get_orders(instrument, base=BASE_CURRENCY, size=3):
+def get_orders(instrument, base=BASE_CURRENCY, size=DEFAULT_ORDER_NUM):
     content = make_request(f"{API}{instrument}{base}/orderbook.json").json()
     try:
         buys = dict(content["bids"][:size])
@@ -64,7 +64,7 @@ def ex1():
 # Zad 2 (5 pkt)
 def ex2():
     pds = price_diff_stream("BTC")
-    for _ in range(3):
+    for _ in range(5):
         print(next(pds))
 
 
