@@ -1,17 +1,14 @@
-from typing import Optional
-
 import requests
 from time import sleep
 
 API = "https://bitbay.net/API/Public/"
 BASE_CURRENCY = "USD"
-INSTRUMENTS = ["BTC", "ETH", "LTC"]
-INTERVAL = 5
-BASE_LIMIT = 20
-FIND_AVERAGE_PROFIT = False
+INSTRUMENTS = ["BTC", "ETH", "XLM"]
+TIMEOUT_SEC = 5.0
+DEFAULT_ORDER_NUM = 3
 
 
-def make_request(url: str) -> Optional[requests.Response]:
+def make_request(url):
     response = requests.get(url)
     if response.status_code not in range(200, 300):
         print(f"Request for {url} failed")
@@ -20,8 +17,7 @@ def make_request(url: str) -> Optional[requests.Response]:
         return response
 
 
-def get_orders(instrument: str, base: str = BASE_CURRENCY, size: int = 3) -> tuple[dict[float, float],
-                                                                                   dict[float, float]]:
+def get_orders(instrument, base=BASE_CURRENCY, size=3):
     content = make_request(f"{API}{instrument}{base}/orderbook.json").json()
     try:
         buys = dict(content["bids"][:size])
@@ -29,11 +25,11 @@ def get_orders(instrument: str, base: str = BASE_CURRENCY, size: int = 3) -> tup
         return buys, sells
     except KeyError:
         print(f"Your request for {instrument}{base} failed to produce a valid response")
-        return {0.0: 0.0}, {0.0: 0.0}
+        return {1.0: -1.0}, {1.0: -1.0}
 
 
-def print_orders(orders: tuple[dict[float, float], dict[float, float]], instrument: str, base: str = BASE_CURRENCY):
-    print(f"Instrument: {instrument}{base}")
+def print_orders(orders, instrument, base=BASE_CURRENCY):
+    print(f"\nInstrument: {instrument}{base}")
     buys, sells = orders
     print("Buy orders:")
     for price, amount in buys.items():
@@ -43,30 +39,32 @@ def print_orders(orders: tuple[dict[float, float], dict[float, float]], instrume
         print(f"\t{amount}{instrument} for {price * amount}{base} @ {instrument}{base} = {price}")
 
 
-def print_pair(instrument: str, base: str = BASE_CURRENCY, size: int = 3):
+def print_pair(instrument, base=BASE_CURRENCY, size=DEFAULT_ORDER_NUM):
     print_orders(get_orders(instrument, base, size), instrument, base)
 
 
-def get_price_diff(instrument: str, base: str = BASE_CURRENCY) -> float:
+def get_price_diff(instrument, base=BASE_CURRENCY):
     buys, sells = get_orders(instrument, base, size=1)
     diff = 1 - ((list(sells.keys())[0] - list(buys.keys())[0]) / list(buys.keys())[0])
     return diff
 
 
-def price_diff_stream(instrument: str, base: str = BASE_CURRENCY, timeout: float = 5.0):
+def price_diff_stream(instrument, base=BASE_CURRENCY, timeout=TIMEOUT_SEC):
     while True:
         yield get_price_diff(instrument, base)
         sleep(timeout)
 
 
+# Zad 1 (5 pkt)
 def ex1():
     for i in INSTRUMENTS:
         print_pair(i)
 
 
+# Zad 2 (5 pkt)
 def ex2():
     pds = price_diff_stream("BTC")
-    for _ in range(10):
+    for _ in range(3):
         print(next(pds))
 
 
