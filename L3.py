@@ -29,9 +29,7 @@ def get_data_from_url(url):
         return None
 
 
-def get_bittrex_orders(cryptocurrency, currency=BASE_CURRENCY, quantity=ORDERS_COUNT):
-    market = f"{cryptocurrency}-{currency}"
-    orders = get_data_from_url(f"{API_BITTREX}/{REQUEST_ORDERBOOK_BITTREX.format(market=market)}")
+def format_bittrex_orders(orders, quantity=ORDERS_COUNT):
     if orders is not None:
         bids = orders["bid"][:quantity]
         bids_list = list()
@@ -55,9 +53,7 @@ def get_bittrex_orders(cryptocurrency, currency=BASE_CURRENCY, quantity=ORDERS_C
     return None
 
 
-def get_bitbay_orders(cryptocurrency, currency=BASE_CURRENCY, quantity=ORDERS_COUNT):
-    market = f"{cryptocurrency}{currency}"
-    orders = get_data_from_url(f"{API_BITBAY}/{REQUEST_ORDERBOOK_BITBAY.format(market=market)}")
+def format_bitbay_orders(orders, quantity=ORDERS_COUNT):
     if orders is not None:
         bids = orders["bids"][:quantity]
         bids_list = list()
@@ -82,10 +78,14 @@ def get_bitbay_orders(cryptocurrency, currency=BASE_CURRENCY, quantity=ORDERS_CO
 
 def get_market_orders(api, cryptocurrency, currency=BASE_CURRENCY, quantity=ORDERS_COUNT):
     if api == MARKET_API.BITBAY:
-        return get_bitbay_orders(cryptocurrency, currency, quantity)
+        market = f"{cryptocurrency}{currency}"
+        orders = get_data_from_url(f"{API_BITBAY}/{REQUEST_ORDERBOOK_BITBAY.format(market=market)}")
+        return format_bitbay_orders(orders, quantity)
 
     if api == MARKET_API.BITTREX:
-        return get_bittrex_orders(cryptocurrency, currency, quantity)
+        market = f"{cryptocurrency}-{currency}"
+        orders = get_data_from_url(f"{API_BITTREX}/{REQUEST_ORDERBOOK_BITTREX.format(market=market)}")
+        return format_bittrex_orders(orders, quantity)
     return None
 
 
@@ -155,8 +155,8 @@ def ex1c():
 
 
 def main():
-#    ex1a()
-#    ex1b()
+    ex1a()
+    ex1b()
     ex1c()
 
 
