@@ -60,24 +60,14 @@ def getSellBuyOffers(exchangeMarket, cypto, curency, offersLimit):
     return None
 
 
-def findPriceDifferencesRatio(tradeOffer1, tradeOffer2, operation):
-    buyOffers1 = tradeOffer1['bids']
-    buyOffers2 = tradeOffer2['bids']
-    sellOffers1 = tradeOffer1['asks']
-    sellOffers2 = tradeOffer2['asks']
-    countBuyOffers1 = len(buyOffers1)
-    countBuyOffers2 = len(buyOffers2)
-    countSellOffers1 = len(sellOffers1)
-    countSellOffers2 = len(sellOffers2)
-    commonTradeOffers = min(countBuyOffers1, countBuyOffers2, countSellOffers1, countSellOffers2)
+def findPriceDifferencesRatio(tradeOffer1, tradeOffer2):
+    countTradeOffers1 = len(tradeOffer1)
+    countTradeOffers2 = len(tradeOffer2)
+    commonTradeOffersCount = min(countTradeOffers1, countTradeOffers2)
     differenceList = []
-    for i in range(commonTradeOffers):
-        if operation == Operations.BUY:
-            difference = (1 - (buyOffers1[i][0] - buyOffers2[i][0] / buyOffers2[i][0])) * 100
-            differenceList.append(difference)
-        elif operation == Operations.SELL:
-            difference = (1 - (sellOffers1[i][0] - sellOffers2[i][0]) / sellOffers2[i][0]) * 100
-            differenceList.append(difference)
+    for i in range(commonTradeOffersCount):
+        difference = (1 - ((tradeOffer1[i][0] - tradeOffer2[i][0]) / (tradeOffer2[i][0]))) * 100
+        differenceList.append(difference)
 
     return differenceList
 
@@ -88,14 +78,34 @@ def printDifferencesRatio(differences, crypto, currency, operation):
         print(difference)
 
 
+def printArbitrationDifferenceRatio(cheapestBuyOffer, expensiveSellOffer, differenceRatio):
+    print("The cheapest buy offer on the first market: ", cheapestBuyOffer)
+    print("The expensive sell offer on the second market: ", expensiveSellOffer)
+    print("Arbitration difference ratio: ", differenceRatio)
+
+
 def calculatePriceDifference(exchangeMarket: tuple, crypto, currency, offersLimit, delayOfExploringData, operation):
     tradeOffer1 = getSellBuyOffers(exchangeMarket[0], crypto, currency, offersLimit)
     tradeOffer2 = getSellBuyOffers(exchangeMarket[1], crypto, currency, offersLimit)
-
-    if operation in [Operations.SELL, Operations.BUY]:
-        differences = findPriceDifferencesRatio(tradeOffer1, tradeOffer2, operation)
+    buyOffers1 = tradeOffer1['bids']
+    buyOffers2 = tradeOffer2['bids']
+    sellOffers1 = tradeOffer1['asks']
+    sellOffers2 = tradeOffer2['asks']
+    print(tradeOffer1)
+    print(tradeOffer2)
+    if operation == Operations.BUY.value:
+        differences = findPriceDifferencesRatio(buyOffers1, buyOffers2)
         printDifferencesRatio(differences, crypto, currency, operation)
-    elif operation in Operations.ARB:
-        
+    elif operation == Operations.SELL.value:
+        differences = findPriceDifferencesRatio(sellOffers1, sellOffers2)
+        printDifferencesRatio(differences, crypto, currency, operation)
+    elif operation == Operations.ARB.value:
+        sortedBuyOffers = sorted(buyOffers1, key=lambda x: x[0])
+        theCheapestBuyOffer = sortedBuyOffers[0][0]
+        reverseSortedSellOffers = sorted(sellOffers2, key=lambda x: x[0], reverse=True)
+        theMostExpensiveSellOffer = reverseSortedSellOffers[0][0]
+        differenceRatio = (1 - ((theMostExpensiveSellOffer - theCheapestBuyOffer) / (theCheapestBuyOffer))) * 100
+        printArbitrationDifferenceRatio(theCheapestBuyOffer, theMostExpensiveSellOffer, differenceRatio)
 
-calculatePriceDifference((TRADE_MARKETS[0], TRADE_MARKETS[1]), 'BTC', 'USD', 10, 0, 'SELL')
+
+calculatePriceDifference((TRADE_MARKETS[0], TRADE_MARKETS[1]), 'BTC', 'USD', 10, 0, 'ARBITRATION')
