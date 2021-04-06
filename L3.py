@@ -1,4 +1,5 @@
 import requests
+import time
 from enum import Enum
 
 
@@ -11,9 +12,10 @@ REQUEST_ORDERBOOK_BITTREX = "markets/{market}/orderbook"
 # Default variables
 BASE_CURRENCY = "USD"
 ORDERS_COUNT = 4
+DIFFERENCE_PRECISION = 2
 
 # Other
-CRYPTOCURRENCIES = ["BTC", "LTC", "DASH", "XRP", "BCC"]
+CRYPTOCURRENCIES = ["BTC", "LTC", "ETH", "XRP"]
 
 # Enums
 MARKET_API = Enum("MARKET_API", "BITBAY BITTREX")
@@ -80,7 +82,7 @@ def get_bitbay_orders(cryptocurrency, currency=BASE_CURRENCY, quantity=ORDERS_CO
 
 def get_market_orders(api, cryptocurrency, currency=BASE_CURRENCY, quantity=ORDERS_COUNT):
     if api == MARKET_API.BITBAY:
-        return get_bittrex_orders(cryptocurrency, currency, quantity)
+        return get_bitbay_orders(cryptocurrency, currency, quantity)
 
     if api == MARKET_API.BITTREX:
         return get_bittrex_orders(cryptocurrency, currency, quantity)
@@ -123,9 +125,39 @@ def ex1b():
     print()
 
 
+def ex1c():
+    markets_pair = (MARKET_API.BITBAY, MARKET_API.BITTREX)
+    for crypto in CRYPTOCURRENCIES:
+        time.sleep(1)
+        fst_orders = get_market_orders(markets_pair[1], crypto, quantity=1)
+        snd_orders = get_market_orders(markets_pair[0], crypto, quantity=1)
+        fail_index = -1
+        if fst_orders is None:
+            fail_index = 0
+        if snd_orders is None:
+            fail_index = 1
+        if fail_index == -1:
+            best_bid = fst_orders["bids"][0]
+            best_ask = snd_orders["asks"][0]
+            diff = (float(best_bid["price"]) - float(best_ask["price"]))\
+                / float(best_ask["price"]) * 100
+            print(f"{markets_pair[0].name}/{markets_pair[1].name} {crypto}-{BASE_CURRENCY} difference: {diff:.2f}%")
+
+            rev_best_bid = snd_orders["bids"][0]
+            rev_best_ask = fst_orders["asks"][0]
+            rev_diff = (float(rev_best_bid["price"]) - float(rev_best_ask["price"]))\
+                       / float(rev_best_ask["price"]) * 100
+            print(f"{markets_pair[1].name}/{markets_pair[0].name} {crypto}-{BASE_CURRENCY} difference: {rev_diff:.2f}%")
+#            print(f"Best bid: {best_bid['price']}")
+#            print(f"Best ask: {best_ask['price']}")
+        else:
+            print(f"Failed to get {crypto} data from {markets_pair[fail_index].name}")
+
+
 def main():
-    ex1a()
-    ex1b()
+#    ex1a()
+#    ex1b()
+    ex1c()
 
 
 if __name__ == "__main__":
