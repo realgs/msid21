@@ -22,15 +22,11 @@ def get_data_bitbay(curr1, curr2):
 
 
 def get_data_bitfinex(curr1, curr2):
-    try:
-        data = get_data(URL_BITFINEX.format(curr1, curr2)).json()
-    except AttributeError:
-        pass
+    data = get_data(URL_BITFINEX.format(curr1, curr2)).json()
     return [data[0], data[1]], [data[2], data[3]]
 
 
 def print_bids_asks_loop(curr1):
-
     exit_event = threading.Event()
 
     def print_loop():
@@ -39,15 +35,32 @@ def print_bids_asks_loop(curr1):
                 break
 
             try:
-                data_bitfinex = get_data_bitfinex(curr1, BASE_CURRENCY)
-                data_bitbay = get_data_bitbay(curr1, BASE_CURRENCY)
+                bid_bitfinex, ask_bitfinex = get_data_bitfinex(curr1, BASE_CURRENCY)
+                bid_bitbay, ask_bitbay = get_data_bitbay(curr1, BASE_CURRENCY)
             except AttributeError:
                 print("API Error")
                 return
 
+            # asks % diff
+            print("Lowest {} ask difference in %, BitFinex to BitBay".format(curr1))
+            print(str((ask_bitfinex[0] - ask_bitbay[0]) / ask_bitfinex[0] * 100) + "%")
+
+            # bids % diff
+            print("Highest {} bid difference in %, BitFinex to BitBay".format(curr1))
+            print(str((bid_bitfinex[0] - bid_bitbay[0]) / bid_bitfinex[0] * 100) + "%")
+
+            # bid to sell % diff
+            bitfinex_to_bitbay = (bid_bitfinex[0] - ask_bitbay[0]) / bid_bitfinex[0]
+            bitbay_to_bitfinex = (bid_bitbay[0] - ask_bitfinex[0]) / bid_bitbay[0]
+
+            print("Buying {} on BitFinex to selling on BitBay".format(curr1))
+            print(str(bitfinex_to_bitbay * 100) + "%")
+
+            print("Buying {} on BitBay to selling on BitFinex".format(curr1))
+            print(str(bitbay_to_bitfinex * 100) + "%")
+
             time.sleep(SLEEP)
 
-    print("Printing bids and asks diff % for", curr1, "in a loop\nPress enter to exit the application")
     th = threading.Thread(target=print_loop)
     th.start()
     input()
@@ -56,8 +69,4 @@ def print_bids_asks_loop(curr1):
 
 
 if __name__ == '__main__':
-    bid, ask = get_data_bitfinex("BTC", "USD")
-    print(bid, ask)
-    bid, ask = get_data_bitbay("BTC", "USD")
-    print(bid, ask)
-
+    print_bids_asks_loop("BTC")
