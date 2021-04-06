@@ -14,6 +14,24 @@ BASE_CURRENCY = "USD"
 ORDERS_COUNT = 4
 DIFFERENCE_PRECISION = 2
 
+# Fees
+TAKER_FEE_BITBAY = 0.0043
+TRANSFER_FEES_BITBAY = {
+    "BTC": 0.0005,
+    "ETH": 0.01,
+    "LTC": 0.001,
+    "XRP": 0.1
+}
+
+TAKER_FEE_BITTREX = 0.0035
+TRANSFER_FEES_BITTREX = {
+    "BTC": 0.0005,
+    "ETH": 0.006,
+    "LTC": 0.01,
+    "XRP": 1.0
+}
+
+
 # Other
 CRYPTOCURRENCIES = ["BTC", "LTC", "ETH", "XRP"]
 
@@ -128,15 +146,16 @@ def ex1b():
 def ex1c():
     markets_pair = (MARKET_API.BITBAY, MARKET_API.BITTREX)
     for crypto in CRYPTOCURRENCIES:
-        time.sleep(1)
-        fst_orders = get_market_orders(markets_pair[1], crypto, quantity=1)
-        snd_orders = get_market_orders(markets_pair[0], crypto, quantity=1)
+        fst_orders = get_market_orders(markets_pair[0], crypto, quantity=1)
+        snd_orders = get_market_orders(markets_pair[1], crypto, quantity=1)
         fail_index = -1
         if fst_orders is None:
             fail_index = 0
         if snd_orders is None:
             fail_index = 1
         if fail_index == -1:
+#            print("Bitbay: " + str(fst_orders))
+#            print("Bitrex: " + str(snd_orders))
             best_bid = fst_orders["bids"][0]
             best_ask = snd_orders["asks"][0]
             diff = (float(best_bid["price"]) - float(best_ask["price"]))\
