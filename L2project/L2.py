@@ -1,4 +1,5 @@
 import requests
+from time import sleep
 
 API = "https://bitbay.net/API/Public/"
 DEFAULT_USER_CURRENCY = "USD"
@@ -87,13 +88,33 @@ def exercise1(list_of_tuples: list[tuple[str, str]]):
     print("poszlo ex1()")
     show_all_info(list_of_tuples)
 
+def show_percentages(bids_and_asks: list[list[float, float]]):
+    bids = bids_and_asks[0]
+    asks = bids_and_asks[1]
 
-# def exercise2(list_of_tuples: list[tuple[str, str]]):
+    for i in range(len(asks)):
+        askOffer = asks[i][0]
+        for j in range(len(bids)):
+            bidOffer = bids[j][0]
+            spread = askOffer - bidOffer
+            percentage_overall = 1 - (spread/askOffer)
+            print(f"ask offer {i} with offer {j} gives {'%.2f' % (percentage_overall * 100)}%")
+
+
+def exercise2(list_of_currencies: list[tuple[str, str]]):
+    while True:
+        print("*****************************UPDATE*****************************")
+        for currencies in list_of_currencies:
+            bids_and_asks = request_specified_bids_and_asks(currencies)
+            display_info(bids_and_asks, currencies)
+            show_percentages(bids_and_asks)
+        sleep(REFRESH_DATA_TIMEOUT_SEC)
 
 
 def main():
     list_of_tuples = data_to_get()
-    exercise1(list_of_tuples)
+    #exercise1(list_of_tuples)
+    exercise2(list_of_tuples)
 
 
 if __name__ == "__main__":
