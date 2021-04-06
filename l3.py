@@ -1,5 +1,6 @@
+from enum import Enum
+
 import requests
-import enum
 
 TRADE_MARKETS = ['bitbay', 'bittrex']
 MARKETS_URL = ['https://bitbay.net/API/Public/', 'https://api.bittrex.com/v3/markets/']
@@ -24,7 +25,12 @@ TRANSFER_FEES = {
 CRYPTO_CURRENCIES = ['BTC', 'LTC', 'ETH', 'DASH']
 BASE_CURRENCY = 'USD'
 
-OPERATIONS = enum.Enum('BUY', 'SELL', 'ARBITRATION')
+
+class Operations(Enum):
+    BUY = 'BUY'
+    SELL = 'SELL'
+    ARB = 'ARBITRATION'
+
 
 def getDataFromApi(url):
     response = requests.get(url)
@@ -54,19 +60,42 @@ def getSellBuyOffers(exchangeMarket, cypto, curency, offersLimit):
     return None
 
 
-def findPriceDifference(tradeOffer1, tradeOffer2):
+def findPriceDifferencesRatio(tradeOffer1, tradeOffer2, operation):
+    buyOffers1 = tradeOffer1['bids']
+    buyOffers2 = tradeOffer2['bids']
+    sellOffers1 = tradeOffer1['asks']
+    sellOffers2 = tradeOffer2['asks']
+    countBuyOffers1 = len(buyOffers1)
+    countBuyOffers2 = len(buyOffers2)
+    countSellOffers1 = len(sellOffers1)
+    countSellOffers2 = len(sellOffers2)
+    commonTradeOffers = min(countBuyOffers1, countBuyOffers2, countSellOffers1, countSellOffers2)
+    differenceList = []
+    for i in range(commonTradeOffers):
+        if operation == Operations.BUY:
+            difference = (1 - (buyOffers1[i][0] - buyOffers2[i][0] / buyOffers2[i][0])) * 100
+            differenceList.append(difference)
+        elif operation == Operations.SELL:
+            difference = (1 - (sellOffers1[i][0] - sellOffers2[i][0]) / sellOffers2[i][0]) * 100
+            differenceList.append(difference)
+
+    return differenceList
 
 
-def calculatePriceDifference(exchangeMarket, crypto, currency, offersLimit, delayOfExploringData, operation):
- while True:
-      tradeOffer1 = getSellBuyOffers(exchangeMarket, crypto, currency, offersLimit)
-      tradeOffer2 = getSellBuyOffers(exchangeMarket, crypto, currency, offersLimit)
-
-     if operation == OPERATIONS.BUY:
-          findPriceDifference(tradeOffer1, tradeOffer2)
-     elif operation == OPERATIONS.SELL:
-            findPriceDifference(tradeOffer1, tradeOffer2)
+def printDifferencesRatio(differences, crypto, currency, operation):
+    print("Difference ratio in %: " + crypto + currency + ", for " + operation + " offers")
+    for difference in differences:
+        print(difference)
 
 
-getSellBuyOffers(TRADE_MARKETS[0], 'BTC', 'USD', 10);
-getSellBuyOffers(TRADE_MARKETS[1], 'BTC', 'USD', 10);
+def calculatePriceDifference(exchangeMarket: tuple, crypto, currency, offersLimit, delayOfExploringData, operation):
+    tradeOffer1 = getSellBuyOffers(exchangeMarket[0], crypto, currency, offersLimit)
+    tradeOffer2 = getSellBuyOffers(exchangeMarket[1], crypto, currency, offersLimit)
+
+    if operation in [Operations.SELL, Operations.BUY]:
+        differences = findPriceDifferencesRatio(tradeOffer1, tradeOffer2, operation)
+        printDifferencesRatio(differences, crypto, currency, operation)
+    elif operation in Operations.ARB:
+        
+
+calculatePriceDifference((TRADE_MARKETS[0], TRADE_MARKETS[1]), 'BTC', 'USD', 10, 0, 'SELL')
