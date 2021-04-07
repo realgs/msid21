@@ -1,5 +1,6 @@
 import requests
 
+
 class FinancialMarketAPI:
     BASEURL = 'https://bitbay.net/API/Public/'
     VALID_CURRENCY1 = {"BTC", "LTC", "DASH"}
@@ -14,7 +15,7 @@ class FinancialMarketAPI:
             query = self.BASEURL + currency1 + currency2 + "/" + category + ".json"
             response = self.__query(query)
             if response.status_code == 200:
-                return response.text
+                return response.json()
                 # if category == "trades":
                 #     return parse__trades(response.text)
                 # if category == "orderbook":
