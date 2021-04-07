@@ -56,7 +56,7 @@ def calculateSpreadFromBitBay(base, crypto):
             sellOfferPrice = asks[0][0]  # takes the best option
 
             ratio = (1 - (sellOfferPrice - buyOfferPrice) / buyOfferPrice)
-            print(f'Profitability for {base}: {ratio * 100} %')
+            print(f'Spread for {crypto}: {ratio * 100} %')
         else:
             print("Couldn't get data about currencies\n")
 
