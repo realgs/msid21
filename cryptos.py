@@ -18,7 +18,7 @@ class Offer:
         return f'{self.transaction_type} offer for {self.market}, quantity = {self.quantity}, price = {self.price}'
 
 
-def get_offers_from_api(site, market, how_many):
+def get_orders_from_api(site, market, how_many):
     try:
         if site == 'bittrex':
             return get_orders_from_bittrex(market, how_many)
@@ -75,7 +75,7 @@ def convert_bitbay_json_to_offerlist(market, data, how_many):
 def get_offerlist(site, markets, num_offers):
     res_offerlist = []
     for market in markets:
-        from_api = get_offers_from_api(site, market, num_offers)
+        from_api = get_orders_from_api(site, market, num_offers)
         current_market_offer_list = convert_json_to_offerlist(site, market, from_api, num_offers)
         for offer in current_market_offer_list:
             res_offerlist.append(offer)
@@ -100,6 +100,19 @@ def count_ratio(offer1, offer2):
     return 1 - (offer2.price - offer1.price) / offer2.price
 
 
+def count_profit(bid, bid_site, ask, ask_site):
+    quantity_in_deposit = ask.quantity * (1 - FEES[bid_site]['transfer'][bid.market.split('-')[0]]) * \
+                          (1 - FEES[ask_site]['transfer'][ask.market.split('-')[0]])
+    quantity = quantity_in_deposit if quantity_in_deposit < bid.quantity else bid.quantity
+    bid_value = quantity * bid.price * (1 - FEES[bid_site]['taker'])
+    ask_value = quantity * ask.price * (1 - FEES[ask_site]['taker'])
+
+    profit = bid_value - ask_value
+    profit_percentage = profit / (ask.price * ask.quantity)
+
+    return profit, profit_percentage
+
+
 def print_ratio_info(offer1, offer2, ratio_type):
     print(f'{offer1.market} {ratio_type} ratio: ' + '{:.1f}%'.format(count_ratio(offer1, offer2) * 100) +
           f' for prices: {offer2.price}$ and {offer1.price}$')
@@ -111,6 +124,15 @@ def print_profit_info(bid, bid_site, ask, ask_site):
     print(f'Profit for arbitrage {bid_site} - {ask_site} {bid.market} is ' +
           '{:.2f}$. Ratio is: {:.1f}% (with respect to ask value - {:.2f}), quantity is {:.5f}, price is {:.2f}'
           .format(profits[0], profits[1] * 100, quantity * ask.price, quantity, ask.price))
+
+
+def print_ratios(bid_offers, ask_offers, sites):
+    print_ratio_info(ask_offers[sites[0]], ask_offers[sites[1]], 'ask')
+    print_ratio_info(bid_offers[sites[0]], bid_offers[sites[1]], 'bid')
+    print_ratio_info(bid_offers[sites[0]], ask_offers[sites[1]], 'arbitrage')
+    print_profit_info(bid_offers[sites[0]], sites[0], ask_offers[sites[1]], sites[1])
+    print_ratio_info(bid_offers[sites[1]], ask_offers[sites[0]], 'reverse arbitrage')
+    print_profit_info(bid_offers[sites[1]], sites[1], ask_offers[sites[0]], sites[0])
 
 
 def print_data(sites, markets, offers):
@@ -126,28 +148,6 @@ def print_data(sites, markets, offers):
         print_ratios(bid_offers, ask_offers, sites)
         bid_offers.clear()
         ask_offers.clear()
-
-
-def print_ratios(bid_offers, ask_offers, sites):
-    print_ratio_info(ask_offers[sites[0]], ask_offers[sites[1]], 'ask')
-    print_ratio_info(bid_offers[sites[0]], bid_offers[sites[1]], 'bid')
-    print_ratio_info(bid_offers[sites[0]], ask_offers[sites[1]], 'arbitrage')
-    print_profit_info(bid_offers[sites[0]], sites[0], ask_offers[sites[1]], sites[1])
-    print_ratio_info(bid_offers[sites[1]], ask_offers[sites[0]], 'reverse arbitrage')
-    print_profit_info(bid_offers[sites[1]], sites[1], ask_offers[sites[0]], sites[0])
-
-
-def count_profit(bid, bid_site, ask, ask_site):
-    quantity_in_deposit = ask.quantity * (1 - FEES[bid_site]['transfer'][bid.market.split('-')[0]]) * \
-                          (1 - FEES[ask_site]['transfer'][ask.market.split('-')[0]])
-    quantity = quantity_in_deposit if quantity_in_deposit < bid.quantity else bid.quantity
-    bid_value = quantity * bid.price * (1 - FEES[bid_site]['taker'])
-    ask_value = quantity * ask.price * (1 - FEES[ask_site]['taker'])
-
-    profit = bid_value - ask_value
-    profit_percentage = profit / (ask.price * ask.quantity)
-
-    return profit, profit_percentage
 
 
 def get_datastream():
