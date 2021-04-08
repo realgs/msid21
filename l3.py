@@ -24,12 +24,15 @@ TRANSFER_FEES = {
 }
 CRYPTO_CURRENCIES = ['BTC', 'LTC', 'ETH', 'DASH']
 BASE_CURRENCY = 'USD'
+DELAY_OF_EXPLORING_DATA = 5
+DATA_LIMIT = 10
 
 
-class Operations(Enum):
-    BUY = 'BUY'
-    SELL = 'SELL'
-    ARBITRATION = 'ARBITRATION'
+class Operation(Enum):
+    BUY = "BUY"
+    SELL = "SELL"
+    ARBITRATION = "ARBITRATION"
+    ARBITRATION_EXTENDED = "ARBITRATION WITH FEES"
 
 
 def getDataFromApi(url):
@@ -79,32 +82,42 @@ def printDifferencesRatio(differences, crypto, currency, operation):
 
 
 def printArbitrationTransactionInfo(exchangeMarket: tuple, cheapestBuyOffer, expensiveSellOffer, differenceRatio,
-                                    realTransactionVolume=0, profit=0):
+                                    volume=0, realTransactionVolume=0, profitPercentage=0, profit=0,
+                                    operation=Operation.ARBITRATION.value):
+
+    print("Info for: ", operation)
     print("The cheapest buy offer on: " + exchangeMarket[0] + " is: ", cheapestBuyOffer)
-    print("The expensive sell offer on: " + exchangeMarket[1] + ' is: ', expensiveSellOffer)
+    print("The most expensive sell offer on: " + exchangeMarket[1] + ' is: ', expensiveSellOffer)
     print("Arbitration difference ratio ", differenceRatio, '%')
+    print("Transaction volume: ", volume)
     print("Transaction volume after calculated fees: ", realTransactionVolume)
-    print("Potential profit of arbitration transaction: ", profit)
+    print("Profit percentage: ", profitPercentage, '%')
+    print("Potential profit of arbitration transaction: ", profit, 'USD')
 
 
 def calculateArbitrageDifferenceRatio(theCheapestBuyOffer, theMostExpensiveSellOffer):
-    differenceRatio = (1 - ((theMostExpensiveSellOffer - theCheapestBuyOffer) / (theCheapestBuyOffer))) * 100
+    differenceRatio = (1 - ((theMostExpensiveSellOffer - theCheapestBuyOffer) / theCheapestBuyOffer)) * 100
     return differenceRatio
 
 
 def calculateTransactionVolumeAfterFees(exchangeMarket: tuple, transactionVolume, crypto):
-    takerFee = 0
+    buyTakerFee = 0
+    sellTakerFee = 0
     transferFee = 0
 
     if exchangeMarket[0] == TRADE_MARKETS[0]:
-        takerFee = TAKER_FEES['bitbay']
+        buyTakerFee = TAKER_FEES['bitbay']
         transferFee = TRANSFER_FEES['bitbay'][crypto]
+        sellTakerFee = TAKER_FEES['bittrex']
     elif exchangeMarket[0] == TRADE_MARKETS[1]:
-        takerFee = TAKER_FEES['bittrex']
+        buyTakerFee = TAKER_FEES['bittrex']
         transferFee = TRANSFER_FEES['bittrex'][crypto]
+        sellTakerFee = TAKER_FEES['bitbay']
 
-    fee = transactionVolume * takerFee + transferFee
-    transactionVolume -= fee
+    buyFee = transactionVolume * buyTakerFee
+    sellFee = transactionVolume * sellTakerFee
+    fee = buyFee + sellFee + transferFee
+    transactionVolume = transactionVolume - fee
     return transactionVolume
 
 
@@ -114,41 +127,49 @@ def calculateArbitrageProfit(realTransactionVolume, theCheapestBuyOffer, theMost
     return profit
 
 
-def calculatePriceDifference(exchangeMarket: tuple, crypto, currency, offersLimit, delayOfExploringData, operation):
+def calculatePriceDifferences(exchangeMarket: tuple, crypto, currency, offersLimit, delayOfExploringData):
     while True:
         tradeOffer1 = getSellBuyOffers(exchangeMarket[0], crypto, currency, offersLimit)
         tradeOffer2 = getSellBuyOffers(exchangeMarket[1], crypto, currency, offersLimit)
+        print(tradeOffer1)
+        print(tradeOffer2)
         buyOffers1 = tradeOffer1['bids']
         buyOffers2 = tradeOffer2['bids']
         sellOffers1 = tradeOffer1['asks']
         sellOffers2 = tradeOffer2['asks']
-        if operation == Operations.BUY.value:
-            differences = findPriceDifferencesRatio(buyOffers1, buyOffers2)
-            printDifferencesRatio(differences, crypto, currency, operation)
-        elif operation == Operations.SELL.value:
-            differences = findPriceDifferencesRatio(sellOffers1, sellOffers2)
-            printDifferencesRatio(differences, crypto, currency, operation)
-        elif operation == Operations.ARBITRATION.value:
-            sortedBuyOffers = sorted(buyOffers1, key=lambda x: x[0])
-            theCheapestBuyOffer = sortedBuyOffers[0][0]
-            reverseSortedSellOffers = sorted(sellOffers2, key=lambda x: x[0], reverse=True)
-            theMostExpensiveSellOffer = reverseSortedSellOffers[0][0]
-            differenceRatio = calculateArbitrageDifferenceRatio(theCheapestBuyOffer, theMostExpensiveSellOffer)
-            # arbitration without fees
-            # printArbitrationTransactionInfo(exchangeMarket, theCheapestBuyOffer, theMostExpensiveSellOffer,
-            #                               differenceRatio)
-            # arbitration with fees
-            transactionVolume = min(sortedBuyOffers[0][1], reverseSortedSellOffers[0][1])
-            realTransactionVolume = calculateTransactionVolumeAfterFees(exchangeMarket, transactionVolume, crypto)
-            profit = calculateArbitrageProfit(realTransactionVolume, theCheapestBuyOffer, theMostExpensiveSellOffer)
-            printArbitrationTransactionInfo(exchangeMarket, theCheapestBuyOffer, theMostExpensiveSellOffer,
-                                            differenceRatio, realTransactionVolume, profit)
+        # buy operation
+        differences = findPriceDifferencesRatio(buyOffers1, buyOffers2)
+        printDifferencesRatio(differences, crypto, currency, Operation.BUY.value)
+
+        # sell operation
+        differences = findPriceDifferencesRatio(sellOffers1, sellOffers2)
+        printDifferencesRatio(differences, crypto, currency, Operation.SELL.value)
+
+        # arbitration and extended arbitration
+        sortedBuyOffers = sorted(buyOffers1, key=lambda x: x[0])
+        theCheapestBuyOffer = sortedBuyOffers[0][0]
+        reverseSortedSellOffers = sorted(sellOffers2, key=lambda x: x[0], reverse=True)
+        theMostExpensiveSellOffer = reverseSortedSellOffers[0][0]
+        differenceRatio = calculateArbitrageDifferenceRatio(theCheapestBuyOffer, theMostExpensiveSellOffer)
+
+        # arbitration without fees
+        printArbitrationTransactionInfo(exchangeMarket, theCheapestBuyOffer, theMostExpensiveSellOffer,
+                                        differenceRatio)
+
+        # arbitration with fees
+        transactionVolume = min(sortedBuyOffers[0][1], reverseSortedSellOffers[0][1])
+        realTransactionVolume = calculateTransactionVolumeAfterFees(exchangeMarket, transactionVolume, crypto)
+        profit = calculateArbitrageProfit(realTransactionVolume, theCheapestBuyOffer, theMostExpensiveSellOffer)
+        profitPercentage = (profit / (theMostExpensiveSellOffer * realTransactionVolume)) * 100
+        printArbitrationTransactionInfo(exchangeMarket, theCheapestBuyOffer, theMostExpensiveSellOffer, differenceRatio,
+                                        transactionVolume, realTransactionVolume, profitPercentage, profit,
+                                        Operation.ARBITRATION_EXTENDED.value)
 
         sleep(delayOfExploringData)
 
 
 def main():
-    calculatePriceDifference((TRADE_MARKETS[0], TRADE_MARKETS[1]), 'BTC', 'USD', 10, 5, 'ARBITRATION')
+    calculatePriceDifferences((TRADE_MARKETS[0], TRADE_MARKETS[1]), 'BTC', BASE_CURRENCY, DATA_LIMIT, DELAY_OF_EXPLORING_DATA)
 
 
 if __name__ == '__main__':
