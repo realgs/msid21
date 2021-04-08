@@ -3,6 +3,7 @@ import time
 import requests
 
 BASE_CURRENCY = 'USD'
+CRYPTOS = ['BTC', 'LTC', 'ETH']
 FEES = {'bittrex': {'taker': 0.25, 'transfer': {'BTC': 0.0005, 'LTC': 0.01, 'ETH': 0.006}},
         'bitbay': {'taker': 0.4, 'transfer': {'BTC': 0.0001, 'LTC': 0.1, 'ETH': 0.01}}}
 
@@ -108,7 +109,7 @@ def count_profit(bid, bid_site, ask, ask_site):
     ask_value = quantity * ask.price * (1 - FEES[ask_site]['taker'])
 
     profit = bid_value - ask_value
-    profit_percentage = profit / (ask.price * ask.quantity)
+    profit_percentage = profit / (ask.price * quantity)
 
     return profit, profit_percentage
 
@@ -122,7 +123,7 @@ def print_profit_info(bid, bid_site, ask, ask_site):
     profits = count_profit(bid, bid_site, ask, ask_site)
     quantity = bid.quantity if bid.quantity < ask.quantity else ask.quantity
     print(f'Profit for arbitrage {bid_site} - {ask_site} {bid.market} is ' +
-          '{:.2f}$. Ratio is: {:.1f}% (with respect to ask value - {:.2f}), quantity is {:.5f}, price is {:.2f}'
+          '{:.2f}$. Ratio is: {:.1f}% (with respect to ask value - {:.2f}$), quantity is {:.5f}, price is {:.2f}'
           .format(profits[0], profits[1] * 100, quantity * ask.price, quantity, ask.price))
 
 
@@ -142,8 +143,8 @@ def print_data(sites, markets, offers):
     for market_name in markets:
         for site in sites:
             temp_offer_list = list(filter(lambda offer: offer.market == market_name, offers[site]))
-            bid_offers[site] = (list(filter(lambda offer: offer.transaction_type == 'bid', temp_offer_list))[0])
-            ask_offers[site] = (list(filter(lambda offer: offer.transaction_type == 'ask', temp_offer_list))[0])
+            bid_offers[site] = list(filter(lambda offer: offer.transaction_type == 'bid', temp_offer_list))[0]
+            ask_offers[site] = list(filter(lambda offer: offer.transaction_type == 'ask', temp_offer_list))[0]
 
         print_ratios(bid_offers, ask_offers, sites)
         bid_offers.clear()
@@ -151,8 +152,7 @@ def print_data(sites, markets, offers):
 
 
 def get_datastream():
-    markets = ['BTC', 'LTC', 'ETH']
-    market_list = [market + '-' + BASE_CURRENCY for market in markets]
+    market_list = [market + '-' + BASE_CURRENCY for market in CRYPTOS]
     site_list = ['bittrex', 'bitbay']
     while True:
         data = get_data(site_list, market_list)
