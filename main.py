@@ -133,8 +133,8 @@ def ex1a():
         bitstampOrders = getOrders(API.BITSTAMP, crypto, BASE_CURRENCY)
         if bitbayOrders and bitstampOrders:
             difference = calculatePercentageDifference(
-                getBestOrder(bitbayOrders['asks']),
-                getBestOrder(bitstampOrders['asks']),
+                getBestOrder(bitbayOrders['bids'], COMPARISON.MAX),
+                getBestOrder(bitstampOrders['bids'], COMPARISON.MAX),
             )
             printPercentageDifference(
                 difference, crypto, "BITBAY:b vs BITSTAMP:b")  # :b = buy, :s = sell
@@ -147,8 +147,8 @@ def ex1b():
         bitstampOrders = getOrders(API.BITSTAMP, crypto, BASE_CURRENCY)
         if bitbayOrders and bitstampOrders:
             difference = calculatePercentageDifference(
-                getBestOrder(bitbayOrders['bids'], COMPARISON.MAX),
-                getBestOrder(bitstampOrders['bids'], COMPARISON.MAX),
+                getBestOrder(bitbayOrders['asks']),
+                getBestOrder(bitstampOrders['asks']),
             )
             printPercentageDifference(
                 difference, crypto, "BITBAY:s vs BITSTAMP:s")  # :b = buy, :s = sell
@@ -177,8 +177,8 @@ def ex1c():
                     getBestOrder(orders[trade[1]]['asks'], COMPARISON.MAX)
                 )
                 printPercentageDifference(
-                    diff, 
-                    crypto, 
+                    diff,
+                    crypto,
                     f"{trade[0].name}:b vs {trade[1].name}:s"
                 )  # :b = buy, :s = sell
 
@@ -202,8 +202,10 @@ def ex2():
             # Calculating difference (profit)
             if trade[0] in orders and trade[1] in orders:
                 bestBuyOrder = getBestOrder(orders[trade[0]]['bids'])
-                bestSellOrder = getBestOrder(orders[trade[1]]['asks'], COMPARISON.MAX)
-                fees = calculateFees(trade[0], trade[1], crypto, min(bestBuyOrder[1], bestSellOrder[1]))
+                bestSellOrder = getBestOrder(
+                    orders[trade[1]]['asks'], COMPARISON.MAX)
+                fees = calculateFees(trade[0], trade[1], crypto, min(
+                    bestBuyOrder[1], bestSellOrder[1]))
 
                 diff = calculateDifference(
                     bestBuyOrder,
