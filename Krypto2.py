@@ -15,9 +15,9 @@ BITBAY_FEES = {
 }
 
 CURRENCIES = {'dolar': 'USD', 'bitcoin': 'BTC', 'ethereum': 'ETH'}
-printDelay = 5
+PRINT_DELAY = 5
 
-# [currency, crypto,  [ bidPrice, ammountOfBidPrice, askPrice, ammountOfAskPrice ], ... ]
+
 def downloadData(currencyToBuy, currency):
     data = {'currency': currency, 'currencyToBuy': currencyToBuy}
     try:
@@ -42,8 +42,10 @@ def downloadData(currencyToBuy, currency):
 
     return data
 
+
 def calculatePercentDifferecne(price1, price2):
     return (price1-price2)/price2*100
+
 
 def printPriceDifference(data):
     print("BID price difference: " + str(abs(calculatePercentDifferecne(data['bittrexBidPrice'], data['bitbayBidPrice']))) + "%")
@@ -71,7 +73,9 @@ def calculateProfit(data):
 
     if(bayTrexProfit < trexBayProfit):
         return [trexBayBuyCost, trexBayProfit, (trexBayProfit/trexBayBuyCost)*100, data['currency']]
-    else: return [bayTrexBuyCost, bayTrexProfit, (bayTrexProfit/bayTrexBuyCost)*100, data['currency']]
+    else: 
+        return [bayTrexBuyCost, bayTrexProfit, (bayTrexProfit/bayTrexBuyCost)*100, data['currency']]
+
 
 def printProfit(data):
     print('Measures submitted to arbitration = ' + str(data[0]) + ' ' + data[3])
@@ -81,12 +85,12 @@ def printProfit(data):
 
 
 def main():
-    while 1 > 0:
+    while True:
         data = downloadData(CURRENCIES['bitcoin'], CURRENCIES['dolar'])
         printPriceDifference(data)
         printProfit(calculateProfit(data))
 
-        time.sleep(printDelay)
+        time.sleep(PRINT_DELAY)
 
 
 if __name__ == '__main__':
