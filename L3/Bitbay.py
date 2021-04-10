@@ -4,12 +4,9 @@ import time
 TIME_TO_WAIT=5
 API="https://bitbay.net/API/Public/{}{}/orderbook.json"
 CURRENCY="USD"
-ARRAY=["BTC", "LTC", "DASH"]
+ARRAY=["BTC", "LTC", "ETH"]
 
-SNDAPI="https://api.bittrex.com/api/v1.1/public/getorderbook?market=BTC-LTC&type=both"
-res=requests.get("https://api.bittrex.com/api/v1.1/public/getorderbook?market=BTC-LTC&type=both")
-
-def jprint(obj, val):
+def jsonPrint(obj, val):
     print("---"+val+"---")
     print("BIDS:")
     i=0
@@ -32,16 +29,16 @@ def getData(link: str):
 def connect():
     response1=getData(API.format("BTC", CURRENCY))
     response2 = getData(API.format("LTC", CURRENCY))
-    response3 = getData(API.format("DASH", CURRENCY))
+    response3 = getData(API.format("ETH", CURRENCY))
     return (response1, response2, response3)
 
 def show(response, val):
     if response is not None:
-        jprint(response.json(), val)
+        jsonPrint(response.json(), val)
 
 show(getData(API.format("BTC", CURRENCY)), "BTC")
 show(getData(API.format("LTC", CURRENCY)), "LTC")
-show(getData(API.format("DASH", CURRENCY)), "DASH")
+show(getData(API.format("ETH", CURRENCY)), "ETH")
 
 def compute(buy: float, sell: float):
     return (1 - ((sell - buy)/buy))
@@ -61,3 +58,11 @@ def update():
         time.sleep(TIME_TO_WAIT)
 
 update()
+
+#-------------------------------------------
+
+def getField(json, i, action):
+    if action=="asks":
+        return (json["asks"][i][0], json["asks"][i][1])
+    else:
+        return (json["bids"][i][0], json["bids"][i][1])
