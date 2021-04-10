@@ -1,10 +1,14 @@
 import requests
 import time
+import L3
 
 TIME_TO_WAIT=5
 API="https://bitbay.net/API/Public/{}{}/orderbook.json"
 CURRENCY="USD"
 ARRAY=["BTC", "LTC", "ETH"]
+
+def apiFormat(baseCurrency, currency):
+    return API.format(currency, baseCurrency)
 
 def jsonPrint(obj, val):
     print("---"+val+"---")
@@ -36,12 +40,12 @@ def show(response, val):
     if response is not None:
         jsonPrint(response.json(), val)
 
-show(getData(API.format("BTC", CURRENCY)), "BTC")
-show(getData(API.format("LTC", CURRENCY)), "LTC")
-show(getData(API.format("ETH", CURRENCY)), "ETH")
 
-def compute(buy: float, sell: float):
-    return (1 - ((sell - buy)/buy))
+def getField(json, i, action):
+    if action=="asks":
+        return (json["asks"][i][0], json["asks"][i][1])
+    else:
+        return (json["bids"][i][0], json["bids"][i][1])
 
 def update():
     while True:
@@ -51,18 +55,8 @@ def update():
             print(ARRAY[i])
             j=0
             while j<3:
-                print("Difference: ", compute(responses[i].json()["bids"][j][0], responses[i].json()["asks"][j][0]))
+                print("Difference: ", L3.compute(getField(responses[i].json(), j, "bids")[0], getField(responses[i].json(), j, "asks")[0]))
                 j+=1
             i+=1
             time.sleep(1)
         time.sleep(TIME_TO_WAIT)
-
-update()
-
-#-------------------------------------------
-
-def getField(json, i, action):
-    if action=="asks":
-        return (json["asks"][i][0], json["asks"][i][1])
-    else:
-        return (json["bids"][i][0], json["bids"][i][1])

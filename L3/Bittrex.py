@@ -1,5 +1,6 @@
 import requests
 import time
+import L3
 
 #[RATE, AMOUNT]
 
@@ -7,6 +8,9 @@ TIME_TO_WAIT=5
 CURRENCY="USD"
 ARRAY=["BTC", "LTC", "ETH"]
 API="https://api.bittrex.com/api/v1.1/public/getorderbook?market={}-{}&type=both"
+
+def apiFormat(baseCurrency, currency):
+    return API.format(baseCurrency, currency)
 
 def jsonPrint(obj, val):
     print("---"+val+"---")
@@ -20,8 +24,6 @@ def jsonPrint(obj, val):
     while i<3:
         print(obj["result"]['sell'][i])
         i+=1
-
-
 
 
 def getData(link: str):
@@ -40,12 +42,11 @@ def show(response, val):
     if response is not None:
         jsonPrint(response.json(), val)
 
-show(getData(API.format(CURRENCY, "BTC")), "BTC")
-show(getData(API.format(CURRENCY, "LTC")), "LTC")
-show(getData(API.format(CURRENCY, "ETH")), "ETH")
-
-def compute(buy: float, sell: float):
-    return (1 - ((sell - buy)/buy))
+def getField(json, i, action):
+    if action=="asks":
+        return (json["result"]["sell"][i][1], json["result"]["sell"][i][0])
+    else:
+        return (json["result"]["buy"][i][1], json["result"]["buy"][i][0])
 
 def update():
     while True:
@@ -55,18 +56,8 @@ def update():
             print(ARRAY[i])
             j=0
             while j<3:
-                print("Difference: ", compute(responses[i].json()["result"]['buy'][j]['Rate'], responses[i].json()["result"]['sell'][j]['Rate']))
+                print("Difference: ", L3.compute(responses[i].json()["result"]['buy'][j]['Rate'], responses[i].json()["result"]['sell'][j]['Rate']))
                 j+=1
             i+=1
             time.sleep(1)
         time.sleep(TIME_TO_WAIT)
-
-update()
-
-#-----------------------------------------------
-
-def getField(json, i, action):
-    if action=="sell":
-        return (json["result"]["sell"][i][1], json["result"]["sell"][i][0])
-    else:
-        return (json["result"]["buy"][i][1], json["result"]["buy"][i][0])
