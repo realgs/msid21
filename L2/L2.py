@@ -4,6 +4,7 @@ import time
 TIME_TO_WAIT=5
 API="https://bitbay.net/API/Public/{}{}/orderbook.json"
 CURRENCY="USD"
+ARRAY={"BTC", "LTC", "DASH"}
 
 #ZADANIE 1
 def jprint(obj, val):
@@ -26,10 +27,12 @@ def getData(link: str):
     else: return None
 
 def connect():
-    response1=getData(API.format("BTC", CURRENCY))
-    response2 = getData(API.format("LTC", CURRENCY))
-    response3 = getData(API.format("DASH", CURRENCY))
-    return (response1, response2, response3)
+    responses=[]
+    i=0
+    while i<len(ARRAY):
+        responses[i]=getData(API.format(ARRAY[i], CURRENCY))
+        i+=1
+    return (responses[0], responses[1], responses[2])
 
 def show(response):
     if response is not None:
@@ -47,13 +50,8 @@ def update():
     while True:
         responses = connect()
         i=0
-        while i<3:
-            if i==0:
-                print("---BTC---")
-            elif i==1:
-                print("---LTC---")
-            else:
-                print("---DASH---")
+        while i<len(ARRAY):
+            print(ARRAY[i])
             j=0
             while j<3:
                 print("Difference: ", compute(responses[i].json()["bids"][j][0], responses[i].json()["asks"][j][0]))
