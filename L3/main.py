@@ -132,9 +132,9 @@ def calculateArbitrage(toPurchase, toSell):
                 if purchase[1] == 0:
                     toPurchase.remove(purchase)
                     break
-    profit = earnedMoney - spentMoney
-    percentage_earned = profit / spentMoney * 100 if spentMoney != 0 else 0
-    return spentMoney, percentage_earned, profit
+    profit = (earnedMoney - spentMoney)
+    arbitrage = ((profit / spentMoney) * 100) if spentMoney != 0 else 0
+    return spentMoney, arbitrage, profit
 
 
 # exc 2
@@ -179,4 +179,4 @@ def exc1And2(crypto, stockName1, stockName2):
 
 
 if __name__ == "__main__":
-    exc1And2(CRYPTO_CURRENCIES[1], APIS[0]["stockName"], APIS[1]["stockName"])
+    exc1And2(CRYPTO_CURRENCIES[0], APIS[0]["stockName"], APIS[1]["stockName"])
