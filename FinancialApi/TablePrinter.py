@@ -3,12 +3,23 @@ MIN_COLUMN_SIZE = 20
 TABLE_SEPARATOR = "|"
 
 
-def printTableRow(cellSize, *headrs):
+def printSingleSizeRow(cellSize, *texts):
     columnSize = MIN_COLUMN_SIZE * cellSize + \
         len(TABLE_SEPARATOR) * (cellSize - 1)
     output = TABLE_SEPARATOR
 
-    for header in headrs:
-        output += f"{header:^{columnSize}}{TABLE_SEPARATOR}"
+    for text in texts:
+        output += f"{text:^{columnSize}}{TABLE_SEPARATOR}"
+
+    print(output)
+
+
+def printMultiSizeRow(*pairs):
+    output = TABLE_SEPARATOR
+
+    for pair in pairs:
+        columnSize = MIN_COLUMN_SIZE * pair[0] + \
+            len(TABLE_SEPARATOR) * (pair[0] - 1)
+        output += f"{pair[1]:^{columnSize}}{TABLE_SEPARATOR}"
 
     print(output)
