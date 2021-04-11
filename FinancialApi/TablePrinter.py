@@ -1,4 +1,3 @@
-PRECISION = 4
 MIN_COLUMN_SIZE = 20
 TABLE_SEPARATOR = "|"
 
@@ -23,3 +22,9 @@ def printMultiSizeRow(*pairs):
         output += f"{pair[1]:^{columnSize}}{TABLE_SEPARATOR}"
 
     print(output)
+
+
+def printHorizontalSeparator(columns):
+    dashesAmount = MIN_COLUMN_SIZE * columns + \
+        len(TABLE_SEPARATOR) * (columns - 1)
+    print(TABLE_SEPARATOR + ('-' * dashesAmount) + TABLE_SEPARATOR)

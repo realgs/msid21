@@ -1,5 +1,6 @@
 MAX_NORMALIZED_RECORDS = 6
 
+
 def getNormalizedTemplate():
     return {
         'buys': [],

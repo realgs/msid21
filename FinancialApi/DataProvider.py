@@ -29,3 +29,7 @@ def fetchNormalizedData(apiName, *urlArgs):
         return registeredApis[apiName]['normalizer'](response.json())
     else:
         return None
+
+
+def getRegisteredApiNames():
+    return list(registeredApis)

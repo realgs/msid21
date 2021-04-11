@@ -10,7 +10,7 @@ APIS = [
         'apiName': "BITTREX",
         'urlPattern': "https://api.bittrex.com/v3/markets/{}-{}/orderbook",
         'dataNormalizer': Normalizers.bittrexNormalizer
-    }
+    },
 ]
 
 
