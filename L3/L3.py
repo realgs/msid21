@@ -23,30 +23,34 @@ def getData(link: str):
 def findBest(r1, r2, nrOfCurrency):
     transferFeeBittrex=FEES_BITTREX[nrOfCurrency]
     transferFeeBitbay = FEES_BITBAY[nrOfCurrency]
-    print(transferFeeBittrex)
-    print(transferFeeBitbay)
-    print("- - - - - - - - - - - -")
-    boolean = False
+    amountToBeArbitrated = 0.0
+    inplus = False
     i = 0
-    diff = -1000
-    computedDiff=0
+    diff = 0
+    computedDiff=diff
     while i < 3:
         j = 0
         while j < 3:
-            buyOnBitbay = Bitbay.getField(r1.json(), j, "sells")[0] * Bitbay.getField(r1.json(), j, "sells")[1] - (Bitbay.getField(r1.json(), j, "sells")[0] * Bitbay.getField(r1.json(), j, "sells")[1] * BITBAY_TAKER)
-            buyOnBittrex = Bittrex.getField(r2.json(), j, "sells")[0] * Bittrex.getField(r2.json(), j, "sells")[1] - (Bittrex.getField(r2.json(), j, "sells")[0] * Bittrex.getField(r2.json(), j, "sells")[1] * BITREX_TAKER)
-            sellOnBitbay = Bitbay.getField(r1.json(), j, "bids")[0] * Bitbay.getField(r1.json(), j, "bids")[1] - (Bitbay.getField(r1.json(), j, "bids")[0] * Bitbay.getField(r1.json(), j, "bids")[1] * BITBAY_TAKER)
-            sellOnBittrex = Bittrex.getField(r2.json(), j, "bids")[0] * Bittrex.getField(r2.json(), j, "bids")[1] - (Bittrex.getField(r2.json(), j, "bids")[0] * Bittrex.getField(r2.json(), j, "bids")[1] * BITREX_TAKER)
-            if Bitbay.getField(r1.json(), j, "sells")[1] > Bittrex.getField(r2.json(), j, "bids")[1]:
-                computedDiff = (buyOnBitbay - sellOnBittrex) - ((buyOnBitbay - sellOnBittrex) * transferFeeBittrex) - ((buyOnBitbay - sellOnBittrex) * transferFeeBitbay)
-            if computedDiff < buyOnBittrex - sellOnBitbay and Bitbay.getField(r1.json(), j, "sells")[1] < Bittrex.getField(r2.json(), j, "bids")[1]:
-                computedDiff = (buyOnBittrex - sellOnBitbay) - ((buyOnBittrex - sellOnBitbay) * transferFeeBittrex) - ((buyOnBittrex - sellOnBitbay) * transferFeeBitbay)
+            buyOnBitbay = Bitbay.getField(r1.json(), i, "sells")[0] * Bitbay.getField(r1.json(), i, "sells")[1] - (Bitbay.getField(r1.json(), i, "sells")[0] * Bitbay.getField(r1.json(), i, "sells")[1] * BITBAY_TAKER) - (Bitbay.getField(r1.json(), i, "sells")[0] * Bitbay.getField(r1.json(), i, "sells")[1] * transferFeeBitbay)
+            buyOnBittrex = Bittrex.getField(r2.json(), i, "sells")[0] * Bittrex.getField(r2.json(), i, "sells")[1] - (Bittrex.getField(r2.json(), i, "sells")[0] * Bittrex.getField(r2.json(), i, "sells")[1] * BITREX_TAKER) - (Bitbay.getField(r1.json(), i, "sells")[0] * Bitbay.getField(r1.json(), i, "sells")[1] * transferFeeBittrex)
+            sellOnBitbay = Bitbay.getField(r1.json(), j, "bids")[0] * Bitbay.getField(r1.json(), j, "bids")[1] - (Bitbay.getField(r1.json(), j, "bids")[0] * Bitbay.getField(r1.json(), j, "bids")[1] * BITBAY_TAKER) - (Bitbay.getField(r1.json(), j, "bids")[0] * Bitbay.getField(r1.json(), j, "bids")[1] * transferFeeBitbay)
+            sellOnBittrex = Bittrex.getField(r2.json(), j, "bids")[0] * Bittrex.getField(r2.json(), j, "bids")[1] - (Bittrex.getField(r2.json(), j, "bids")[0] * Bittrex.getField(r2.json(), j, "bids")[1] * BITREX_TAKER) - (Bittrex.getField(r2.json(), j, "bids")[0] * Bittrex.getField(r2.json(), j, "bids")[1] * transferFeeBittrex)
+            if Bitbay.getField(r1.json(), i, "sells")[1] > Bittrex.getField(r2.json(), j, "bids")[1]:
+                computedDiff = sellOnBittrex - buyOnBitbay
             if computedDiff > diff:
-                diff=computedDiff
-                boolean = True
+                amountToBeArbitrated = Bittrex.getField(r2.json(), j, "bids")[1]
+                diff = computedDiff
+                inplus = True
+            if Bittrex.getField(r2.json(), i, "sells")[1] > Bitbay.getField(r1.json(), j, "bids")[1]:
+                computedDiff = sellOnBitbay - buyOnBittrex
+            if computedDiff > diff:
+                amountToBeArbitrated = Bitbay.getField(r1.json(), j, "bids")[1]
+                diff = computedDiff
+                inplus = True
             j += 1
         i += 1
-    if boolean:
+    if inplus:
+        print("Can be arbitrated: ", amountToBeArbitrated)
         print("Profit: ", diff)
 
 
@@ -58,13 +62,16 @@ while True:
         print(ARRAY[i])
         j = 0
         while j < 3:
-            print("Difference in bids: ", abs(1-compute(Bitbay.getField(responses1[i].json(), j, "bids")[0], Bittrex.getField(responses2[i].json(), j, "bids")[0])))
-            print("Difference in asks: ", abs(1-compute(Bitbay.getField(responses1[i].json(), j, "asks")[0],
+            print("Difference in bids: ", abs(1 - compute(Bitbay.getField(responses1[i].json(), j, "bids")[0], Bittrex.getField(responses2[i].json(), j, "bids")[0])))
+            print("Difference in asks: ", abs(1 - compute(Bitbay.getField(responses1[i].json(), j, "asks")[0],
                                           Bittrex.getField(responses2[i].json(), j, "asks")[0])))
             findBest(responses1[i], responses2[i], i)
             j += 1
         i += 1
+        print("- - - - - - - - - - - -")
         time.sleep(1)
     time.sleep(TIME_TO_WAIT)
+    print("-----------------------------------")
+
 
 update()
