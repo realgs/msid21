@@ -29,6 +29,3 @@ def fetchNormalizedData(apiName, *urlArgs):
         return registeredApis[apiName]['normalizer'](response.json())
     else:
         return None
-
-# for i in range(900):
-#     print(f"{i} is {isValidStatusCode(i)}")
