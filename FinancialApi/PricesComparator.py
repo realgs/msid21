@@ -22,6 +22,18 @@ LINES = [
     }
 ]
 PRECISION = 2
+FEES = {
+    'BITBAY': {
+        'DEPOSIT': 0,
+        'WITHDRAWAL': 0.00050000,
+        'TAKER': 0.0043
+    },
+    'BITTREX': {
+        'DEPOSIT': 0,
+        'WITHDRAWAL': 0,
+        'TAKER': 0.0035
+    }
+}
 
 
 def createComparisonsData(market):
@@ -89,6 +101,28 @@ def createRowCells(comparisonsData, baseName, line):
             )
     return cells
 
+    
+def printArbitrations(comparisonsData, baseCurrency):
+    for baseName in comparisonsData:
+        baseData = comparisonsData[baseName]['data']
+        if baseData:
+            for compareTo in comparisonsData[baseName]['compareTo']:
+                compareData = comparisonsData[compareTo]['data']
+                if compareData:
+                    buyPrice = float(baseData['buys'][0]['price'])
+                    buyPrice += float(FEES[baseName]["WITHDRAWAL"])
+                    
+                    sellPrice = float(compareData['sells'][0]['price'])
+                    sellPrice += sellPrice * float(FEES[baseName]["TAKER"])
+                    sellPrice += float(FEES[baseName]["DEPOSIT"])
+
+                    if sellPrice > buyPrice:
+                        amount = min(float(baseData['buys'][0]['amount']), float(compareData['sells'][0]['amount']))
+                        costs = buyPrice * amount
+                        income = sellPrice * amount
+
+                        print(f"ARBITRATION {baseName} to {compareTo}: \n\t Amount: {amount:.{PRECISION}f} Costs: {costs:.{PRECISION}f} Profit:{calculatePercentDiff(costs, income):.{PRECISION}f}% ({(income - costs):.{PRECISION}f} {baseCurrency})")
+
 
 def printComparisons(comparisonsData):
     compareToAmount = len(comparisonsData) - 1
@@ -104,12 +138,12 @@ def printComparisons(comparisonsData):
             printErrorRow(tableColumns, baseName)
         TablePrinter.printHorizontalSeparator(compareToAmount + 2)
 
-
 def startComparerLoop():
     Configurator.registerAllApis()
     while True:
-        printComparisons(createComparisonsData(MARKET))
-        print("\n")
+        comparisonsData = createComparisonsData(MARKET)
+        printComparisons(comparisonsData)
+        printArbitrations(comparisonsData, MARKET[1])
         time.sleep(5)
 
 

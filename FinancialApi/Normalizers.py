@@ -1,4 +1,4 @@
-MAX_NORMALIZED_RECORDS = 6
+MAX_NORMALIZED_RECORDS = 1
 
 
 def getNormalizedTemplate():
@@ -16,12 +16,12 @@ def bitBayNormalizer(data):
 
     for i in range(min(len(bids), len(asks), MAX_NORMALIZED_RECORDS)):
         normalized['buys'].append({
-            'price': bids[i][0],
-            'amount': bids[i][1]
-        })
-        normalized['sells'].append({
             'price': asks[i][0],
             'amount': asks[i][1]
+        })
+        normalized['sells'].append({
+            'price': bids[i][0],
+            'amount': bids[i][1]
         })
 
     return normalized
