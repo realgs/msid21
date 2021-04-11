@@ -48,9 +48,10 @@ def bittrexNormalizer(data):
     return normalized
 
 
-DataProvider.registerApi(
-    "BITBAY", "https://bitbay.net/API/Public/{}{}/orderbook.json", bitBayNormalizer
-)
-DataProvider.registerApi(
-    "BITTREX", "https://api.bittrex.com/v3/markets/{}-{}/orderbook", bittrexNormalizer
-)
+def registerAllApis():
+    DataProvider.registerApi(
+        "BITBAY", "https://bitbay.net/API/Public/{}{}/orderbook.json", bitBayNormalizer
+    )
+    DataProvider.registerApi(
+        "BITTREX", "https://api.bittrex.com/v3/markets/{}-{}/orderbook", bittrexNormalizer
+    )
