@@ -66,22 +66,19 @@ def get_percentage_difference(first, second):
     return (1 - (first - second) / second) * 100
 
 
-def get_payment(buy_rate, buy_quantity, buy_taker, transfer_fee, with_fees):
+def get_payment(buy_rate, buy_quantity, buy_taker, with_fees):
     if with_fees:
-        payment = buy_rate * buy_quantity \
-                  * (1 + buy_taker / 100) \
-                  + transfer_fee
+        payment = buy_rate * buy_quantity * (1 + buy_taker / 100)
     else:
         payment = buy_rate * buy_quantity
     return payment
 
 
-def get_profit(sell_rate, sell_quantity, sell_taker, with_fees):
+def get_profit(sell_rate, sell_quantity, sell_taker, transfer_fee, with_fees):
     if with_fees:
-        profit = sell_rate * sell_quantity * (1 - sell_taker / 100)
+        profit = sell_rate * (sell_quantity - transfer_fee) * (1 - sell_taker / 100)
     else:
         profit = sell_rate * sell_quantity
-
     return profit
 
 
@@ -105,14 +102,14 @@ def get_arbitrage(arbitrage_code, crypto_currency, response_bitbay, response_bit
 
     if arbitrage_code == 0:
         payment = get_payment(bittrex_rate, transaction_quantity, TAKER_BITTREX,
-                              TRANSFER_FEES_BITTREX[crypto_currency], with_fees)
+                              with_fees)
         profit = get_profit(bitbay_rate, transaction_quantity, TAKER_BITBAY,
-                            with_fees)
+                            TRANSFER_FEES_BITTREX[crypto_currency], with_fees)
     elif arbitrage_code == 1:
         payment = get_payment(bitbay_rate, transaction_quantity, TAKER_BITBAY,
-                              TRANSFER_FEES_BITBAY[crypto_currency], with_fees)
+                              with_fees)
         profit = get_profit(bittrex_rate, transaction_quantity, TAKER_BITTREX,
-                            with_fees)
+                            TRANSFER_FEES_BITBAY[crypto_currency], with_fees)
 
     return [transaction_quantity, payment, profit]
 
