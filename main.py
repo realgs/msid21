@@ -136,8 +136,7 @@ def ex1a():
                 getBestOrder(bitbayOrders['bids'], COMPARISON.MAX),
                 getBestOrder(bitstampOrders['bids'], COMPARISON.MAX),
             )
-            printPercentageDifference(
-                difference, crypto, "BITBAY:b vs BITSTAMP:b")  # :b = buy, :s = sell
+            printPercentageDifference(difference, crypto, "BITBAY:b vs BITSTAMP:b")  # :b = buy, :s = sell
 
 
 def ex1b():
@@ -150,8 +149,7 @@ def ex1b():
                 getBestOrder(bitbayOrders['asks']),
                 getBestOrder(bitstampOrders['asks']),
             )
-            printPercentageDifference(
-                difference, crypto, "BITBAY:s vs BITSTAMP:s")  # :b = buy, :s = sell
+            printPercentageDifference(difference, crypto, "BITBAY:s vs BITSTAMP:s")  # :b = buy, :s = sell
 
 
 def ex1c():
@@ -164,17 +162,21 @@ def ex1c():
     print("Exercise 1c: ")
     for crypto in CRYPTOCURRENCIES:
         for trade in trades:
+            tradekeys = [f"{crypto}-{trade[0]}", f"{crypto}-{trade[1]}"]
+
             # Checking if orders have already been fetched
-            if trade[0] not in orders:
-                orders[trade[0]] = getOrders(trade[0], crypto, BASE_CURRENCY)
-            if trade[1] not in orders:
-                orders[trade[1]] = getOrders(trade[1], crypto, BASE_CURRENCY)
+            if tradekeys[0] not in orders:
+                orders[tradekeys[0]] = getOrders(
+                    trade[0], crypto, BASE_CURRENCY)
+            if tradekeys[1] not in orders:
+                orders[tradekeys[1]] = getOrders(
+                    trade[1], crypto, BASE_CURRENCY)
 
             # Calculating difference (profit)
-            if trade[0] in orders and trade[1] in orders:
+            if tradekeys[0] in orders and tradekeys[1] in orders:
                 diff = calculatePercentageDifference(
-                    getBestOrder(orders[trade[0]]['bids']),
-                    getBestOrder(orders[trade[1]]['asks'], COMPARISON.MAX)
+                    getBestOrder(orders[tradekeys[0]]['bids']),
+                    getBestOrder(orders[tradekeys[1]]['asks'], COMPARISON.MAX)
                 )
                 printPercentageDifference(
                     diff,
@@ -193,17 +195,20 @@ def ex2():
     print("Exercise 2: ")
     for crypto in CRYPTOCURRENCIES:
         for trade in trades:
+            tradekeys = [f"{crypto}-{trade[0]}", f"{crypto}-{trade[1]}"]
+
             # Checking if orders have already been fetched
-            if trade[0] not in orders:
-                orders[trade[0]] = getOrders(trade[0], crypto, BASE_CURRENCY)
-            if trade[1] not in orders:
-                orders[trade[1]] = getOrders(trade[1], crypto, BASE_CURRENCY)
+            if tradekeys[0] not in orders:
+                orders[tradekeys[0]] = getOrders(
+                    trade[0], crypto, BASE_CURRENCY)
+            if tradekeys[1] not in orders:
+                orders[tradekeys[1]] = getOrders(
+                    trade[1], crypto, BASE_CURRENCY)
 
             # Calculating difference (profit)
-            if trade[0] in orders and trade[1] in orders:
-                bestBuyOrder = getBestOrder(orders[trade[0]]['bids'])
-                bestSellOrder = getBestOrder(
-                    orders[trade[1]]['asks'], COMPARISON.MAX)
+            if tradekeys[0] in orders and tradekeys[1] in orders:
+                bestBuyOrder = getBestOrder(orders[tradekeys[0]]['bids'])
+                bestSellOrder = getBestOrder(orders[tradekeys[1]]['asks'], COMPARISON.MAX)
                 fees = calculateFees(trade[0], trade[1], crypto, min(
                     bestBuyOrder[1], bestSellOrder[1]))
 
