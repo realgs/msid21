@@ -22,7 +22,6 @@ MARKET_API = {
             "XRP": 0.1
         }
     },
-
     "BITTREX": {
         "name": "BITTREX",
         "url": "https://api.bittrex.com/v3",
@@ -49,47 +48,39 @@ def get_data_from_url(url):
         return None
 
 
-def format_bittrex_orders(orders, quantity=ORDERS_COUNT):
+def format_orders(api, orders, quantity=ORDERS_COUNT):
+    sel_price = ""
+    sel_volume = ""
+    sel_bid = "bid"
+    sel_ask = "ask"
+    if api == MARKET_API["BITBAY"]:
+        sel_price = 0
+        sel_volume = 1
+        sel_bid = "bids"
+        sel_ask = "asks"
+    elif api == MARKET_API["BITTREX"]:
+        sel_price = "rate"
+        sel_volume = "quantity"
+        sel_bid = "bid"
+        sel_ask = "ask"
+    else:
+        return None
     if orders is not None:
-        bids = orders["bid"][:quantity]
+        bids = orders[sel_bid][:quantity]
         bids_list = list()
         for bid in bids:
             temp_dict = {
-                "price": bid["rate"],
-                "volume": bid["quantity"]
+                "price": bid[sel_price],
+                "volume": bid[sel_volume]
             }
             bids_list.append(temp_dict)
 
-        asks = orders["ask"][:quantity]
+        asks = orders[sel_ask][:quantity]
         asks_list = list()
         for ask in asks:
             temp_dict = {
-                "price": ask["rate"],
-                "volume": ask["quantity"]
-            }
-            asks_list.append(temp_dict)
-
-        return {"bids": bids_list, "asks": asks_list}
-    return None
-
-
-def format_bitbay_orders(orders, quantity=ORDERS_COUNT):
-    if orders is not None:
-        bids = orders["bids"][:quantity]
-        bids_list = list()
-        for bid in bids:
-            temp_dict = {
-                "price": bid[0],
-                "volume": bid[1]
-            }
-            bids_list.append(temp_dict)
-
-        asks = orders["asks"][:quantity]
-        asks_list = list()
-        for ask in asks:
-            temp_dict = {
-                "price": ask[0],
-                "volume": ask[1]
+                "price": ask[sel_price],
+                "volume": ask[sel_volume]
             }
             asks_list.append(temp_dict)
         return {"bids": bids_list, "asks": asks_list}
@@ -100,12 +91,12 @@ def get_market_orders(api, cryptocurrency, currency=BASE_CURRENCY, quantity=ORDE
     if api == MARKET_API["BITBAY"]:
         market = f"{cryptocurrency}{currency}"
         orders = get_data_from_url(f"{api['url']}/{api['orderbook'].format(market=market)}")
-        return format_bitbay_orders(orders, quantity)
+        return format_orders(api, orders, quantity)
 
     if api == MARKET_API["BITTREX"]:
         market = f"{cryptocurrency}-{currency}"
         orders = get_data_from_url(f"{api['url']}/{api['orderbook'].format(market=market)}")
-        return format_bittrex_orders(orders, quantity)
+        return format_orders(api, orders, quantity)
     return None
 
 
@@ -184,13 +175,13 @@ def ex1c():
             best_bid = fst_orders["bids"][0]
             best_ask = snd_orders["asks"][0]
             diff = (float(best_bid["price"]) - float(best_ask["price"])) \
-                   / float(best_ask["price"]) * 100
+                / float(best_ask["price"]) * 100
             print(f"{markets_pair[0]['name']}/{markets_pair[1]['name']} {crypto}-{BASE_CURRENCY} difference: {diff:.2f}%")
 
             rev_best_bid = snd_orders["bids"][0]
             rev_best_ask = fst_orders["asks"][0]
             rev_diff = (float(rev_best_bid["price"]) - float(rev_best_ask["price"])) \
-                       / float(rev_best_ask["price"]) * 100
+                / float(rev_best_ask["price"]) * 100
             print(f"{markets_pair[1]['name']}/{markets_pair[0]['name']} {crypto}-{BASE_CURRENCY} difference: {rev_diff:.2f}%")
         else:
             print(f"Failed to get {crypto} data from {markets_pair[fail_index]['name']}")
@@ -236,7 +227,6 @@ def main():
     thread_bg.start()
     time.sleep(7)
     input("\nType exit and press enter to exit program\n")
-
 
 
 if __name__ == "__main__":
