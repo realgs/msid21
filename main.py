@@ -32,10 +32,10 @@ APIS: List[dict] = [
         'urlFormatFunction': bittrexUrlFormat,
         'takerFee': 0.0075,
         'transferFee': {
-            'BAT': 50.0,
-            'BTC': 0.00015,
-            'ETH': 0.0017,
-            'XLM': 0.005
+            'BAT': 31.0,
+            'BTC': 0.0003,
+            'ETH': 0.0085,
+            'XLM': 0.05
         }
     }
 ]
@@ -105,6 +105,7 @@ def handlePriceDifferences(marketSymbol: Tuple[str, str], tradeOffer: Tuple[dict
     for index in range(numberOfComparisons):
         offersPrice1 = offers1[index]["rate"]
         offersPrice2 = offers2[index]["rate"]
+        print(offersPrice1, offersPrice2)
         difference = ((offersPrice1 - offersPrice2) / offersPrice1)
         printPriceDifference(marketSymbol, tradeOffer, operationType, difference)
 
@@ -138,10 +139,10 @@ def calculateDifference(marketSymbol: Tuple[str, str], apis: Tuple[dict, dict], 
         offers1 = getOffers(marketSymbol, numberOfOffers, apis[0])
         offers2 = getOffers(marketSymbol, numberOfOffers, apis[1])
         if offers1 and offers2:
-            buyOffers1, sellOffers1 = offers1["asks"], offers1["bids"]
-            buyOffers2, sellOffers2 = offers2["asks"], offers2["bids"]
-            # buyOffers1, sellOffers1 = offers1["bids"], offers1["asks"]
-            # buyOffers2, sellOffers2 = offers2["bids"], offers2["asks"]
+            # buyOffers1, sellOffers1 = offers1["asks"], offers1["bids"]
+            # buyOffers2, sellOffers2 = offers2["asks"], offers2["bids"]
+            buyOffers1, sellOffers1 = offers1["bids"], offers1["asks"]
+            buyOffers2, sellOffers2 = offers2["bids"], offers2["asks"]
 
             if operationType == "BUY":
                 handlePriceDifferences(marketSymbol, apis, operationType, buyOffers1, buyOffers2)
@@ -165,8 +166,6 @@ def calculateDifference(marketSymbol: Tuple[str, str], apis: Tuple[dict, dict], 
                     profitDifference = mostExpensiveSell["rate"] - cheapestBuy["rate"]
                     profit = profitDifference * volumeAfterFees
 
-                    #print(cheapestBuy["rate"] * volumeAfterFees, mostExpensiveSell["rate"] * volumeAfterFees)
-
                     printAdvArbitrationDetails(marketSymbol, transactionVolume, totalFee, volumeAfterFees, difference, differenceRatio, profit)
         sleep(refreshDelay)
 
@@ -179,7 +178,7 @@ def main():
     refreshDelay = 20
 
     operationTypes = ['BUY', 'SELL', 'ARB', 'ARB+']
-    operationType = operationTypes[2]
+    operationType = operationTypes[3]
     calculateDifference(marketSymbol, tradeOrder, numberOfOffers, refreshDelay, operationType)
 
 
