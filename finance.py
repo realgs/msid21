@@ -41,14 +41,12 @@ class ProfitSeeker:
         else:
             print("The rate cannot be calculated")
 
-    @staticmethod
-    def _getTransactionData(buyOrder, sellOrder, market1TakerFee, market2TakerFee, market2TransferFee):
+    def _getTransactionData(self, buyOrder, sellOrder, market1TakerFee, market2TakerFee, currency):
         rate = buyOrder['price'] * (1 - market1TakerFee) / sellOrder['price'] * (1 - market2TakerFee)
         quantity = min(buyOrder['quantity'], sellOrder['quantity'])
         priceDiffer = (rate - 1) * quantity
-        exchangeProfit = priceDiffer - priceDiffer * (market1TakerFee + market2TakerFee)
-        withdrewProfit = exchangeProfit - market2TransferFee
-        return rate, quantity, withdrewProfit
+        profit = priceDiffer - self.firstApi.getTransferFee(currency) - self.secondApi.getTransferFee(currency)
+        return rate, quantity, profit
 
     @staticmethod
     def _printFullInfo(buyIn, sellIn, rate, quantity, profit, currency):
@@ -66,9 +64,9 @@ class ProfitSeeker:
         secondApiBuy, secondApiSell = secondApiData['buy'], secondApiData['sell']
 
         rate1, quantity1, profit1 = self._getTransactionData(firstApiBuy, secondApiSell, self.firstApi.getTakerFee(),
-                                                             self.secondApi.getTakerFee(), self.secondApi.getTransferFee(currency))
+                                                             self.secondApi.getTakerFee(), currency)
         rate2, quantity2, profit2 = self._getTransactionData(secondApiBuy, firstApiSell, self.secondApi.getTakerFee(),
-                                                             self.firstApi.getTakerFee(), self.firstApi.getTransferFee(currency))
+                                                             self.firstApi.getTakerFee(), currency)
 
         print("Profit percentage (100% - 0 profit):")
         self._printFullInfo(self.firstApiName, self.secondApiName, rate1, quantity1, profit1, currency)
