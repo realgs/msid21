@@ -82,20 +82,6 @@ def displayOffers(marketSymbol: Tuple[str, str], offers: List[dict[str, float]])
         print(f'Price (1 {marketSymbol[0]}):', f'{offer["rate"]} {marketSymbol[1]} \n')
 
 
-def findPriceDifferences(offers1: List[dict[str, float]], offers2: List[dict[str, float]]):
-    offersSize1 = len(offers1)
-    offersSize2 = len(offers2)
-    numberOfComparisons = offersSize2 if offersSize1 >= offersSize2 else offersSize1
-    priceDifferences = []
-    for index in range(numberOfComparisons):
-        offersPrice1 = offers1[index]["rate"]
-        offersPrice2 = offers2[index]["rate"]
-        difference = ((offersPrice1 - offersPrice2) / offersPrice1)
-        priceDifferences.append(difference)
-
-    return priceDifferences
-
-
 def printPriceDifference(marketSymbol: Tuple[str, str], tradeOffer: Tuple[dict, dict], operationType: str, difference: float):
     differencePercentage = (1 - difference) * 100
     operationWord = 'Buying from' if operationType == "BUY" else 'Selling on'
@@ -113,9 +99,14 @@ def printPriceDifference(marketSymbol: Tuple[str, str], tradeOffer: Tuple[dict, 
 
 
 def handlePriceDifferences(marketSymbol: Tuple[str, str], tradeOffer: Tuple[dict, dict], operationType: str, offers1: List[dict[str, float]], offers2: List[dict[str, float]]):
-    differences = findPriceDifferences(offers1, offers2)
-    for dif in differences:
-        printPriceDifference(marketSymbol, tradeOffer, operationType, dif)
+    offersSize1 = len(offers1)
+    offersSize2 = len(offers2)
+    numberOfComparisons = offersSize2 if offersSize1 >= offersSize2 else offersSize1
+    for index in range(numberOfComparisons):
+        offersPrice1 = offers1[index]["rate"]
+        offersPrice2 = offers2[index]["rate"]
+        difference = ((offersPrice1 - offersPrice2) / offersPrice1)
+        printPriceDifference(marketSymbol, tradeOffer, operationType, difference)
 
 
 def printArbitrationDetails(marketSymbol: Tuple[str, str], tradeOffer: Tuple[dict, dict], buyRate: float, sellRate: float, difference: float):
@@ -149,6 +140,8 @@ def calculateDifference(marketSymbol: Tuple[str, str], apis: Tuple[dict, dict], 
         if offers1 and offers2:
             buyOffers1, sellOffers1 = offers1["asks"], offers1["bids"]
             buyOffers2, sellOffers2 = offers2["asks"], offers2["bids"]
+            # buyOffers1, sellOffers1 = offers1["bids"], offers1["asks"]
+            # buyOffers2, sellOffers2 = offers2["bids"], offers2["asks"]
 
             if operationType == "BUY":
                 handlePriceDifferences(marketSymbol, apis, operationType, buyOffers1, buyOffers2)
@@ -186,7 +179,7 @@ def main():
     refreshDelay = 20
 
     operationTypes = ['BUY', 'SELL', 'ARB', 'ARB+']
-    operationType = operationTypes[3]
+    operationType = operationTypes[2]
     calculateDifference(marketSymbol, tradeOrder, numberOfOffers, refreshDelay, operationType)
 
 
