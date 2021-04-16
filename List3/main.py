@@ -1,6 +1,5 @@
-import collections
 from time import sleep
-from typing import Optional
+from typing import Optional, Callable, Any
 
 from utils import print_decorator
 import requests
@@ -9,8 +8,21 @@ INSTRUMENTS = ["BTC", "ETH", "XLM"]
 BASE_CURRENCY = "USD"
 DEFAULT_ORDER_NUM = -1
 
-# TODO
-bittrex_parser = ""
+
+def bittrex_parser(content: list[dict[str, str]]) -> list[list[float]]:
+    """
+    Converts bittrex ask and bid response contents to [[price, quantity], ...] format
+    Raises:
+        ValueError: if parser cannot interpret content parameter correctly
+    """
+    result = []
+    try:
+        for d in content:
+            result.append([float(d["rate"]), float(d["quantity"])])
+        return result
+    except KeyError:
+        raise ValueError("Couldn't parse content: no rate or quantity elements found")
+
 
 APIS = {
     "bitbay": {
@@ -44,6 +56,8 @@ class MarketDaemon:
         self.taker_fee = taker_fee
         self.transfer_fees = transfer_fees
 
+        self._orderbook_parser: Callable[[list], list[list[float]]] = lambda x: x
+
     @print_decorator
     def make_request(self, instrument: str, base: str = BASE_CURRENCY) -> Optional[requests.Response]:
         try:
@@ -65,20 +79,32 @@ class MarketDaemon:
         response: requests.Response = self.make_request(instrument, base)
         if response:
             content = dict(response.json())
-            print(content)
-            buys = content["bids"][:size] if "bids" in content else content["bid"][:size]
-            sells = content["asks"][:size] if "asks" in content else content["ask"][:size]
-            self._normalize_response_contents(buys, sells)
-            return {price: quantity for [price, quantity] in buys}, {price: quantity for [price, quantity] in sells}
+            print(content)  # TODO Remove
+            try:
+                buys = content["bids"][:size] if "bids" in content else content["bid"][:size]
+                sells = content["asks"][:size] if "asks" in content else content["ask"][:size]
+                buys, sells = self._normalize_response_contents(buys, sells)
+                return {order[0]: order[1] for order in buys}, {order[0]: order[1] for order in sells}
+            except KeyError:
+                print("Your request produced a response but no bids or asks were found")
+                return None
         else:
             pass
 
     def _normalize_response_contents(self, buys, sells):
-        pass
+        """Normalizes the contents of bids and asks to [price, quantity] format using orderbook_parser"""
+        return self._orderbook_parser(buys), self._orderbook_parser(sells)
 
     @print_decorator
     def _to_request_url(self, instrument: str, base: str = BASE_CURRENCY) -> str:
         return f"{self.url}/{instrument}-{base}/{self.orderbook_endpoint}"
+
+    def set_parser(self, parser: Callable[[Any], list[list[float]]]):
+        """Sets the orderbook parser if a custom one is needed"""
+        self._orderbook_parser = parser
+
+    def get_parser(self):
+        return self._orderbook_parser
 
     def __str__(self):
         return f"API: {self.name} @ {self.url}"
@@ -90,6 +116,7 @@ def main():
 
     bittrex = MarketDaemon("bittrex", APIS["bittrex"]["url"], APIS["bittrex"]["endpoint"],
                            taker_fee=APIS["bittrex"]["taker_fee"], transfer_fees=APIS["bittrex"]["transfer_fee"])
+    bittrex.set_parser(bittrex_parser)
 
     bitbay.get_orders("BTC")
     bittrex.get_orders("ETH")
