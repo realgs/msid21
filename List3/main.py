@@ -125,12 +125,33 @@ def price_diff(lhs: dict[float, float], rhs: dict[float, float]):
 
 
 def compare_stream(d1: MarketDaemon, d2: MarketDaemon, instrument: str, base: str = BASE_CURRENCY, kind: str = "buy"):
-    """Compares prices for a given instrument; kind == "buys" compares bids prices and "sell" compares "asks" prices"""
+    """Compares prices for a given instrument; kind == "buys" compares bid prices and "sell" compares ask prices"""
     while True:
         b1, s1 = d1.get_orders(instrument, base, size=1)
         b2, s2 = d2.get_orders(instrument, base, size=1)
         diff = price_diff(b1, b2) if kind == "buy" else (price_diff(s1, s2) if kind == "sell" else None)
         print(f"{d1} vs {d2} is {diff:.4f}% for {kind} of pair {instrument}{base}")
+        yield diff
+        sleep(DEFAULT_TIMOUT)
+
+
+def compare_transfer_stream(d1: MarketDaemon, d2: MarketDaemon, instrument: str, base: str = BASE_CURRENCY):
+    """
+    Args:
+        d1: Buy market for given instrument
+        d2: Sell market for given instrument
+        instrument: Instrument intended at buy at d1 and sell at d2
+        base: Base currency
+
+    Returns:
+        Price difference between buy at market d1 and sell at market d2 expressed as percentage.
+        Negative percentage implies lack of profitability of arbitrage between markets d1, d2 for a given instrument.
+    """
+    while True:
+        b1, s1 = d1.get_orders(instrument, base, size=1)
+        b2, s2 = d2.get_orders(instrument, base, size=1)
+        diff = price_diff(b1, s2)
+        print(f"Buy at {d1}, sell at {d2} for {instrument}{base} - profitability = {diff:.4f}%")
         yield diff
         sleep(DEFAULT_TIMOUT)
 
@@ -146,8 +167,12 @@ def main():
     bitbay.get_orders("BTC")
     bittrex.get_orders("ETH")
 
+    css = compare_transfer_stream(bitbay, bittrex, "BTC")
+    for _ in range(5):
+        next(css)
+
     cs = compare_stream(bitbay, bittrex, "BTC")
-    for _ in range(10):
+    for _ in range(5):
         next(cs)
 
 
