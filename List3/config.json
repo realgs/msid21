@@ -1,0 +1,43 @@
+{
+  "API": {
+    "default": {
+      "url": "https://bitbay.net/API/Public",
+      "orderbook_endpoint": "orderbook.json",
+      "instrument_sep": "-",
+      "asks": "asks",
+      "bids": "bids",
+      "taker_fee": 0.001,
+      "transfer_fee": {
+        "BTC": 0.0005,
+        "ETH": 0.01,
+        "XLM": 0.005
+      }
+    },
+    "bitbay": {
+      "url": "https://bitbay.net/API/Public",
+      "orderbook_endpoint": "orderbook.json",
+      "instrument_sep": "-",
+      "asks": "asks",
+      "bids": "bids",
+      "taker_fee": 0.001,
+      "transfer_fee": {
+        "BTC": 0.0005,
+        "ETH": 0.01,
+        "XLM": 0.005
+      }
+    },
+    "bittrex": {
+      "url": "https://api.bittrex.com/v3/markets",
+      "orderbook_endpoint": "orderbook",
+      "instrument_sep": "-",
+      "asks": "ask",
+      "bids": "bid",
+      "taker_fee": 0.0075,
+      "transfer_fee": {
+        "BTC": 0.0003,
+        "ETH": 0.0085,
+        "XLM": 0.05
+      }
+    }
+  }
+}
