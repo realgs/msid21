@@ -271,39 +271,47 @@ def compare_transfer_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str,
 
 def arbitrage_monitor(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: str = BASE_CURRENCY,
                       verbose: bool = True):
-    try:
-        b1, s1 = m1.get_orders(instrument, base, size=-1, verbose=False)
-        b2, s2 = m2.get_orders(instrument, base, size=-1, verbose=False)
+    while True:
+        try:
+            b1, s1 = m1.get_orders(instrument, base, size=-1, verbose=False)
+            b2, s2 = m2.get_orders(instrument, base, size=-1, verbose=False)
 
-        print(s1)
-        print(b2)
+            print(s1)
+            print(b2)
 
-        buy_offers = [[price, qty] for price, qty in s2.items()]
-        sell_offers = [[price, qty] for price, qty in b1.items()]
+            # TODO flipped data
+            to_buy = [[price, qty] for price, qty in s2.items()]
+            to_sell = [[price, qty] for price, qty in b1.items()]
 
-        # TODO: unfinished
-        while buy_offers[0][0] < sell_offers[0][0]:
-            print("ANALYZING:")
-            print(buy_offers[0], sell_offers[0])
-            buy_qty = min(buy_offers[0][1], sell_offers[0][1])
-            buy_value = m1.order_value(buy_offers[0][0], buy_qty, instrument, kind="buy")
-            sell_value = m2.order_value(sell_offers[0][0], buy_qty, instrument, kind="sell")
-            print(buy_value, sell_value)
-            if buy_value < sell_value:
-                print("buy qty: %s" % buy_qty)
-                if buy_offers[0][1] < sell_offers[0][1]:
-                    del buy_offers[0]
-                    sell_offers[0][1] -= buy_qty
+            profit = 0.0
+
+            while to_buy and to_sell and to_buy[0][0] < to_sell[0][0]:
+                print("ANALYZING:")
+                print(to_buy[0], to_sell[0])
+                buy_qty = min(to_buy[0][1], to_sell[0][1])
+                buy_value = m1.order_value(to_buy[0][0], buy_qty, instrument, kind="buy")
+                sell_value = m2.order_value(to_sell[0][0], buy_qty, instrument, kind="sell")
+                print(buy_value, sell_value)
+                if buy_value < sell_value:
+                    profit += sell_value - buy_value
+                    print("buy qty: %s" % buy_qty)
+                    if to_buy[0][1] < to_sell[0][1]:
+                        del to_buy[0]
+                        to_sell[0][1] -= buy_qty
+                    else:
+                        del to_sell[0]
+                        to_buy[0][1] -= buy_qty
                 else:
-                    del sell_offers[0]
-                    buy_offers[0][1] -= buy_qty
-            else:
-                break
+                    break
 
-        sleep(5.0)
-    except ValueError:
-        print(f"Fetching data for {instrument} failed")
-        sleep(5.0)
+            yield profit
+
+            sleep(5.0)
+        except ValueError:
+            if verbose:
+                print(f"Fetching data for {instrument} failed")
+            yield 0.0
+            sleep(DEFAULT_TIMOUT)
 
 
 def create_config():

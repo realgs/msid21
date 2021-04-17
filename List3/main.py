@@ -15,10 +15,7 @@ if __name__ == "__main__":
     s = md.compare_stream(bitbay, bittrex, "BTC")
     ss = md.compare_transfer_stream(bitbay, bittrex, "BTC")
 
-    sss = bitbay.stream("BTC")
-    for _ in range(5):
-        next(sss)
+    aw = md.arbitrage_monitor(bitbay, bittrex, "BTC")
 
     while True:
-        next(s)
-        # next(ss)
+        print(next(aw))
