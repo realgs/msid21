@@ -4,7 +4,6 @@ import os
 from time import sleep
 from typing import Optional, Callable, Any
 
-from utils import print_decorator
 import requests
 
 OrderList = list[list[float]]
@@ -12,7 +11,7 @@ OrderList = list[list[float]]
 CONFIG_PATH: str = "config.json"
 
 BASE_CURRENCY: str = "USD"
-DEFAULT_ORDER_NUM: int = -1
+DEFAULT_ORDER_NUM: int = 3
 DEFAULT_TIMOUT: float = 5.0
 
 SAMPLE_CONFIG: dict = {
@@ -92,14 +91,15 @@ class MarketDaemon:
 
         return MarketDaemon(api_identifier, config["url"], config)
 
-    @print_decorator
-    def get_orders(self, instrument: str, base: str = BASE_CURRENCY, size: int = DEFAULT_ORDER_NUM):
+    def get_orders(self, instrument: str, base: str = BASE_CURRENCY, size: int = DEFAULT_ORDER_NUM,
+                   verbose: bool = True):
         """Gets the orders for a given instrument and base currency, selects 'size' number of orders
 
         Args:
             instrument: Symbol of an instrument to look up in the orderbook
             base: Base currency
             size: Number of orders to return (-1 gives the full list of orders)
+            verbose: prints the results if set to True
 
         Returns:
             Optional of Tuple of dicts containing float pairs representing prices and quantities of orders respectively.
@@ -110,13 +110,17 @@ class MarketDaemon:
         if response:
             content = dict(response.json())
             try:
-                buys = content[self._settings["bids"]]
-                sells = content[self._settings["asks"]]
+                buys = content[self._settings["bids"]][:size]
+                sells = content[self._settings["asks"]][:size]
                 buys, sells = self._normalize_response_contents(buys, sells)
                 if not buys or not sells:
                     return None
                 else:
-                    return {order[0]: order[1] for order in buys}, {order[0]: order[1] for order in sells}
+                    result = {order[0]: order[1] for order in buys}, {order[0]: order[1] for order in sells}
+                    if verbose:
+                        self._print_orders(result[0], instrument, base, kind="buy")
+                        self._print_orders(result[1], instrument, base, kind="sell")
+                    return result
             except KeyError:
                 print("Your request produced a response but no bids or asks were found")
                 return None
@@ -129,7 +133,6 @@ class MarketDaemon:
             yield buys, sells
             sleep(timeout_sec)
 
-    @print_decorator
     def _make_request(self, instrument: str, base: str = BASE_CURRENCY) -> Optional[requests.Response]:
         try:
             response = requests.request("GET", self._to_request_url(instrument, base))
@@ -150,7 +153,6 @@ class MarketDaemon:
         """Normalizes the contents of bids and asks to [price, quantity] format using orderbook_parser"""
         return self._orderbook_parser(buys), self._orderbook_parser(sells)
 
-    @print_decorator
     def _to_request_url(self, instrument: str, base: str = BASE_CURRENCY) -> str:
         return f"{self.url}/{instrument}{self._settings['instrument_sep']}{base}/{self._settings['orderbook_endpoint']}"
 
@@ -173,6 +175,11 @@ class MarketDaemon:
     def get_parser(self) -> Callable[[Any], OrderList]:
         return self._orderbook_parser
 
+    def _print_orders(self, orders: dict[float, float], instrument: str, base: str, kind: str = "buy"):
+        if orders:
+            for price, qty in orders.items():
+                print(f"[{self}] {kind.capitalize()} {qty}{instrument} at {price} {instrument}{base}")
+
     def __str__(self):
         return f"{self.name}"
 
@@ -182,36 +189,55 @@ def price_diff(lhs: dict[float, float], rhs: dict[float, float]):
     return diff * 100
 
 
-def compare_stream(d1: MarketDaemon, d2: MarketDaemon, instrument: str, base: str = BASE_CURRENCY, kind: str = "buy"):
-    """Compares prices for a given instrument; kind == "buys" compares bid prices and "sell" compares ask prices"""
+def compare_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: str = BASE_CURRENCY,
+                   kind: str = "buy", verbose: bool = True):
+    """Compares prices buy of sell for a given instrument at two markets m1, m2.
+    Update frequency is constrained by a timeout.
+
+    Args:
+        m1: MarketDaemon monitoring market 1
+        m2: MarketDaemon monitoring market 2
+        instrument: Symbol for an instrument to query
+        base: Base currency
+        kind: 'buy' for comparing buy prices, 'sell' for comparing sell prices
+        verbose: prints the results if set to True
+
+    Returns:
+        Price difference between buy or sell between markets m1, m2.
+        Positive percentage implies the price is lower at market m2, negative implies the contrary.
+    """
     while True:
-        b1, s1 = d1.get_orders(instrument, base, size=1)
-        b2, s2 = d2.get_orders(instrument, base, size=1)
+        b1, s1 = m1.get_orders(instrument, base, size=1, verbose=verbose)
+        b2, s2 = m2.get_orders(instrument, base, size=1, verbose=verbose)
         diff = price_diff(b1, b2) if kind == "buy" else (price_diff(s1, s2) if kind == "sell" else None)
-        print(f"{d1} vs {d2} is {diff:.4f}% for {kind} of pair {instrument}{base}")
+        if verbose:
+            print(f"{m1} vs {m2} is {diff:.4f}% for {kind} of pair {instrument}{base}\n")
         yield diff
         sleep(DEFAULT_TIMOUT)
 
 
-def compare_transfer_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: str = BASE_CURRENCY):
+def compare_transfer_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: str = BASE_CURRENCY,
+                            verbose: bool = True):
     """Creates a generator tracking price differences as a percentage between buy market 'm1' and sell market 'm2'
-    for a given instrument. Update frequency is constrained by a timeout.
+    for a given instrument. Does not take fees into account. Update frequency is constrained by a timeout.
 
     Args:
         m1: Buy market for given instrument
         m2: Sell market for given instrument
         instrument: Instrument intended to buy at m1 and sell at m2
         base: Base currency
+        verbose: prints the results if set to True
 
     Returns:
         Price difference between buy at market m1 and sell at market m2 expressed as percentage.
         Negative percentage implies lack of profitability of arbitrage between markets m1, m2 for a given instrument.
     """
     while True:
-        b1, s1 = m1.get_orders(instrument, base, size=1)
-        b2, s2 = m2.get_orders(instrument, base, size=1)
+        b1, s1 = m1.get_orders(instrument, base, size=1, verbose=verbose)
+        b2, s2 = m2.get_orders(instrument, base, size=1, verbose=verbose)
         diff = price_diff(b1, s2)
-        print(f"Buy at {m1}, sell at {m2} for {instrument}{base} - profitability = {diff:.4f}%")
+        if verbose:
+            print(f"Buy at {m1}, sell at {m2} for {instrument}{base} - profitability = {diff:.4f}%\n")
         yield diff
         sleep(DEFAULT_TIMOUT)
 
@@ -230,7 +256,13 @@ def create_config():
 
 def _onload():
     try:
-        preferences = load_config(CONFIG_PATH)
+        config = load_config(CONFIG_PATH)
+        preferences = config["preferences"]
+
+        global DEFAULT_TIMOUT, DEFAULT_ORDER_NUM, BASE_CURRENCY
+        DEFAULT_TIMOUT = preferences["default_timout"]
+        DEFAULT_ORDER_NUM = preferences["default_order_num"]
+        BASE_CURRENCY = preferences["base_currency"]
     except KeyError:
         print("Preferences entries not found, using default values")
     except FileNotFoundError:
