@@ -1,3 +1,5 @@
+from threading import Thread
+
 import requests
 import time
 
@@ -74,33 +76,33 @@ def calculateDifference(first, second):
     return difference
 
 
-def findDifferenceBid(currency):
-    bid_BITBAY = getBestBid(currency, BITBAY)
-    bid_BITTREX = getBestBid(currency, BITTREX)
-    print(f'Best bid: BITBAY: {bid_BITBAY}\t\t-\t\tBITTREX: {bid_BITTREX}')
-    return calculateDifference(float(bid_BITTREX), float(bid_BITBAY))
+def findDifferenceBid(currency, api1, api2):
+    bid_api1 = getBestBid(currency, api1)
+    bid_api2 = getBestBid(currency, api2)
+    print(f'Best bid: {api1["name"]}: {bid_api1}\t\t-\t\t{api2["name"]}: {bid_api2}')
+    return calculateDifference(float(bid_api2), float(bid_api1))
 
 
 # zad 1b
-def printDifferenceBid():
+def printDifferenceBid(api1, api2):
     print("Bids:")
     for currency in CURRENCIES:
-        difference = findDifferenceBid(f'{currency}-{BASE_CURRENCY}')
+        difference = findDifferenceBid(f'{currency}-{BASE_CURRENCY}', api1, api2)
         print(f'Currency: {currency}-{BASE_CURRENCY}\t\tDifference: {difference}%')
 
 
-def findDifferenceAsk(currency):
-    bid_BITBAY = getBestAsk(currency, BITBAY)
-    bid_BITTREX = getBestAsk(currency, BITTREX)
-    print(f'Best ask: BITBAY: {bid_BITBAY}\t\t-\t\tBITTREX: {bid_BITTREX}')
-    return calculateDifference(float(bid_BITTREX), float(bid_BITBAY))
+def findDifferenceAsk(currency, api1, api2):
+    bid_api1 = getBestAsk(currency, api1)
+    bid_api2 = getBestAsk(currency, api2)
+    print(f'Best ask: {api1["name"]}: {bid_api1}\t\t-\t\t{api2["name"]}: {bid_api2}')
+    return calculateDifference(float(bid_api2), float(bid_api1))
 
 
 # zad 1a
-def printDifferenceAsk():
+def printDifferenceAsk(api1, api2):
     print("Asks:")
     for currency in CURRENCIES:
-        difference = findDifferenceAsk(f'{currency}-{BASE_CURRENCY}')
+        difference = findDifferenceAsk(f'{currency}-{BASE_CURRENCY}', api1, api2)
         print(f'Currency: {currency}-{BASE_CURRENCY}\t\tDifference: {difference}%')
 
 
@@ -129,18 +131,86 @@ def printDifferenceApis(api1, api2):
         print(f'Currency: {currency}-{BASE_CURRENCY}\t\tDifference: {difference}%')
 
 
+# zad 2
+def isArbitragePossible(bid_rate, ask_rate):
+    return float(bid_rate) > float(ask_rate)
+
+
+def countTakerAddTransferFee(offer, api, currency):
+    return offer * api['taker'] + offer * api['transfer'][currency]
+
+
+def countTakerFee(offer, api):
+    return offer * api['taker']
+
+
+def calculateArbitrage(currency, api1, api2):
+    [bids_api1, _] = downloadData(currency, api1)
+    [_, asks_api2] = downloadData(currency, api2)
+
+    if isArbitragePossible(getBestBid(currency, api1), getBestAsk(currency, api2)):
+        i, j, askQuantity, bidQuantity, askValue, bidValue, asksFee, bidsFee = 0, 0, 0, 0, 0, 0, 0, 0
+        for ask in asks_api2:
+            if float(ask['rate_prompt']) < float(bids_api1[0]['rate_prompt']):
+                askQuantity = float(ask['quantity_prompt'])
+                i += 1
+        for bid in bids_api1:
+            if float(bid['rate_prompt']) < float(asks_api2[i-1]['rate_prompt']):
+                bidQuantity = float(bid['quantity_prompt'])
+                j += 1
+
+        while askQuantity < bidQuantity:
+            # zabierz bid  z końca
+            bidQuantity -= float(bids_api1[j-1]['quantity_prompt'])
+            j -= 1
+        leftoverQuantity = askQuantity - bidQuantity
+        leftoverValue = 0
+        if j == 0:
+            print(f"Arbitrage for {currency} impossible!")
+            print(f'Buying from {api2["name"]} and selling to {api1["name"]}')
+        else:
+            while i > 0:
+                askValue += float(asks_api2[i-1]['rate_prompt']) * float(asks_api2[i-1]['quantity_prompt'])
+                asksFee += countTakerAddTransferFee(asks_api2[i-1]['rate_prompt'], api2, currency)
+                if leftoverQuantity < float(asks_api2[i-1]['quantity_prompt']):
+                    leftoverValue += leftoverQuantity * float(asks_api2[i-1]['rate_prompt'])
+                    leftoverQuantity = 0
+                else:
+                    leftoverValue += float(asks_api2[i - 1]['quantity_prompt']) * float(asks_api2[i - 1]['rate_prompt'])
+                    leftoverQuantity -= float(asks_api2[i - 1]['quantity_prompt'])
+                i -= 1
+            while j > 0:
+                bidValue += float(bids_api1[j-1]['rate_prompt']) * float(bids_api1[j-1]['quantity_prompt'])
+                bidsFee += countTakerFee(bids_api1[j-1]['rate_prompt'], api1)
+                j -= 1
+
+        sumFees = asksFee + bidsFee
+        baseProfit = bidValue - (askValue - leftoverValue)
+        totalProfit = baseProfit - sumFees
+        print("Arbitrage was possible!")
+        print(f'Buying from {api2["name"]} and selling to {api1["name"]}')
+        print(f'Total profit for {currency}:\t{totalProfit}')
+
+    else:
+        print(f"Arbitrage for {currency} impossible!")
+        print(f'Buying from {api2["name"]} and selling to {api1["name"]}')
+
+
 def main():
-    # printOffers(BITBAY)
-    # printOffers(BITTREX)
+    while True:
+        printOffers(BITBAY)
+        printOffers(BITTREX)
 
-    # printDifferenceBid()
-    # printDifferenceAsk()
+        printDifferenceBid(BITTREX, BITBAY)
+        printDifferenceAsk(BITBAY, BITTREX)
 
-    printDifferenceApis(BITBAY, BITTREX)
-    printDifferenceApis(BITTREX, BITBAY)
+        printDifferenceApis(BITBAY, BITTREX)
+        printDifferenceApis(BITTREX, BITBAY)
 
-    # print_currency_offers(BITTREX)
-    # print_currency_offers(BITBAY)
+        calculateArbitrage('BTC-USD', BITBAY, BITTREX)
+        calculateArbitrage('LTC-USD', BITTREX, BITBAY)
+        print('\n---------------------------------------------------\n')
+        time.sleep(DELAY)
 
 
 if __name__ == '__main__':
