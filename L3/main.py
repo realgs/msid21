@@ -11,8 +11,8 @@ APIS = [
     {
         'stockName': 'BITBAY',
         'url': "https://bitbay.net/API/Public/",
-        'takerFee': 0.0031,  # 0.31% z transakcji
-        'transferFee': {  # to nie procent, tylko kwota
+        'takerFee': 0.0031,
+        'transferFee': {
             "BTC": 0.0005,
             "LTC": 0.001,
             "XRP": 0.1,
@@ -22,8 +22,8 @@ APIS = [
     {
         'stockName': 'BITSTAMP',
         'url': "https://www.bitstamp.net/api/v2/",
-        'takerFee': 0.0022,  # 0.22% z transakcji - < 200,000$
-        'transferFee': {  # to nie procent, tylko kwota
+        'takerFee': 0.0022,
+        'transferFee': {
             "BTC": 0.0005,
             "LTC": 0.001,
             "XRP": 0.02,
@@ -43,13 +43,13 @@ def getApiResponse(url):
 
 
 def getOffers(base, crypto, stockName, amountOfOffers=SINGLE_OFFER):
-    if stockName == APIS[0]["stockName"]:  # bitbay
+    if stockName == APIS[0]["stockName"]:
         apiResponse = getApiResponse(f'{APIS[0]["url"]}{crypto}{base}/orderbook.json')
         if apiResponse is not None:
             return {'bids': apiResponse['bids'][:min(amountOfOffers, len(apiResponse['bids']))],
                     'asks': apiResponse['asks'][:min(amountOfOffers, len(apiResponse['asks']))]}
 
-    elif stockName == APIS[1]["stockName"]:  # bitstamp
+    elif stockName == APIS[1]["stockName"]:
         apiResponse = getApiResponse(f'{APIS[1]["url"]}order_book/{crypto.lower()}{base.lower()}')
         if apiResponse is not None:
             return {'bids': list(map(lambda x: [float(x[0]), float(x[1])],
@@ -81,8 +81,7 @@ def idealArbitrageValue(crypto, stockName1, stockName2):
         return None
 
 
-# exercise 2 methods
-# zwraca tablice [koszt oferty, ilość] - koszt oferty to cena * wolumen
+# exc 2
 def offersCostAndVolume(stockOffers, action):
     costAndVolume = []
     for offer in stockOffers[action]:
@@ -91,7 +90,6 @@ def offersCostAndVolume(stockOffers, action):
     return costAndVolume
 
 
-# dolicza taker fee jakie trzeba będzie zapłacić
 def addTakerFee(costsAndVolumes, stockName):
     costAndVolumeWithFee = []
     fee = APIS[0]["takerFee"] if stockName == APIS[0]["stockName"] else APIS[1]["takerFee"]
@@ -101,7 +99,6 @@ def addTakerFee(costsAndVolumes, stockName):
     return costAndVolumeWithFee
 
 
-# dolicza transfer fee do asks
 def addTransferFee(costsAndVolumes, stockName, crypto):
     costAndVolumeWithFee = []
     fee = APIS[0]["transferFee"][crypto] if stockName == APIS[0]["stockName"] else APIS[1]["transferFee"][crypto]
@@ -111,7 +108,6 @@ def addTransferFee(costsAndVolumes, stockName, crypto):
     return costAndVolumeWithFee
 
 
-# analizuje arbitraż dla "przygotowanych danych"
 def calculateArbitrage(toPurchase, toSell):
     spentMoney = 0
     earnedMoney = 0
@@ -138,17 +134,18 @@ def calculateArbitrage(toPurchase, toSell):
 
 
 # exc 2
-def arbitrageValue(crypto, stockName1, stockName2):  # dla mnie, niech apiName1 bedzie BitBay, a apiName2 BitStamp
-    stockOffer1 = getOffers(BASE_CURRENCY, crypto, stockName1, OFFERS_AMOUNT)  # oferty z bitbaya
-    stockOffer2 = getOffers(BASE_CURRENCY, crypto, stockName2, OFFERS_AMOUNT)  # oferty z bitstampa
+def arbitrageValue(crypto, stockName1, stockName2):
+    stockOffer1 = getOffers(BASE_CURRENCY, crypto, stockName1, OFFERS_AMOUNT)
+    stockOffer2 = getOffers(BASE_CURRENCY, crypto, stockName2, OFFERS_AMOUNT)
 
-    stock1AsksCostsAndVolume = offersCostAndVolume(stockOffer1, 'asks')  # oferty jakie moge skupić z bitbaya - koszty
-    stock2BidsCostsAndVolume = offersCostAndVolume(stockOffer2, 'bids')  # ofery jakie moge sprzedać na bitstampie - koszty
+    stock1AsksCostsAndVolume = offersCostAndVolume(stockOffer1, 'asks')
+    stock2BidsCostsAndVolume = offersCostAndVolume(stockOffer2, 'bids')
 
-    stock1AsksCostsAndVolumeWithTakerFee = addTakerFee(stock1AsksCostsAndVolume, stockName1)  # to samo co wyżej tylko po dodaniu taker fee
-    stock2BidsCostsAndVolumeWithTakerFee = addTakerFee(stock2BidsCostsAndVolume, stockName2)  # to samo co wyżej tylko po dodaniu taker fee
+    stock1AsksCostsAndVolumeWithTakerFee = addTakerFee(stock1AsksCostsAndVolume, stockName1)
+    stock2BidsCostsAndVolumeWithTakerFee = addTakerFee(stock2BidsCostsAndVolume, stockName2)
 
-    stock1AsksCostsAndVolumeWithTakerAndTransferFee = addTransferFee(stock1AsksCostsAndVolumeWithTakerFee, stockName1, crypto)
+    stock1AsksCostsAndVolumeWithTakerAndTransferFee = \
+        addTransferFee(stock1AsksCostsAndVolumeWithTakerFee, stockName1, crypto)
 
     result = calculateArbitrage(stock1AsksCostsAndVolumeWithTakerAndTransferFee, stock2BidsCostsAndVolumeWithTakerFee)
     return result
@@ -157,23 +154,29 @@ def arbitrageValue(crypto, stockName1, stockName2):  # dla mnie, niech apiName1 
 def exc1And2(crypto, stockName1, stockName2):
     while True:
         # exc 1 - whole
-        print(f'{stockName1} to {stockName2} buy difference: {buyOrSellDifference(crypto, stockName1, stockName2, ACTIONS[0])}% for {crypto}')  # bids
-        print(f'{stockName1} to {stockName2} sell difference: {buyOrSellDifference(crypto, stockName1, stockName2, ACTIONS[1])}% for {crypto} \n')  # asks
+        print(f'{stockName1} to {stockName2} buy difference: '
+              f'{buyOrSellDifference(crypto, stockName1, stockName2, ACTIONS[0])}% for {crypto}')
+        print(f'{stockName1} to {stockName2} sell difference: '
+              f'{buyOrSellDifference(crypto, stockName1, stockName2, ACTIONS[1])}% for {crypto} \n')
 
-        print(f'Purchase at {stockName1} and put up for sale at {stockName2}')  # stock1 - asks, stock2 - bids
+        print(f'Purchase at {stockName1} and put up for sale at {stockName2}')
         print(f'Ideal arbitrage: {idealArbitrageValue(crypto, stockName1, stockName2)}% for {crypto} \n')
 
-        print(f'Purchase at {stockName2} and put up for sale at {stockName1}')  # stock2 - asks, stock1 - bids
+        print(f'Purchase at {stockName2} and put up for sale at {stockName1}')
         print(f'Ideal arbitrage: {idealArbitrageValue(crypto, stockName2, stockName1)}% for {crypto}\n')
 
         # exc 2 - whole
         stock1ToStock2 = arbitrageValue(crypto, stockName1, stockName2)
-        print(f'Purchase at {stockName1} and put up for sale at {stockName2}')  # stock1 - asks, stock2 - bids
-        print(f'Arbitrage: {round(stock1ToStock2[1], 2)}%, to earn: {round(stock1ToStock2[2], 2)} {BASE_CURRENCY}, {round(stock1ToStock2[0],2)} {BASE_CURRENCY} available for arbitrage\n')
+        print(f'Purchase at {stockName1} and put up for sale at {stockName2}')
+        print(f'Arbitrage: {round(stock1ToStock2[1], 2)}%, to earn: '
+              f'{round(stock1ToStock2[2], 2)} {BASE_CURRENCY}, {round(stock1ToStock2[0],2)} {BASE_CURRENCY} '
+              f'available for arbitrage\n')
 
         stock2ToStock1 = arbitrageValue(crypto, stockName2, stockName1)
         print(f'Purchase at {stockName2} and put up for sale at {stockName1}')  # stock1 - asks, stock2 - bids
-        print(f'Arbitrage: {round(stock2ToStock1[1], 2)}%, to earn: {round(stock2ToStock1[2], 2)} {BASE_CURRENCY}, {round(stock2ToStock1[0], 2)} {BASE_CURRENCY} available for arbitrage\n')
+        print(f'Arbitrage: {round(stock2ToStock1[1], 2)}%, to earn: '
+              f'{round(stock2ToStock1[2], 2)} {BASE_CURRENCY}, {round(stock2ToStock1[0], 2)} {BASE_CURRENCY} '
+              f'available for arbitrage\n')
         print("#######################################################################################################")
         time.sleep(REFRESH_TIME)
 
