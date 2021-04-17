@@ -35,7 +35,6 @@ SAMPLE_CONFIG: dict = {
         "default_timout": 5.0,
         "default_order_num": 5
     }
-
 }
 
 
@@ -103,23 +102,23 @@ class MarketDaemon:
 
         Returns:
             Optional of Tuple of dicts containing float pairs representing prices and quantities of orders respectively.
-            The first tuple represents buy offers and the second one - sell offers.
-            None is returned if query fails.
+            The first tuple represents asks or buy offers and the second one - bids or sell offers. None is
+            returned if query fails.
         """
         response: requests.Response = self._make_request(instrument, base)
         if response:
             content = dict(response.json())
             try:
-                buys = content[self._settings["bids"]][:size]
-                sells = content[self._settings["asks"]][:size]
+                buys = content[self._settings["asks"]][:size]
+                sells = content[self._settings["bids"]][:size]
                 buys, sells = self._normalize_response_contents(buys, sells)
                 if not buys or not sells:
                     return None
                 else:
                     result = {order[0]: order[1] for order in buys}, {order[0]: order[1] for order in sells}
                     if verbose:
-                        self._print_orders(result[0], instrument, base, kind="buy")
                         self._print_orders(result[1], instrument, base, kind="sell")
+                        self._print_orders(result[0], instrument, base, kind="buy")
                     return result
             except KeyError:
                 print("Your request produced a response but no bids or asks were found")
@@ -132,6 +131,29 @@ class MarketDaemon:
                 print(buys, sells)
             yield buys, sells
             sleep(timeout_sec)
+
+    def order_value(self, price: float, quantity: float, instrument: str, kind: str = "buy"):
+        """Returns total price of fulfilling a buy or a sell order including market fees if they are provided
+        If not returns bare value of the order. Kind can take values 'buy' or 'sell'"""
+        if kind == "buy":
+            try:
+                total = price * quantity
+                return total * (1 + self._settings["taker_fee"] + self._settings["transfer_fee"][instrument])
+            except KeyError:
+                print(f"Settings for market {self} do not have information about taker_fee or transfer_fee "
+                      f"for {instrument}. Returning bare order value.")
+                return price * quantity
+        elif kind == "sell":
+            try:
+                total = price * quantity
+                return total * (1 + 0)  # TODO there may be maker fees or withdrawal fees
+            except KeyError:
+                print(f"Settings for market {self} do not have information about maker_fee or withdrawal fees"
+                      f"for {instrument}. Returning bare order value.")
+                return price * quantity
+        else:
+            print("Invalid option")
+            return -1
 
     def _make_request(self, instrument: str, base: str = BASE_CURRENCY) -> Optional[requests.Response]:
         try:
@@ -174,6 +196,11 @@ class MarketDaemon:
 
     def get_parser(self) -> Callable[[Any], OrderList]:
         return self._orderbook_parser
+
+    @property
+    def settings(self):
+        # Getter only property
+        return self._settings
 
     def _print_orders(self, orders: dict[float, float], instrument: str, base: str, kind: str = "buy"):
         if orders:
@@ -237,9 +264,46 @@ def compare_transfer_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str,
         b2, s2 = m2.get_orders(instrument, base, size=1, verbose=verbose)
         diff = price_diff(b1, s2)
         if verbose:
-            print(f"Buy at {m1}, sell at {m2} for {instrument}{base} - profitability = {diff:.4f}%\n")
+            print(f"Buy at {m1}, sell at {m2} for {instrument}{base} - profitability = {-diff:.4f}%\n")
         yield diff
         sleep(DEFAULT_TIMOUT)
+
+
+def arbitrage_monitor(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: str = BASE_CURRENCY,
+                      verbose: bool = True):
+    try:
+        b1, s1 = m1.get_orders(instrument, base, size=-1, verbose=False)
+        b2, s2 = m2.get_orders(instrument, base, size=-1, verbose=False)
+
+        print(s1)
+        print(b2)
+
+        buy_offers = [[price, qty] for price, qty in s2.items()]
+        sell_offers = [[price, qty] for price, qty in b1.items()]
+
+        # TODO: unfinished
+        while buy_offers[0][0] < sell_offers[0][0]:
+            print("ANALYZING:")
+            print(buy_offers[0], sell_offers[0])
+            buy_qty = min(buy_offers[0][1], sell_offers[0][1])
+            buy_value = m1.order_value(buy_offers[0][0], buy_qty, instrument, kind="buy")
+            sell_value = m2.order_value(sell_offers[0][0], buy_qty, instrument, kind="sell")
+            print(buy_value, sell_value)
+            if buy_value < sell_value:
+                print("buy qty: %s" % buy_qty)
+                if buy_offers[0][1] < sell_offers[0][1]:
+                    del buy_offers[0]
+                    sell_offers[0][1] -= buy_qty
+                else:
+                    del sell_offers[0]
+                    buy_offers[0][1] -= buy_qty
+            else:
+                break
+
+        sleep(5.0)
+    except ValueError:
+        print(f"Fetching data for {instrument} failed")
+        sleep(5.0)
 
 
 def create_config():

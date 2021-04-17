@@ -12,8 +12,13 @@ if __name__ == "__main__":
     bitbay.get_orders("BTC")
     bitbay.get_orders("BTCx")
 
-    s = md.compare_stream(bitbay, bittrex, "BTC", kind="buy", verbose=True)
-    ss = md.compare_transfer_stream(bittrex, bitbay, "ETH")
+    s = md.compare_stream(bitbay, bittrex, "BTC")
+    ss = md.compare_transfer_stream(bitbay, bittrex, "BTC")
+
+    sss = bitbay.stream("BTC")
+    for _ in range(5):
+        next(sss)
 
     while True:
         next(s)
+        # next(ss)
