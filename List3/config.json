@@ -39,5 +39,10 @@
         "XLM": 0.05
       }
     }
+  },
+  "preferences": {
+    "base_currency": "USD",
+    "default_timout": 5.0,
+    "default_order_num": 5
   }
 }
