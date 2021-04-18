@@ -42,7 +42,8 @@
   },
   "preferences": {
     "base_currency": "USD",
-    "default_timout": 5.0,
-    "default_order_num": 5
+    "default_timout": 10.0,
+    "default_order_num": 5,
+    "max_retries": 2
   }
 }

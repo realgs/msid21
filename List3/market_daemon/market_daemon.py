@@ -14,6 +14,8 @@ BASE_CURRENCY: str = "USD"
 DEFAULT_ORDER_NUM: int = 3
 DEFAULT_TIMOUT: float = 5.0
 
+MAX_RETRIES = 3
+
 SAMPLE_CONFIG: dict = {
     "API": {
         "default": {
@@ -105,7 +107,7 @@ class MarketDaemon:
             The first tuple represents asks or buy offers and the second one - bids or sell offers. None is
             returned if query fails.
         """
-        response: requests.Response = self._make_request(instrument, base)
+        response: requests.Response = self._make_request(instrument, base, verbose=verbose)
         if response:
             content = dict(response.json())
             try:
@@ -121,7 +123,8 @@ class MarketDaemon:
                         self._print_orders(result[0], instrument, base, kind="buy")
                     return result
             except KeyError:
-                print("Your request produced a response but no bids or asks were found")
+                if verbose:
+                    print("Your request produced a response but no bids or asks were found")
                 return None
 
     def stream(self, instrument: str, base: str = BASE_CURRENCY, timeout_sec: float = DEFAULT_TIMOUT, verbose=True):
@@ -155,20 +158,24 @@ class MarketDaemon:
             print("Invalid option")
             return -1
 
-    def _make_request(self, instrument: str, base: str = BASE_CURRENCY) -> Optional[requests.Response]:
+    def _make_request(self, instrument: str, base: str = BASE_CURRENCY, verbose: bool = True) -> Optional[
+        requests.Response]:
         try:
             response = requests.request("GET", self._to_request_url(instrument, base))
             if response.status_code in range(200, 300) and "code" not in dict(response.json()):
                 return response
             else:
-                print(f"Your request for '{instrument}{base}' at {self} didn't produce a valid response.")
+                if verbose:
+                    print(f"Your request for '{instrument}{base}' at {self} didn't produce a valid response.")
                 return None
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
-            print(f"Your request for '{instrument}{base}' at {self} timed out, retrying in 5s...")
+            if verbose:
+                print(f"Your request for '{instrument}{base}' at {self} timed out, retrying in 5s...")
             sleep(5.0)
             self._make_request(instrument, base)
         except requests.exceptions.RequestException:
-            print(f"Your request for '{instrument}{base}' at {self} failed")
+            if verbose:
+                print(f"Your request for '{instrument}{base}' at {self} failed")
             return None
 
     def _normalize_response_contents(self, buys, sells) -> tuple[OrderList, OrderList]:
@@ -218,7 +225,7 @@ def price_diff(lhs: dict[float, float], rhs: dict[float, float]):
 
 def compare_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: str = BASE_CURRENCY,
                    kind: str = "buy", verbose: bool = True):
-    """Compares prices buy of sell for a given instrument at two markets m1, m2.
+    """Creates a generator comparing buy or sell prices for a given instrument at two markets m1, m2.
     Update frequency is constrained by a timeout.
 
     Args:
@@ -269,32 +276,55 @@ def compare_transfer_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str,
         sleep(DEFAULT_TIMOUT)
 
 
-def arbitrage_monitor(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: str = BASE_CURRENCY,
-                      verbose: bool = True):
+def arbitrage_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: str = BASE_CURRENCY,
+                     verbose: bool = True):
+    """Creates a generator for monitoring arbitrage opportunity for buy at market m1 and sell at m2 of a given symbol
+    Fees are taken into account if relevant entries are present in config
+
+    Args:
+        m1: Buy market for given instrument
+        m2: Sell market for given instrument
+        instrument: Instrument intended to buy at m1 and sell at m2
+        base: Base currency
+        verbose: prints the results if set to True
+
+    Returns:
+        Profit if arbitrage opportunity exists in base currency, 0.0 otherwise
+
+    Raises:
+        StopIteration: when the stream couldn't be established after max_retries as stated in the config file
+    """
+    retries = MAX_RETRIES
     while True:
         try:
             b1, s1 = m1.get_orders(instrument, base, size=-1, verbose=False)
             b2, s2 = m2.get_orders(instrument, base, size=-1, verbose=False)
 
-            print(s1)
-            print(b2)
+            # TODO: flipped for testins
 
-            # TODO flipped data
+            if verbose:
+                print(f"Analyzing query for {instrument}{base}:")
+                print(s2)
+                print(b1)
+
             to_buy = [[price, qty] for price, qty in s2.items()]
             to_sell = [[price, qty] for price, qty in b1.items()]
 
             profit = 0.0
 
+            # Arbitrage is possible only when buy price at m1 is lower then sell price at m2
+            # If such condition occurs then further analysis must be made by taking fees into account
             while to_buy and to_sell and to_buy[0][0] < to_sell[0][0]:
-                print("ANALYZING:")
-                print(to_buy[0], to_sell[0])
                 buy_qty = min(to_buy[0][1], to_sell[0][1])
                 buy_value = m1.order_value(to_buy[0][0], buy_qty, instrument, kind="buy")
                 sell_value = m2.order_value(to_sell[0][0], buy_qty, instrument, kind="sell")
-                print(buy_value, sell_value)
                 if buy_value < sell_value:
                     profit += sell_value - buy_value
-                    print("buy qty: %s" % buy_qty)
+                    if verbose:
+                        print(f"\tBuy {buy_qty} {instrument} at market {m1} for {to_buy[0][0]} {instrument}{base}")
+                        print(f"\tSell {buy_qty} {instrument} at market {m2} for {to_sell[0][0]} {instrument}{base}")
+                        print(f"\tTotal profit on order: {sell_value} {base} - {buy_value} {base} ="
+                              f" {sell_value - buy_value} {base}\n")
                     if to_buy[0][1] < to_sell[0][1]:
                         del to_buy[0]
                         to_sell[0][1] -= buy_qty
@@ -304,12 +334,26 @@ def arbitrage_monitor(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base:
                 else:
                     break
 
+            if verbose and profit == 0.0:
+                print(f"No orders were found to be profitable for buy of {instrument} at {m1} and sell at {m2}\n")
+
             yield profit
 
             sleep(5.0)
-        except ValueError:
+        except TypeError:
+            retries -= 1 if retries != -1 else 0
             if verbose:
-                print(f"Fetching data for {instrument} failed")
+                print(f"Fetching data for {instrument} failed. ", end='')
+
+            if retries != 0:
+                if verbose:
+                    print(f"Retrying in {DEFAULT_TIMOUT} sec")
+            else:
+                if verbose:
+                    print(f"Arbitrage stream failed to establish connection for pair {instrument}{base} "
+                          f"at markets {m1}, {m2} after {MAX_RETRIES} retries. Terminating generator...")
+                    break
+
             yield 0.0
             sleep(DEFAULT_TIMOUT)
 
@@ -331,12 +375,15 @@ def _onload():
         config = load_config(CONFIG_PATH)
         preferences = config["preferences"]
 
-        global DEFAULT_TIMOUT, DEFAULT_ORDER_NUM, BASE_CURRENCY
+        global DEFAULT_TIMOUT, DEFAULT_ORDER_NUM, BASE_CURRENCY, MAX_RETRIES
         DEFAULT_TIMOUT = preferences["default_timout"]
         DEFAULT_ORDER_NUM = preferences["default_order_num"]
         BASE_CURRENCY = preferences["base_currency"]
+        MAX_RETRIES = preferences["max_retries"]
+
+        print("User preferences loaded successfully\n")
     except KeyError:
-        print("Preferences entries not found, using default values")
+        print("Some of the preferences couldn't been set, using default values")
     except FileNotFoundError:
         decision = input("Config file not discovered. Would you like to create config? Y/n: ")
         if decision == "y" or decision == "Y" or decision == "\n":
