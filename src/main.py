@@ -8,7 +8,7 @@ DEBUG = True
 
 def printBidsAsks(bids, asks):
     print("BIDS[0] / BIDS[1]: ", bids[0]["price"]/bids[1]["price"] * 100, "%", sep='') # kupno (w sensie gielda za ile kupuje)
-    print("ASKS[0] / ASKS[0]: ", asks[0]["price"]/asks[1]["price"] * 100, "%", sep='') # sprzedaz
+    print("ASKS[0] / ASKS[1]: ", asks[0]["price"]/asks[1]["price"] * 100, "%", sep='') # sprzedaz
     print("BIDS[0] / ASKS[1]: ", bids[0]["price"]/asks[1]["price"] * 100, "%", sep='')
     print("BIDS[1] / ASKS[0]: ", bids[1]["price"]/asks[0]["price"] * 100, "%", sep='')
 
