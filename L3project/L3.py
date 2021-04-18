@@ -109,20 +109,20 @@ def calculate_arbitration(bids_and_asks_bitbay: list[list[tuple[float, float]]],
     bids_bittrex = bids_and_asks_bittrex[0]
     asks_bittrex = bids_and_asks_bittrex[1]
 
-    buy_on_bitbay_data_pack = []
+    ask_bid_tuples_buy_on_bitbay = []
     for ask in asks_bitbay:
         for bid in bids_bittrex:
-            buy_on_bitbay_data_pack.append((ask, bid))
+            ask_bid_tuples_buy_on_bitbay.append((ask, bid))
 
-    buy_on_bittrex_data_pack = []
+    ask_bid_tuples_buy_on_bittrex = []
     for ask in asks_bittrex:
         for bid in bids_bitbay:
-            buy_on_bittrex_data_pack.append((ask, bid))
+            ask_bid_tuples_buy_on_bittrex.append((ask, bid))
 
     print(f"ARBITRATION FOR {currencies[0]} - {currencies[1]} BUY ON BITBAY SELL ON BITTREX")
-    print_arbitration_details(buy_on_bitbay_data_pack, currencies, "BITBAY")
+    print_arbitration_details(ask_bid_tuples_buy_on_bitbay, currencies, "BITBAY")
     print(f"ARBITRATION FOR {currencies[0]} - {currencies[1]} BUY ON BITTREX SELL ON BITBAY")
-    print_arbitration_details(buy_on_bittrex_data_pack, currencies, "BITTREX")
+    print_arbitration_details(ask_bid_tuples_buy_on_bittrex, currencies, "BITTREX")
 
 
 def print_arbitration_details(ask_bid_tuples: list[tuple[tuple[float, float], tuple[float, float]]],
@@ -151,9 +151,11 @@ def calculate_income(ask_bid_tuples: list[tuple[tuple[float, float], tuple[float
     for i in range(len(ask_bid_tuples)):
         if ask_bid_tuples[i][0][0] < ask_bid_tuples[i][1][0]:
             print("\nTHERE IS POSSIBILITY OF ARBITRATION!")
-            cost_of_buying = ask_bid_tuples[i][0][0] * ask_bid_tuples[i][0][1] * (1 + to_buy_from_taker_fee + to_buy_from_currency_fee)
+            cost_of_buying = ask_bid_tuples[i][0][0] * ask_bid_tuples[i][0][1] * (1 + to_buy_from_taker_fee
+                                                                                  + to_buy_from_currency_fee)
             print(f"ask: {cost_of_buying} with exchange rate {ask_bid_tuples[i][0][0]}")
-            received_money_from_second_api = ask_bid_tuples[i][1][0] * ask_bid_tuples[i][1][1] * (1 - to_sell_taker_fee - to_sell_currency_fee)
+            received_money_from_second_api = ask_bid_tuples[i][1][0] * ask_bid_tuples[i][1][1] * (1 - to_sell_taker_fee
+                                                                                                  - to_sell_currency_fee)
             print(f"bid: {received_money_from_second_api} with exchange rate {ask_bid_tuples[i][1][0]}")
             income = received_money_from_second_api - cost_of_buying
             if income > 0:
@@ -171,8 +173,8 @@ def show_loop_apis_data(list_of_currencies: list[tuple[str, str]]):
 
 def main():
     list_of_currencies = data_to_get()
-    show_apis_data_once(list_of_currencies)
-    # show_loop_apis_data(list_of_tuples)
+    # show_apis_data_once(list_of_currencies)
+    show_loop_apis_data(list_of_currencies)
 
 
 if __name__ == "__main__":
