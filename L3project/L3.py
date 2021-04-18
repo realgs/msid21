@@ -70,30 +70,6 @@ def request_bids_and_asks_bittrex(currencies: tuple[str, str]):
         raise Exception(f"Empty bids and asks list in BITTREX for ({currencies[0]},{currencies[1]})")
 
 
-"""
-def get_and_show_all_info(list_of_currencies: list[tuple[str, str]]):
-    for currencies in list_of_currencies:
-        bids_and_asks_bitbay = request_bids_and_asks_bitbay(currencies)
-        bids_and_asks_bittrex = request_bids_and_asks_bittrex(currencies)
-        print("**********************************************BITBAY*************************************************")
-        display_info(bids_and_asks_bitbay, currencies)
-        print("**********************************************BITTREX************************************************")
-        display_info(bids_and_asks_bittrex, currencies)
-"""
-
-"""
-def get_info_multiple_currencies(currencies: tuple[str, str]):
-    bids_and_asks = request_specified_bids_and_asks(currencies)
-    display_info(bids_and_asks, currencies)
-"""
-
-"""
-def print_offer(offer: tuple[float, float], currencies: tuple[str, str]):
-    print(f"1 {currencies[0]} = {offer[0]} {currencies[1]}")
-    print(f"{'%.8f' % offer[1]} {currencies[0]} for {'%.2f' % (offer[1] * offer[0])} {currencies[1]}\n")
-"""
-
-
 def display_info(bids_and_asks: list[list[tuple[float, float]]], currencies: tuple[str, str]):
     if len(bids_and_asks) <= 0:
         raise Exception("No offers")
@@ -149,7 +125,7 @@ def calculate_arbitration(bids_and_asks_bitbay: list[list[tuple[float, float]]],
     print_arbitration_details(buy_on_bittrex_data_pack, currencies, "BITTREX")
 
 
-def print_arbitration_details(data_pack: list[tuple[tuple[float, float], tuple[float, float]]],
+def print_arbitration_details(ask_bid_tuples: list[tuple[tuple[float, float], tuple[float, float]]],
                               currencies: tuple[str, str], api_to_buy_from: str):
     if api_to_buy_from == "BITBAY":
         to_buy_from_taker_fee = float(FEES_BITBAY["TAKER_FEE"])
@@ -157,7 +133,7 @@ def print_arbitration_details(data_pack: list[tuple[tuple[float, float], tuple[f
         API_CURRENCY_FEE_KEY = f"{currencies[0]}_FEE"
         to_buy_from_currency_fee = float(FEES_BITBAY[API_CURRENCY_FEE_KEY])
         to_sell_currency_fee = float(FEES_BITTREX[API_CURRENCY_FEE_KEY])
-        calculate_income(data_pack, to_buy_from_taker_fee, to_buy_from_currency_fee, to_sell_taker_fee,
+        calculate_income(ask_bid_tuples, to_buy_from_taker_fee, to_buy_from_currency_fee, to_sell_taker_fee,
                          to_sell_currency_fee)
     elif api_to_buy_from == "BITTREX":
         to_buy_from_taker_fee = float(FEES_BITTREX["TAKER_FEE"])
@@ -165,47 +141,37 @@ def print_arbitration_details(data_pack: list[tuple[tuple[float, float], tuple[f
         API_CURRENCY_FEE_KEY = f"{currencies[0]}_FEE"
         to_buy_from_currency_fee = float(FEES_BITTREX[API_CURRENCY_FEE_KEY])
         to_sell_currency_fee = float(FEES_BITBAY[API_CURRENCY_FEE_KEY])
-        calculate_income(data_pack, to_buy_from_taker_fee, to_buy_from_currency_fee, to_sell_taker_fee,
+        calculate_income(ask_bid_tuples, to_buy_from_taker_fee, to_buy_from_currency_fee, to_sell_taker_fee,
                          to_sell_currency_fee)
 
 
-def calculate_income(data_pack: list[tuple[tuple[float, float], tuple[float, float]]], to_buy_from_taker_fee: float,
+def calculate_income(ask_bid_tuples: list[tuple[tuple[float, float], tuple[float, float]]], to_buy_from_taker_fee: float,
                      to_buy_from_currency_fee: float, to_sell_taker_fee: float, to_sell_currency_fee: float):
 
-    for i in range(len(data_pack)):
-        ask = data_pack[i][0][0] * data_pack[i][0][1] * (1 - to_buy_from_taker_fee - to_buy_from_currency_fee)
-        bid = data_pack[i][1][0] * data_pack[i][1][1] * (1 - to_sell_taker_fee - to_sell_currency_fee)
-        spread = ask - bid
-        percentage_overall = 1 - (spread / ask)
-        print(f"ask offer gives {'%.2f' % (percentage_overall * 100)}% with income {spread}")
+    for i in range(len(ask_bid_tuples)):
+        if ask_bid_tuples[i][0][0] < ask_bid_tuples[i][1][0]:
+            print("\nTHERE IS POSSIBILITY OF ARBITRATION!")
+            cost_of_buying = ask_bid_tuples[i][0][0] * ask_bid_tuples[i][0][1] * (1 + to_buy_from_taker_fee + to_buy_from_currency_fee)
+            print(f"ask: {cost_of_buying} with exchange rate {ask_bid_tuples[i][0][0]}")
+            received_money_from_second_api = ask_bid_tuples[i][1][0] * ask_bid_tuples[i][1][1] * (1 - to_sell_taker_fee - to_sell_currency_fee)
+            print(f"bid: {received_money_from_second_api} with exchange rate {ask_bid_tuples[i][1][0]}")
+            income = received_money_from_second_api - cost_of_buying
+            if income > 0:
+                print("WE HAVE A GREAT PROPOSITON FOR TRANSACTION HERE!")
+            percentage_overall = 1 - (income / cost_of_buying)
+            print(f"ask offer gives {'%.2f' % (percentage_overall * 100)}% with income {income}\n")
 
-"""
-def show_percentages(bids_and_asks: list[list[float, float]]):
-    bids = bids_and_asks[0]
-    asks = bids_and_asks[1]
-
-    for i in range(len(asks)):
-        ask_offer = asks[i][0]
-        for j in range(len(bids)):
-            bid_offer = bids[j][0]
-            spread = ask_offer - bid_offer
-            percentage_overall = 1 - (spread / ask_offer)
-            print()
-"""
 
 def show_loop_apis_data(list_of_currencies: list[tuple[str, str]]):
     while True:
-        print("*****************************UPDATE*****************************")
-        for currencies in list_of_currencies:
-            bids_and_asks = request_bids_and_asks_bitbay(currencies)
-            display_info(bids_and_asks, currencies)
-            show_percentages(bids_and_asks)
+        print("\n*****************************UPDATE*****************************")
+        show_apis_data_once(list_of_currencies)
         sleep(REFRESH_DATA_TIMEOUT_SEC)
 
 
 def main():
-    list_of_tuples = data_to_get()
-    show_apis_data_once(list_of_tuples)
+    list_of_currencies = data_to_get()
+    show_apis_data_once(list_of_currencies)
     # show_loop_apis_data(list_of_tuples)
 
 
