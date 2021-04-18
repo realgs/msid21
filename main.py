@@ -86,6 +86,14 @@ def diff(first_source_offers, second_source_offers, currencies):
         print("Widełki ceny kupna sprzedaży bidrex-bidbay:", end=" ")
         print("{:.2%}".format(spread_between_markets(second_source_offers[i]["asks"], first_source_offers[i]["bids"])))
 
+        print("\nArbitaż bidbay-bidrex")
+        display_arbitration_best_result(first_source_offers[i]["asks"], second_source_offers[i]["bids"],
+                                        TAKER_FEE_API_1, WITHDRAWAL_FEE_API_1, TAKER_FEE_API_2, currencies[i])
+
+        print("\nArbitaż bidrex-bidbay")
+        display_arbitration_best_result(second_source_offers[i]["asks"], first_source_offers[i]["bids"],
+                                        TAKER_FEE_API_2, WITHDRAWAL_FEE_API_2, TAKER_FEE_API_1, currencies[i])
+
 
 def diff_ask(first_source_ask_prices, second_source_ask_prices):
     return abs(first_source_ask_prices[0][0] - second_source_ask_prices[0][0]) / second_source_ask_prices[0][0]
@@ -100,6 +108,38 @@ def spread_between_markets(first_source_ask_prices, second_source_bid_prices):
     best_bid_offer = max([second_source_bid_prices[i][0] for i in range(len(second_source_bid_prices))])
 
     return (best_bid_offer - best_ask_offer) / best_ask_offer
+
+
+def display_arbitration_best_result(first_source_ask_prices, second_source_bid_prices, taker_fee_source, withdrawal_fee,
+                                    taker_fee_destiny, currencies):
+    best_ask_offer = first_source_ask_prices[0]
+    best_bid_offer = second_source_bid_prices[0]
+
+    for i in range(1, len(first_source_ask_prices)):
+        if first_source_ask_prices[i][0] < best_ask_offer[0]:
+            best_ask_offer = first_source_ask_prices[i]
+
+    for i in range(1, len(second_source_bid_prices)):
+        if second_source_bid_prices[i][0] > best_bid_offer[0]:
+            best_bid_offer = second_source_bid_prices[i]
+
+    volume = min(best_ask_offer[1], best_bid_offer[1])
+
+    if volume <= withdrawal_fee:
+        print("Arbitraż nieopłacalny")
+        return
+
+    expense = (1 + taker_fee_source) * best_ask_offer[0] * volume
+    gain = (1 - taker_fee_destiny) * best_bid_offer[0] * (volume - withdrawal_fee)
+
+    arbitration_best_result = gain - expense
+
+    if arbitration_best_result < 0:
+        print("Arbitraż nieopłacalny")
+    else:
+        formatted_text = "Arbitraż opłacalny można kupić {} {} i zarobić na tym {:.2%} czyli {:.2f} {}"
+        print(formatted_text.format(volume, currencies[0],
+                                    (gain - expense) / expense, arbitration_best_result, currencies[1]))
 
 
 if __name__ == '__main__':
