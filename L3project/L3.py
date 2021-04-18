@@ -4,7 +4,15 @@ from time import sleep
 API = "https://bitbay.net/API/Public/"
 API2 = "https://api.bittrex.com/api/v1.1/public/getorderbook?market="
 DEFAULT_USER_CURRENCY = "USD"
-DEFAULT_USER_INFO_CURRENCIES = ["BTC", "LTC", "DASH"]
+DEFAULT_USER_INFO_CURRENCIES = ["BTC"]
+FEES_BITBAY = {
+    "TAKER_FEE": 0.0042,
+    "BTC_FEE": 0.0001,
+}
+FEES_BITREX = {
+    "TAKER_FEE": 0.0025,
+    "BTC_FEE": 0.0001,
+}
 REFRESH_DATA_TIMEOUT_SEC = 5
 DEFAULT_NUMBER_OF_OFFERS = 5
 
@@ -113,6 +121,32 @@ def show_apis_data_once(list_of_currencies: list[tuple[str, str]]):
         display_info(bids_and_asks_bitbay, currencies)
         print("**********************************************BITTREX************************************************")
         display_info(bids_and_asks_bittrex, currencies)
+        print("********************************************ARBITRATION********************************************")
+        calculate_arbitration(bids_and_asks_bitbay,bids_and_asks_bittrex,currencies)
+
+def print_arbitration_details(data_pack: list[tuple[float,float]]):
+    print("implementation needed")
+
+def calculate_arbitration(bids_and_asks_bitbay: list[list[float, float]],bids_and_asks_bittrex: list[list[float, float]], currencies: tuple[str,str]):
+    bids_bitbay = bids_and_asks_bitbay[0]
+    asks_bitbay = bids_and_asks_bitbay[1]
+    bids_bittrex = bids_and_asks_bittrex[0]
+    asks_bittrex = bids_and_asks_bittrex[1]
+
+    buy_on_bitbay_data_pack = []
+    for ask in asks_bitbay:
+        for bid in bids_bittrex:
+            buy_on_bitbay_data_pack.append((float(ask), float(bid)))
+
+    buy_on_bittrex_data_pack = []
+    for ask in asks_bittrex:
+        for bid in bids_bitbay:
+            buy_on_bittrex_data_pack.append((float(ask), float(bid)))
+
+    print(f"ARBITRATION FOR {currencies[0]} - {currencies[1]} BUY ON BITBAY SELL ON BITTREX")
+    print_arbitration_details(buy_on_bitbay_data_pack)
+    print(f"ARBITRATION FOR {currencies[0]} - {currencies[1]} BUY ON BITTREX SELL ON BITBAY")
+    print_arbitration_details(buy_on_bittrex_data_pack)
 
 
 def show_percentages(bids_and_asks: list[list[float, float]]):
