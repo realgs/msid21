@@ -9,7 +9,7 @@ FEES_BITBAY = {
     "TAKER_FEE": 0.0042,
     "BTC_FEE": 0.0001,
 }
-FEES_BITREX = {
+FEES_BITTREX = {
     "TAKER_FEE": 0.0025,
     "BTC_FEE": 0.0001,
 }
@@ -93,11 +93,6 @@ def print_offer(offer: tuple[float, float], currencies: tuple[str, str]):
     print(f"{'%.8f' % offer[1]} {currencies[0]} for {'%.2f' % (offer[1] * offer[0])} {currencies[1]}\n")
 """
 
-def display_info_helper(offers: list[tuple[float, float]], currencies: tuple[str, str]):
-    for offer in offers:
-        print(f"1 {currencies[0]} = {offer[0]} {currencies[1]}")
-        print(f"{'%.8f' % offer[1]} {currencies[0]} for {'%.2f' % (offer[1] * offer[0])} {currencies[1]}\n")
-
 
 def display_info(bids_and_asks: list[list[tuple[float, float]]], currencies: tuple[str, str]):
     if len(bids_and_asks) <= 0:
@@ -113,6 +108,12 @@ def display_info(bids_and_asks: list[list[tuple[float, float]]], currencies: tup
     display_info_helper(asks, currencies)
 
 
+def display_info_helper(offers: list[tuple[float, float]], currencies: tuple[str, str]):
+    for offer in offers:
+        print(f"1 {currencies[0]} = {offer[0]} {currencies[1]}")
+        print(f"{'%.8f' % offer[1]} {currencies[0]} for {'%.2f' % (offer[1] * offer[0])} {currencies[1]}\n")
+
+
 def show_apis_data_once(list_of_currencies: list[tuple[str, str]]):
     for currencies in list_of_currencies:
         bids_and_asks_bitbay = request_bids_and_asks_bitbay(currencies)
@@ -122,12 +123,11 @@ def show_apis_data_once(list_of_currencies: list[tuple[str, str]]):
         print("**********************************************BITTREX************************************************")
         display_info(bids_and_asks_bittrex, currencies)
         print("********************************************ARBITRATION********************************************")
-        calculate_arbitration(bids_and_asks_bitbay,bids_and_asks_bittrex,currencies)
+        calculate_arbitration(bids_and_asks_bitbay, bids_and_asks_bittrex, currencies)
 
-def print_arbitration_details(data_pack: list[tuple[float,float]]):
-    print("implementation needed")
 
-def calculate_arbitration(bids_and_asks_bitbay: list[list[float, float]],bids_and_asks_bittrex: list[list[float, float]], currencies: tuple[str,str]):
+def calculate_arbitration(bids_and_asks_bitbay: list[list[tuple[float, float]]],
+                          bids_and_asks_bittrex: list[list[tuple[float, float]]], currencies: tuple[str, str]):
     bids_bitbay = bids_and_asks_bitbay[0]
     asks_bitbay = bids_and_asks_bitbay[1]
     bids_bittrex = bids_and_asks_bittrex[0]
@@ -136,19 +136,50 @@ def calculate_arbitration(bids_and_asks_bitbay: list[list[float, float]],bids_an
     buy_on_bitbay_data_pack = []
     for ask in asks_bitbay:
         for bid in bids_bittrex:
-            buy_on_bitbay_data_pack.append((float(ask), float(bid)))
+            buy_on_bitbay_data_pack.append((ask, bid))
 
     buy_on_bittrex_data_pack = []
     for ask in asks_bittrex:
         for bid in bids_bitbay:
-            buy_on_bittrex_data_pack.append((float(ask), float(bid)))
+            buy_on_bittrex_data_pack.append((ask, bid))
 
     print(f"ARBITRATION FOR {currencies[0]} - {currencies[1]} BUY ON BITBAY SELL ON BITTREX")
-    print_arbitration_details(buy_on_bitbay_data_pack)
+    print_arbitration_details(buy_on_bitbay_data_pack, currencies, "BITBAY")
     print(f"ARBITRATION FOR {currencies[0]} - {currencies[1]} BUY ON BITTREX SELL ON BITBAY")
-    print_arbitration_details(buy_on_bittrex_data_pack)
+    print_arbitration_details(buy_on_bittrex_data_pack, currencies, "BITTREX")
 
 
+def print_arbitration_details(data_pack: list[tuple[tuple[float, float], tuple[float, float]]],
+                              currencies: tuple[str, str], api_to_buy_from: str):
+    if api_to_buy_from == "BITBAY":
+        to_buy_from_taker_fee = float(FEES_BITBAY["TAKER_FEE"])
+        to_sell_taker_fee = float(FEES_BITTREX["TAKER_FEE"])
+        API_CURRENCY_FEE_KEY = f"{currencies[0]}_FEE"
+        to_buy_from_currency_fee = float(FEES_BITBAY[API_CURRENCY_FEE_KEY])
+        to_sell_currency_fee = float(FEES_BITTREX[API_CURRENCY_FEE_KEY])
+        calculate_income(data_pack, to_buy_from_taker_fee, to_buy_from_currency_fee, to_sell_taker_fee,
+                         to_sell_currency_fee)
+    elif api_to_buy_from == "BITTREX":
+        to_buy_from_taker_fee = float(FEES_BITTREX["TAKER_FEE"])
+        to_sell_taker_fee = float(FEES_BITBAY["TAKER_FEE"])
+        API_CURRENCY_FEE_KEY = f"{currencies[0]}_FEE"
+        to_buy_from_currency_fee = float(FEES_BITTREX[API_CURRENCY_FEE_KEY])
+        to_sell_currency_fee = float(FEES_BITBAY[API_CURRENCY_FEE_KEY])
+        calculate_income(data_pack, to_buy_from_taker_fee, to_buy_from_currency_fee, to_sell_taker_fee,
+                         to_sell_currency_fee)
+
+
+def calculate_income(data_pack: list[tuple[tuple[float, float], tuple[float, float]]], to_buy_from_taker_fee: float,
+                     to_buy_from_currency_fee: float, to_sell_taker_fee: float, to_sell_currency_fee: float):
+
+    for i in range(len(data_pack)):
+        ask = data_pack[i][0][0] * data_pack[i][0][1] * (1 - to_buy_from_taker_fee - to_buy_from_currency_fee)
+        bid = data_pack[i][1][0] * data_pack[i][1][1] * (1 - to_sell_taker_fee - to_sell_currency_fee)
+        spread = ask - bid
+        percentage_overall = 1 - (spread / ask)
+        print(f"ask offer gives {'%.2f' % (percentage_overall * 100)}% with income {spread}")
+
+"""
 def show_percentages(bids_and_asks: list[list[float, float]]):
     bids = bids_and_asks[0]
     asks = bids_and_asks[1]
@@ -159,8 +190,8 @@ def show_percentages(bids_and_asks: list[list[float, float]]):
             bid_offer = bids[j][0]
             spread = ask_offer - bid_offer
             percentage_overall = 1 - (spread / ask_offer)
-            print(f"ask offer {i} with offer {j} gives {'%.2f' % (percentage_overall * 100)}%")
-
+            print()
+"""
 
 def show_loop_apis_data(list_of_currencies: list[tuple[str, str]]):
     while True:
