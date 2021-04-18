@@ -1,8 +1,12 @@
 import requests
 import time
 
+BITBAY_TAKER = 0.0037
+BITBAY_TRANSFER_FEE = 0.0005
+BITTREX_TAKER = 0.0035
+BITTREX_TRANSFER_FEE = 0.0005
+LIMIT = 1
 
-LIMIT = 3
 
 def main():
     calculate_price_differences()
@@ -60,7 +64,19 @@ def print_arbitrage(data):
     print(f"BITTREX-BITBAY ARBITRAGE = {bittrex_bitbay_arbitrage:.3f}%")
     print(f"BITBAY-BITTREX ARBITRAGE = {bitbay_bittrex_arbitrage:.3f}%")
 
+    bitbay_volume = data['bitbay']['bids'][0][1]
+    bittrex_volume = data['bittrex']['asks'][0][1]
 
+    volume = min(bitbay_volume, bittrex_volume)
+    real_volume = volume * (1 - BITTREX_TAKER) - BITTREX_TRANSFER_FEE
+    bittrex_price = volume * bittrex_ask_price
+    bitbay_price = real_volume * bitbay_bid_price
+
+    profit = bitbay_price - bittrex_price
+
+    print(f"VOLUME = {volume} BTC")
+    print(f"PERCENT PROFIT = {profit / bittrex_price * 100:.2f}%")
+    print(f"PROFIT = {profit:.2f} USD")
 
     print()
 
@@ -71,7 +87,6 @@ def calculate_price_differences():
         print_buy_difference(data)
         print_sell_difference(data)
         print_arbitrage(data)
-        # print_
         time.sleep(5)
 
 
