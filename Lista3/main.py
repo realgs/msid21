@@ -1,23 +1,19 @@
 import requests
 import time
 
-BITBAY_URL = "https://bitbay.net/API/Public/"
-BITBAY_ORDERBOOK = "/orderbook"
-FORMAT = ".json"
-
-BITREX_URL = "https://api.bittrex.com/api/v1.1/public/getorderbook?market="
-BITREX_ORDERBOOK_TYPE = "&type=both"
-
-CRYPTOCURRIRNCIES = ["BTC", "ETH", "XRP", "None"]
+CRYPTOCURRIRNCIES = ["BTC", "ETH", "XRP"]
+NORMALIZED_OPERATIONS = ['bids', 'asks']
+REAL_CURRENCY = "USD"
+WAITING_TIME = 5
+ARTIFICIAL_LOOP_LIMIT = 10
 
 API_INFO = [
     {
         'name': 'BITBAY',
         'url': 'https://bitbay.net/API/Public/',
-        'separator': '',
         'orderbook': '/orderbook',
         'format': '.json',
-        'taker': 0.4,
+        'taker': 0.43,
         'transferFee': {
             "BTC": 0.0005,
             "ETH": 0.01,
@@ -29,7 +25,6 @@ API_INFO = [
         'url': 'https://api.bittrex.com/api/v1.1/public/getorderbook?market=',
         'separator': '-',
         'orderbook': '&type=both',
-        'format': '',
         'taker': 0.25,
         'transferFee': {
             "BTC": 0.0005,
@@ -38,10 +33,6 @@ API_INFO = [
         }
     }
 ]
-REAL_CURRENCY = "USD"
-WAITING_TIME = 5
-ARTIFICIAL_LOOP_LIMIT = 10
-ARTIFICIAL_DATA_LIMIT = 5
 
 
 def parse_bitrex_data(jsondata):
@@ -78,16 +69,16 @@ def get_api_response(url):
         return None
 
 
-def get_offers(currency, api):
-    if api == API_INFO[0]["name"]:
-        offers = get_api_response(f'{API_INFO[0]["url"]}{currency}{API_INFO[0]["separator"]}'
+def get_offers(currency, market):
+    if market == API_INFO[0]["name"]:
+        offers = get_api_response(f'{API_INFO[0]["url"]}{currency}'
                                   f'{REAL_CURRENCY}{API_INFO[0]["orderbook"]}{API_INFO[0]["format"]}')
         if offers is not None:
             return offers
 
-    elif api == API_INFO[1]["name"]:
+    elif market == API_INFO[1]["name"]:
         offers = get_api_response(f'{API_INFO[1]["url"]}{REAL_CURRENCY}{API_INFO[1]["separator"]}'
-                                  f'{currency}{API_INFO[1]["orderbook"]}{API_INFO[1]["format"]}')
+                                  f'{currency}{API_INFO[1]["orderbook"]}')
         if offers is not None:
             return parse_bitrex_data(offers)
 
@@ -95,9 +86,13 @@ def get_offers(currency, api):
         return None
 
 
-def print_offers(currency, api):
+def calculate_percentage_difference(order1, order2):
+    return round((1 - (order1 - order2) / order2) * 100, 2)
+
+
+def print_offers(currency, market):
     print("Offers for: " + currency + " in: " + REAL_CURRENCY)
-    offers = get_offers(currency, api)
+    offers = get_offers(currency, market)
     if offers is not None:
         print("Bids:")
         if offers.get("bids", None):
@@ -118,59 +113,37 @@ def print_category(table):
         print(entry[0], "\t", entry[1])
 
 
-def calculate_buy_sell_diffrence(currency):
-    offers = get_api_response(BITBAY_URL + currency + REAL_CURRENCY + BITBAY_ORDERBOOK + FORMAT)
-    if offers is not None:
-        bestBuyingPrice = -1
-        bestSellingPrice = -1
-        if offers.get("bids", None):
-            bestBuyingPrice = offers["bids"][0][0]
-        if offers.get("asks", None):
-            bestSellingPrice = offers["asks"][0][0]
-        if bestSellingPrice != -1 and bestBuyingPrice != -1:
-            return 1 - (bestSellingPrice - bestBuyingPrice) / bestBuyingPrice
-        else:
-            return None
-    else:
-        return None
-
-
-def print_price_diffrence(currency):
-    print("Diffrences for cryptocurrency: " + currency + " for costs in: " + REAL_CURRENCY)
-    i = 0
-    while i < ARTIFICIAL_LOOP_LIMIT:  # using artificial limit so that program would end
-        diffrence = calculate_buy_sell_diffrence(currency)
-        if diffrence is not None:
-            percentage = "{:.2%}".format(diffrence)
-            print(f"Check No. {i + 1}: {percentage}")
-        else:
-            print(f"Oops, selling and/or buying prices could not be read for check No. {i + 1}")
-        time.sleep(WAITING_TIME)
-        i += 1
-    print()
-
-
-def lista1():
-    # zad 1 (5 pkt)
-    print("------ BITBAY offers ------")
-    for crypto in CRYPTOCURRIRNCIES:
-        print_offers(crypto, "BITBAY")
-
-    print("\n------ BITREX offers ------")
-    for crypto in CRYPTOCURRIRNCIES:
-        print_offers(crypto, "BITREX")
-
-    # zad 2 (5 pkt)
-    # print("------ Task 2 ------")
-    # for crypto in CRYPTOCURRIRNCIES:
-    # print_price_diffrence(crypto)
-
-
 def test():
     print("------ BITREX offers ------")
     for crypto in CRYPTOCURRIRNCIES:
         print_offers(crypto, "BITREX")
 
 
+def zad1():
+    # Zad1 (5 pkt)
+    print("-------- Zad 1 --------")
+    for crypto in CRYPTOCURRIRNCIES:
+        print("#################################")
+        print("Percentage difference for cryptocurrency: " + crypto + " for costs in: " + REAL_CURRENCY)
+        i = 0
+        while i < ARTIFICIAL_LOOP_LIMIT:
+            offer1 = get_offers(crypto, API_INFO[0]["name"])
+            offer2 = get_offers(crypto, API_INFO[1]["name"])
+            if offer1 and offer2:
+                print(f'Buying ({API_INFO[0]["name"]} to {API_INFO[1]["name"]}):'
+                      f' {calculate_percentage_difference(offer1[NORMALIZED_OPERATIONS[0]][0][0], offer2[NORMALIZED_OPERATIONS[0]][0][0])} %')
+                print(f'Selling ({API_INFO[0]["name"]} to {API_INFO[1]["name"]}):'
+                      f' {calculate_percentage_difference(offer1[NORMALIZED_OPERATIONS[1]][0][0], offer2[NORMALIZED_OPERATIONS[1]][0][0])} %')
+                print(f'Buying in {API_INFO[0]["name"]} and selling in {API_INFO[1]["name"]}:'
+                      f' {calculate_percentage_difference(offer1[NORMALIZED_OPERATIONS[0]][0][0], offer2[NORMALIZED_OPERATIONS[1]][0][0])} %')
+                print(f'Buying in {API_INFO[1]["name"]} and selling in {API_INFO[0]["name"]}:'
+                      f' {calculate_percentage_difference(offer2[NORMALIZED_OPERATIONS[0]][0][0], offer1[NORMALIZED_OPERATIONS[1]][0][0])} %')
+            time.sleep(WAITING_TIME)
+            i += 1
+            print()
+        print()
+    print()
+
+
 if __name__ == '__main__':
-    lista1()
+    zad1()
