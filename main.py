@@ -50,7 +50,7 @@ def transform_bittrex_format_into_bitbay(data):
             transformed_data[i]["bids"].append([data[i]["result"]["buy"][j]["Rate"],
                                                 data[i]["result"]["buy"][j]["Quantity"]])
 
-        for j in range(len(data[i]["result"]["buy"])):
+        for j in range(len(data[i]["result"]["sell"])):
             transformed_data[i]["asks"].append([data[i]["result"]["sell"][j]["Rate"],
                                                 data[i]["result"]["sell"][j]["Quantity"]])
 
