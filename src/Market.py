@@ -11,7 +11,10 @@ class Market:
         self.__dataPath = dataPath
         self.__priceName = priceName
         self.__volumeName = volumeName
-        # self.__orderBook = requests.get(self.__url)
+        self.__orderBook = None
+
+    def isOrderBookFine(self):
+        return self.__orderBook != None
 
     def updateOrderBook(self):
         try:
@@ -46,3 +49,6 @@ class Market:
     
     def getTransferFee(self):
         return self.__transferFee
+
+    def getName(self):
+        return self.__name

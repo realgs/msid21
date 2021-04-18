@@ -6,26 +6,19 @@ CURRENCY1 = "USD"
 CURRENCY2 = "BTC"
 DEBUG = True
 
-def printBidsAsks(bids, asks):
-    print("BIDS[0] / BIDS[1]: ", bids[0]["price"]/bids[1]["price"] * 100, "%", sep='') # kupno (w sensie gielda za ile kupuje)
-    print("ASKS[0] / ASKS[1]: ", asks[0]["price"]/asks[1]["price"] * 100, "%", sep='') # sprzedaz
-    print("BIDS[0] / ASKS[1]: ", bids[0]["price"]/asks[1]["price"] * 100, "%", sep='')
-    print("BIDS[1] / ASKS[0]: ", bids[1]["price"]/asks[0]["price"] * 100, "%", sep='')
+def printBidsAsks(market1, market2):
+    print(f"BIDS {market1.getName()} / BIDS {market2.getName()}: ", market1.getLastBidPrice()/market2.getLastBidPrice() * 100, "%", sep='') # kupno (w sensie gielda za ile kupuje)
+    print(f"ASKS {market1.getName()} / ASKS {market2.getName()}: ", market1.getLastAskPrice()/market2.getLastAskPrice() * 100, "%", sep='') # sprzedaz
+    print(f"BIDS {market1.getName()} / ASKS {market2.getName()}: ", market1.getLastBidPrice()/market2.getLastAskPrice() * 100, "%", sep='')
+    print(f"BIDS {market2.getName()} / ASKS {market1.getName()}: ", market2.getLastBidPrice()/market1.getLastAskPrice() * 100, "%", sep='')
 
-def printArbitage(bids, asks):
-        volume10 = min(bids[0]["volume"], asks[1]["volume"])
-        sellPrice10 = volume10 * asks[1]["price"]
-        sellPrice10 += sellPrice10 * markets[1].getTaker() + sellPrice10 * markets[1].getTransferFee()
-        buyPrice10 = volume10 * bids[0]["price"]
-        buyPrice10 -= buyPrice10 * markets[0].getTaker()
-        print("sprzedaz od [1], kupno na [0] zysk: ", round(buyPrice10 - sellPrice10, 2), CURRENCY1, ", wolumen: ", volume10, ", do zarobienia: ",  100 * round(buyPrice10 - sellPrice10, 2)/sellPrice10, "%", sep='')
-
-        volume01 = min(bids[1]["volume"], asks[0]["volume"])
-        sellPrice01 = volume01 * asks[0]["price"]
-        sellPrice01 += sellPrice01 * markets[0].getTaker() + sellPrice01 * markets[0].getTransferFee()
-        buyPrice01 = volume01 * bids[1]["price"]
-        buyPrice01 -= buyPrice01 * markets[1].getTaker()
-        print("sprzedaz od [0], kupno na [1] zysk: ", round(buyPrice01 - sellPrice01, 2), CURRENCY1, ", wolumen: ", volume01, ", do zarobienia: ", 100 * round(buyPrice01 - sellPrice01, 2)/sellPrice01, "%", sep='')
+def printArbitage(marketBid, marketAsk):
+        volume = min(marketBid.getLastBidVolume(), marketAsk.getLastAskVolume())
+        askPrice = volume * marketAsk.getLastAskPrice()
+        askPrice += askPrice * marketAsk.getTaker() + askPrice * marketAsk.getTransferFee()
+        bidPrice = volume * marketBid.getLastBidPrice()
+        bidPrice -= bidPrice * marketBid.getTaker()
+        print(f"sprzedaz od {marketAsk.getName()}, kupno na {marketBid.getName()} zysk: ", round(bidPrice - askPrice, 2), CURRENCY1, ", wolumen: ", volume, ", do zarobienia: ",  100 * round(bidPrice - askPrice, 2)/askPrice, "%", sep='')
 
 if __name__ == '__main__':
     markets = ( 
@@ -36,21 +29,19 @@ if __name__ == '__main__':
     while True:
         for market in markets:
             market.updateOrderBook()
-
-        bids = ({"price" : markets[0].getLastBidPrice(), "volume" : markets[0].getLastBidVolume()}, {"price" : markets[1].getLastBidPrice(), "volume" : markets[1].getLastBidVolume()})
-        asks = ({"price" : markets[0].getLastAskPrice(), "volume" : markets[0].getLastAskPrice()}, {"price" : markets[1].getLastAskPrice(), "volume" : markets[1].getLastAskPrice()})
         
         goodData = True
-        for i in range(len(bids)):
-            if bids[i]["price"] == -1 or bids[i]["volume"] == -1 or asks[i]["price"] == -1 or asks[i]["price"] == -1:
+        for market in markets:
+            if market.isOrderBookFine() == False:
                 goodData = False
 
         if goodData == False:
             if DEBUG == True:
                 print("BLAD, czekam")
         else:
-            printBidsAsks(bids, asks)
-            printArbitage(bids, asks)
+            printBidsAsks(markets[0], markets[1])
+            printArbitage(markets[0], markets[1])
+            printArbitage(markets[1], markets[0])
 
         print()
         time.sleep(SLEEP_TIME)
