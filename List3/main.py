@@ -9,10 +9,12 @@ if __name__ == "__main__":
     bittrex = md.MarketDaemon.build_from_config("bittrex", CONFIG_PATH)
     bittrex.set_parser(bittrex_parser)
 
-    bitbay.get_orders("BTC")
-    bitbay.get_orders("BTCx")
+    # bitbay.get_orders("BTC")
+    # bitbay.get_orders("BTCx")
 
-    s = md.compare_stream(bitbay, bittrex, "BTC")
+    buy = md.compare_stream(bitbay, bittrex, "BTC")
+    sell = md.compare_stream(bitbay, bittrex, "BTC", kind="sell")
+
     ss = md.compare_transfer_stream(bitbay, bittrex, "BTC")
 
     aw = md.arbitrage_stream(bitbay, bittrex, "BTC")

@@ -135,31 +135,19 @@ class MarketDaemon:
             yield buys, sells
             sleep(timeout_sec)
 
-    def order_value(self, price: float, quantity: float, instrument: str, kind: str = "buy"):
-        """Returns total price of fulfilling a buy or a sell order including market fees if they are provided
+    def order_value(self, price: float, quantity: float, instrument: str):
+        """Returns total price of fulfilling (taking) an order including taker fees if they are provided
         If not returns bare value of the order. Kind can take values 'buy' or 'sell'"""
-        if kind == "buy":
-            try:
-                total = price * quantity
-                return total * (1 + self._settings["taker_fee"] + self._settings["transfer_fee"][instrument])
-            except KeyError:
-                print(f"Settings for market {self} do not have information about taker_fee or transfer_fee "
-                      f"for {instrument}. Returning bare order value.")
-                return price * quantity
-        elif kind == "sell":
-            try:
-                total = price * quantity
-                return total * (1 + 0)  # TODO there may be maker fees or withdrawal fees
-            except KeyError:
-                print(f"Settings for market {self} do not have information about maker_fee or withdrawal fees"
-                      f"for {instrument}. Returning bare order value.")
-                return price * quantity
-        else:
-            print("Invalid option")
-            return -1
+        try:
+            total = price * quantity
+            return total * (1 + self._settings["taker_fee"])
+        except KeyError:
+            print(f"Settings for market {self} do not have information about taker_fee or transfer_fee "
+                  f"for {instrument}. Returning bare order value.")
+            return price * quantity
 
-    def _make_request(self, instrument: str, base: str = BASE_CURRENCY, verbose: bool = True) -> Optional[
-        requests.Response]:
+    def _make_request(self, instrument: str, base: str = BASE_CURRENCY,
+                      verbose: bool = True) -> Optional[requests.Response]:
         try:
             response = requests.request("GET", self._to_request_url(instrument, base))
             if response.status_code in range(200, 300) and "code" not in dict(response.json()):
@@ -203,6 +191,12 @@ class MarketDaemon:
 
     def get_parser(self) -> Callable[[Any], OrderList]:
         return self._orderbook_parser
+
+    def transfer_fee(self, instrument: str):
+        if instrument in self._settings["transfer_fee"]:
+            return self._settings["transfer_fee"][instrument]
+        else:
+            return 0
 
     @property
     def settings(self):
@@ -300,7 +294,7 @@ def arbitrage_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: 
             b1, s1 = m1.get_orders(instrument, base, size=-1, verbose=False)
             b2, s2 = m2.get_orders(instrument, base, size=-1, verbose=False)
 
-            # TODO: flipped for testins
+            # TODO flipped
 
             if verbose:
                 print(f"Analyzing query for {instrument}{base}:")
@@ -311,20 +305,28 @@ def arbitrage_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: 
             to_sell = [[price, qty] for price, qty in b1.items()]
 
             profit = 0.0
+            volume = 0.0
+            total_buy = 0.0
+            transfer_fee_paid = False
 
             # Arbitrage is possible only when buy price at m1 is lower then sell price at m2
             # If such condition occurs then further analysis must be made by taking fees into account
             while to_buy and to_sell and to_buy[0][0] < to_sell[0][0]:
-                buy_qty = min(to_buy[0][1], to_sell[0][1])
-                buy_value = m1.order_value(to_buy[0][0], buy_qty, instrument, kind="buy")
-                sell_value = m2.order_value(to_sell[0][0], buy_qty, instrument, kind="sell")
+                buy_qty = min(to_buy[0][1], to_sell[0][1] + "fee")
+                if not transfer_fee_paid:
+                    transfer_fee_paid = True
+                buy_value = m1.order_value(to_buy[0][0], buy_qty, instrument)
+                sell_value = m2.order_value(to_sell[0][0], buy_qty, instrument)
                 if buy_value < sell_value:
+                    volume += buy_qty
+                    total_buy += buy_value
                     profit += sell_value - buy_value
                     if verbose:
                         print(f"\tBuy {buy_qty} {instrument} at market {m1} for {to_buy[0][0]} {instrument}{base}")
                         print(f"\tSell {buy_qty} {instrument} at market {m2} for {to_sell[0][0]} {instrument}{base}")
                         print(f"\tTotal profit on order: {sell_value} {base} - {buy_value} {base} ="
                               f" {sell_value - buy_value} {base}\n")
+                        print(f"TOTAL VOLUME{volume}")
                     if to_buy[0][1] < to_sell[0][1]:
                         del to_buy[0]
                         to_sell[0][1] -= buy_qty
