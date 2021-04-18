@@ -25,7 +25,7 @@ API_FIRST = 'https://api.bittrex.com/v3/markets/{}-{}/orderbook?depth={}'.format
                                                                                  SEARCH_CURRENCIES[1], 25)
 API_SECOND = 'https://bitbay.net/API/Public/{}{}/orderbook.json'.format(SEARCH_CURRENCIES[0], SEARCH_CURRENCIES[1])
 
-no_of_offers = 25
+NO_OF_OFFERS = 25
 DELAY = 5
 
 
@@ -112,22 +112,22 @@ def find_best_arbitrage(bid_offers, ask_offers, ask_taker, bid_taker, ask_transf
 
 
 def print_arbitrage_differ():
-    [bid_bittrex, ask_bittrex] = download_data_bittrex(API_FIRST, no_of_offers)
-    [bid_bitbay, ask_bitbay] = download_data_bitbay(API_SECOND, no_of_offers)
+    [bid_bittrex, ask_bittrex] = download_data_bittrex(API_FIRST, NO_OF_OFFERS)
+    [bid_bitbay, ask_bitbay] = download_data_bitbay(API_SECOND, NO_OF_OFFERS)
 
     print('Buy on BITTREX - sell on BITBAY (arbitrage): ')
     bid_offers = []
     ask_offers = []
-    for i in range(no_of_offers):
+    for i in range(NO_OF_OFFERS):
         bid_offers.append([retrieve_data_bitbay(bid_bitbay, i, RATE),
                            retrieve_data_bitbay(bid_bitbay, i, QUANTITY)])
         ask_offers.append([retrieve_data_bittrex(ask_bittrex, i, RATE),
                            retrieve_data_bittrex(ask_bittrex, i, QUANTITY)])
 
     [bought, left, invest, revenue] = find_best_arbitrage(bid_offers, ask_offers,
-                                         CURRENCIES[0]['taker_fee'],
-                                         CURRENCIES[1]['taker_fee'],
-                                         CURRENCIES[0]['transfer_fee']['BTC'])
+                                                          CURRENCIES[0]['taker_fee'],
+                                                          CURRENCIES[1]['taker_fee'],
+                                                          CURRENCIES[0]['transfer_fee']['BTC'])
 
     print(f'Volume: {bought} \t Left volume: {left} \t Spending: {invest} \t Revenue: {revenue}')
     print(f'Income in percentage: {get_percentage_differ(invest, revenue)}')
@@ -136,16 +136,16 @@ def print_arbitrage_differ():
     print('Buy on BITBAY - sell on BITTREX (arbitrage): ')
     bid_offers = []
     ask_offers = []
-    for i in range(no_of_offers):
+    for i in range(NO_OF_OFFERS):
         bid_offers.append([retrieve_data_bittrex(bid_bittrex, i, RATE),
                            retrieve_data_bittrex(bid_bittrex, i, QUANTITY)])
         ask_offers.append([retrieve_data_bitbay(ask_bitbay, i, RATE),
                            retrieve_data_bitbay(ask_bitbay, i, QUANTITY)])
 
     [bought, left, invest, revenue] = find_best_arbitrage(bid_offers, ask_offers,
-                                         CURRENCIES[0]['taker_fee'],
-                                         CURRENCIES[1]['taker_fee'],
-                                         CURRENCIES[0]['transfer_fee']['BTC'])
+                                                          CURRENCIES[0]['taker_fee'],
+                                                          CURRENCIES[1]['taker_fee'],
+                                                          CURRENCIES[0]['transfer_fee']['BTC'])
 
     print(f'Volume: {bought} \t Left volume: {left} \t Spending: {invest} \t Revenue: {revenue}')
     print(f'Income in percentage: {get_percentage_differ(invest, revenue)}')
