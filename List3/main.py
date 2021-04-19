@@ -54,7 +54,7 @@ def downloadData(currency, api):
         asks = offersData[api['asks']]
         return [bids, asks]
     else:
-        print(f'Cannot load market data for {currency} from {api}!')
+        print(f'Cannot load market data for {currency} from {api["name"]}!')
         return None
 
 
@@ -127,6 +127,11 @@ def calculateProfit(quantity, rate, api):
     return float(rate) * float(quantity) * (1 - float(api['taker']))
 
 
+def printArbitrageImpossible(currency, api1, api2):
+    print(f"Arbitrage for {currency} impossible!")
+    print(f'Buying from {api2["name"]} and selling to {api1["name"]}')
+
+
 def calculateArbitrage(currency, api1, api2):
     [bids_api1, _] = downloadData(f'{currency}-{BASE_CURRENCY}', api1)
     [_, asks_api2] = downloadData(f'{currency}-{BASE_CURRENCY}', api2)
@@ -134,25 +139,27 @@ def calculateArbitrage(currency, api1, api2):
     i, j, askQuantity, bidQuantity, cost, profit = 0, 0, 0, 0, 0, 0
     for ask in asks_api2:
         if float(ask[api2['rate']]) < float(bids_api1[0][api1['rate']]):
-            askQuantity = float(ask[api2['quantity']])
+            askQuantity += float(ask[api2['quantity']])
             i += 1
     for bid in bids_api1:
-        if float(bid[api1['rate']]) > float(asks_api2[i-1][api2['rate']]):
-            bidQuantity = float(bid[api1['quantity']])
+        if float(bid[api1['rate']]) > float(asks_api2[i - 1][api2['rate']]):
+            bidQuantity += float(bid[api1['quantity']])
             j += 1
+    finalAsks = asks_api2[:i]
+    finalBids = bids_api1[:j]
     while askQuantity < bidQuantity:
-        bidQuantity -= float(bids_api1[j-1][api1['quantity']])
-        j -= 1
+        finalBids.sort(key=lambda x: x[api1['quantity']])
+        bidQuantity -= finalBids[0][api1['quantity']]
+        finalBids = finalBids[1:]
+
     leftoverQuantity = askQuantity - bidQuantity
-    if j == 0 or i == 0:
+    if not finalAsks or not finalBids:
         printArbitrageImpossible(currency, api1, api2)
     else:
-        while i > 0:
-            cost += calculateCost(asks_api2[i-1][api2['quantity']], asks_api2[i-1][api2['rate']], api2, currency)
-            i -= 1
-        while j > 0:
-            profit += calculateProfit(bids_api1[j-1][api1['quantity']], bids_api1[j-1][api1['rate']], api1)
-            j -= 1
+        for ask in finalAsks:
+            cost += calculateCost(ask[api2['quantity']], ask[api2['rate']], api2, currency)
+        for bid in finalBids:
+            profit += calculateProfit(bid[api1['quantity']], bid[api1['rate']], api1)
 
         baseIncome = profit - cost
         if baseIncome < 0:
@@ -163,11 +170,6 @@ def calculateArbitrage(currency, api1, api2):
             print(f'Total profit for {currency}:\t{baseIncome}USD')
             print(f'Profit in percentage: {calculateDifference(cost, profit)}')
             print(f'Quantity of the currency: BOUGHT: {askQuantity}, SOLD: {bidQuantity}, LEFT: {leftoverQuantity}')
-
-
-def printArbitrageImpossible(currency, api1, api2):
-    print(f"Arbitrage for {currency} impossible!")
-    print(f'Buying from {api2["name"]} and selling to {api1["name"]}')
 
 
 def main():
