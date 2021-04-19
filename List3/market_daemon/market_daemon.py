@@ -316,14 +316,15 @@ def arbitrage_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: 
             transfer_fee_paid = False
 
             while to_buy and to_sell and to_buy[0][0] < to_sell[0][0]:
-                if transfer_fee_paid:
-                    buy_qty = min(to_buy[0][1], to_sell[0][1])
-                else:
-                    buy_qty = min(to_buy[0][1], to_sell[0][1] + m1.transfer_fee(instrument))
+                buy_qty = min(to_buy[0][1], to_sell[0][1])
+                sell_qty = buy_qty
+
+                if not transfer_fee_paid:
+                    sell_qty -= m1.transfer_fee(instrument)
                     transfer_fee_paid = True
 
                 buy_value = m1.order_value(to_buy[0][0], buy_qty, instrument)
-                sell_value = m2.order_value(to_sell[0][0], buy_qty, instrument)
+                sell_value = m2.order_value(to_sell[0][0], sell_qty, instrument)
 
                 if buy_value < sell_value:
                     volume += buy_qty
@@ -331,12 +332,12 @@ def arbitrage_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: 
                     profit += sell_value - buy_value
                     if verbose:
                         print(f"\tBuy {buy_qty} {instrument} at market {m1} for {to_buy[0][0]} {instrument}{base}")
-                        print(f"\tSell {buy_qty} {instrument} at market {m2} for {to_sell[0][0]} {instrument}{base}")
+                        print(f"\tSell {sell_qty} {instrument} at market {m2} for {to_sell[0][0]} {instrument}{base}")
                         print(f"\tTotal profit on order: {sell_value} {base} - {buy_value} {base} ="
                               f" {sell_value - buy_value} {base}\n")
                     if to_buy[0][1] < to_sell[0][1]:
                         del to_buy[0]
-                        to_sell[0][1] -= buy_qty
+                        to_sell[0][1] -= sell_qty
                     else:
                         del to_sell[0]
                         to_buy[0][1] -= buy_qty
