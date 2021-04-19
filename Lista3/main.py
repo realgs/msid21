@@ -158,7 +158,7 @@ def zad1():
     print("-------- Zad 1 --------")
     for crypto in CRYPTOCURRIRNCIES:
         print("#########################################################################################")
-        print("Percentage difference for cryptocurrency: " + crypto + " for costs in: " + REAL_CURRENCY)
+        print("Percentage difference for cryptocurrency: " + crypto + " for costs in: " + REAL_CURRENCY + "\n")
         i = 0
         while i < ARTIFICIAL_LOOP_LIMIT:
             offer1 = get_offers(crypto, API_INFO[0]["name"])
@@ -166,20 +166,20 @@ def zad1():
             if offer1 is not None and offer2 is not None:
                 if offer1.get(NORMALIZED_OPERATIONS[0], None) and offer1.get(NORMALIZED_OPERATIONS[1], None) \
                         and offer2.get(NORMALIZED_OPERATIONS[0], None) and offer2.get(NORMALIZED_OPERATIONS[1], None):
-                    print(f'{API_INFO[0]["name"]} - best selling price: {offer1[NORMALIZED_OPERATIONS[1]][0][0]},'
-                          f' best buying price: {offer1[NORMALIZED_OPERATIONS[0]][0][0]}')
-                    print(f'{API_INFO[1]["name"]} - best selling price: {offer2[NORMALIZED_OPERATIONS[1]][0][0]},'
-                          f' best buying price: {offer2[NORMALIZED_OPERATIONS[0]][0][0]}')
+                    print(f'{API_INFO[0]["name"]} - highest selling price: {offer1[NORMALIZED_OPERATIONS[0]][0][0]},'
+                          f' lowest buying price: {offer1[NORMALIZED_OPERATIONS[1]][0][0]}')
+                    print(f'{API_INFO[1]["name"]} - highest selling price: {offer2[NORMALIZED_OPERATIONS[0]][0][0]},'
+                          f' lowest buying price: {offer2[NORMALIZED_OPERATIONS[1]][0][0]}')
                     print(f'Buying price difference ({API_INFO[0]["name"]} to {API_INFO[1]["name"]}):'
-                          f' {calculate_percentage_difference(offer1[NORMALIZED_OPERATIONS[0]][0][0], offer2[NORMALIZED_OPERATIONS[0]][0][0])} %')
-                    print(f'Selling price difference ({API_INFO[0]["name"]} to {API_INFO[1]["name"]}):'
                           f' {calculate_percentage_difference(offer1[NORMALIZED_OPERATIONS[1]][0][0], offer2[NORMALIZED_OPERATIONS[1]][0][0])} %')
+                    print(f'Selling price difference ({API_INFO[0]["name"]} to {API_INFO[1]["name"]}):'
+                          f' {calculate_percentage_difference(offer1[NORMALIZED_OPERATIONS[0]][0][0], offer2[NORMALIZED_OPERATIONS[0]][0][0])} %')
                     print(f'Difference for buying price in {API_INFO[0]["name"]}'
                           f' to selling price in {API_INFO[1]["name"]}:'
-                          f' {calculate_percentage_difference(offer1[NORMALIZED_OPERATIONS[0]][0][0], offer2[NORMALIZED_OPERATIONS[1]][0][0])} %')
+                          f' {calculate_percentage_difference(offer1[NORMALIZED_OPERATIONS[1]][0][0], offer2[NORMALIZED_OPERATIONS[0]][0][0])} %')
                     print(f'Difference for buying price in {API_INFO[1]["name"]}'
                           f' to selling price in {API_INFO[0]["name"]}:'
-                          f' {calculate_percentage_difference(offer2[NORMALIZED_OPERATIONS[0]][0][0], offer1[NORMALIZED_OPERATIONS[1]][0][0])} %')
+                          f' {calculate_percentage_difference(offer2[NORMALIZED_OPERATIONS[1]][0][0], offer1[NORMALIZED_OPERATIONS[0]][0][0])} %')
                 else:
                     print("Orderbooks do not contain buying and selling prices!")
             else:
@@ -240,7 +240,7 @@ def zad2():
 
 if __name__ == '__main__':
     try:
-        # zad1()
+        zad1()
         zad2()
     except requests.ConnectionError:
         print("Failed to connect to API")
