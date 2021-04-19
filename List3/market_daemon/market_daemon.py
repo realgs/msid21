@@ -304,11 +304,11 @@ def arbitrage_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: 
 
             if verbose:
                 print(f"Analyzing query for {instrument}{base}:")
-                print(b1)
                 print(s2)
+                print(b1)
 
-            to_buy = [[price, qty] for price, qty in b1.items()]
-            to_sell = [[price, qty] for price, qty in s2.items()]
+            to_buy = [[price, qty] for price, qty in s2.items()]
+            to_sell = [[price, qty] for price, qty in b1.items()]
 
             profit = 0.0
             volume = 0.0
@@ -348,7 +348,8 @@ def arbitrage_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: 
                 print(f"No orders were found to be profitable for buy of {instrument} at {m1} and sell at {m2}")
 
             profitability = 100 * profit / total_buy if total_buy else 0.0
-            print(f"Total volume: {volume}, total price: {total_buy} {base}, profitability: {profitability}%\n")
+            print(f"Total volume: {volume}, total value: {total_buy} {base}, profit: {profit} {base},"
+                  f"profitability: {profitability}%\n")
 
             yield profit
 
