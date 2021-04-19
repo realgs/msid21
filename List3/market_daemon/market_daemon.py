@@ -351,22 +351,30 @@ def arbitrage_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: 
                         to_buy[0][1] -= buy_qty
                 else:
                     if order_num == 1:
-                        print("Profit neg : %s " % (sell_value - buy_value))
+                        if verbose:
+                            print("\tConsidering negative profit : %s\n" % (sell_value - buy_value))
                         volume += buy_qty
                         total_buy += buy_value
                         profit += sell_value - buy_value
+                        if to_buy[0][1] < to_sell[0][1]:
+                            del to_buy[0]
+                            to_sell[0][1] -= buy_qty if sell_qty < 0 else sell_qty
+                        else:
+                            del to_sell[0]
+                            to_buy[0][1] -= buy_qty
                     else:
                         break
 
-            if verbose and profit <= 0.0:
-                print(f"No orders were found to be profitable for buy of {instrument} at {m1} and sell at {m2}")
+            if profit <= 0.0:
+                if verbose:
+                    print(f"No orders were found to be profitable for buy of {instrument} at {m1} and sell at {m2}")
                 yield 0.0
+            else:
+                profitability = 100 * profit / total_buy if total_buy else 0.0
+                print(f"Total volume: {volume}, total value: {total_buy} {base}, profit: {profit} {base},"
+                      f"profitability: {profitability}%\n")
 
-            profitability = 100 * profit / total_buy if total_buy else 0.0
-            print(f"Total volume: {volume}, total value: {total_buy} {base}, profit: {profit} {base},"
-                  f"profitability: {profitability}%\n")
-
-            yield profit
+                yield profit
 
             sleep(DEFAULT_TIMOUT)
         except TypeError:
