@@ -6,7 +6,7 @@
       "instrument_sep": "-",
       "asks": "asks",
       "bids": "bids",
-      "taker_fee": 0.001,
+      "taker_fee": 0.0043,
       "transfer_fee": {
         "BTC": 0.0005,
         "ETH": 0.01,
@@ -19,7 +19,7 @@
       "instrument_sep": "-",
       "asks": "asks",
       "bids": "bids",
-      "taker_fee": 0.001,
+      "taker_fee": 0.0043,
       "transfer_fee": {
         "BTC": 0.0005,
         "ETH": 0.01,
@@ -32,18 +32,17 @@
       "instrument_sep": "-",
       "asks": "ask",
       "bids": "bid",
-      "taker_fee": 0.0075,
+      "taker_fee": 0.0035,
       "transfer_fee": {
         "BTC": 0.0003,
-        "ETH": 0.0085,
+        "ETH": 0.0173,
         "XLM": 0.05
       }
     }
   },
   "preferences": {
     "base_currency": "USD",
-    "default_timout": 10.0,
-    "default_order_num": 5,
-    "max_retries": 2
+    "default_timout": 5.0,
+    "default_order_num": 5
   }
 }

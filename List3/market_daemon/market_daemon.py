@@ -14,8 +14,6 @@ BASE_CURRENCY: str = "USD"
 DEFAULT_ORDER_NUM: int = 3
 DEFAULT_TIMOUT: float = 5.0
 
-MAX_RETRIES = 3
-
 SAMPLE_CONFIG: dict = {
     "API": {
         "default": {
@@ -41,9 +39,12 @@ SAMPLE_CONFIG: dict = {
 
 
 def load_config(path="config.json"):
-    with open(path, 'r') as f:
-        result = dict(json.load(f))
-        return result
+    try:
+        with open(path, 'r') as f:
+            result = dict(json.load(f))
+            return result
+    except json.decoder.JSONDecodeError:
+        return dict()
 
 
 def recursive_keys(dictionary: dict):
@@ -83,7 +84,11 @@ class MarketDaemon:
             FileNotFoundError: if file under config_path is unreachable
             KeyError: if the parser couldn't find required entry in config for given api_identifier
         """
-        config = load_config(config_path)["API"][api_identifier]
+        conf_file = load_config(config_path)
+        if not conf_file:
+            raise KeyError(f"Error in reading {config_path} file")
+
+        config = conf_file["API"][api_identifier]
         discovered_fields = set([k for k in recursive_keys(config)])
         diff = REQUIRED_FIELDS - discovered_fields
 
@@ -158,8 +163,8 @@ class MarketDaemon:
                 return None
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
             if verbose:
-                print(f"Your request for '{instrument}{base}' at {self} timed out, retrying in 5s...")
-            sleep(5.0)
+                print(f"Your request for '{instrument}{base}' at {self} timed out, retrying in {DEFAULT_TIMOUT}s...")
+            sleep(DEFAULT_TIMOUT)
             self._make_request(instrument, base)
         except requests.exceptions.RequestException:
             if verbose:
@@ -175,7 +180,6 @@ class MarketDaemon:
 
     def set_parser(self, parser: Callable[[Any], OrderList]) -> None:
         """Sets a parser for converting orderbook prices into standard form [[price, quantity]..]
-
         Sample parsers are provided in market_daemon.parsers
 
         Args:
@@ -193,6 +197,8 @@ class MarketDaemon:
         return self._orderbook_parser
 
     def transfer_fee(self, instrument: str):
+        """Returns the transfer fee for a given security,
+        if information in settings has not been provided 0 is returned"""
         if instrument in self._settings["transfer_fee"]:
             return self._settings["transfer_fee"][instrument]
         else:
@@ -217,6 +223,7 @@ def price_diff(lhs: dict[float, float], rhs: dict[float, float]):
     return diff * 100
 
 
+# Zad 1 a-b (5 pkt)
 def compare_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: str = BASE_CURRENCY,
                    kind: str = "buy", verbose: bool = True):
     """Creates a generator comparing buy or sell prices for a given instrument at two markets m1, m2.
@@ -244,6 +251,7 @@ def compare_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: st
         sleep(DEFAULT_TIMOUT)
 
 
+# Zad 1 c
 def compare_transfer_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: str = BASE_CURRENCY,
                             verbose: bool = True):
     """Creates a generator tracking price differences as a percentage between buy market 'm1' and sell market 'm2'
@@ -270,6 +278,7 @@ def compare_transfer_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str,
         sleep(DEFAULT_TIMOUT)
 
 
+# Zad 2 (5 pkt)
 def arbitrage_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: str = BASE_CURRENCY,
                      verbose: bool = True):
     """Creates a generator for monitoring arbitrage opportunity for buy at market m1 and sell at m2 of a given symbol
@@ -283,12 +292,11 @@ def arbitrage_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: 
         verbose: prints the results if set to True
 
     Returns:
-        Profit if arbitrage opportunity exists in base currency, 0.0 otherwise
+        Profit if arbitrage opportunity exists, expressed in base currency, 0.0 otherwise
 
     Raises:
         StopIteration: when the stream couldn't be established after max_retries as stated in the config file
     """
-    retries = MAX_RETRIES
     while True:
         try:
             b1, s1 = m1.get_orders(instrument, base, size=-1, verbose=False)
@@ -309,14 +317,16 @@ def arbitrage_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: 
             total_buy = 0.0
             transfer_fee_paid = False
 
-            # Arbitrage is possible only when buy price at m1 is lower then sell price at m2
-            # If such condition occurs then further analysis must be made by taking fees into account
             while to_buy and to_sell and to_buy[0][0] < to_sell[0][0]:
-                buy_qty = min(to_buy[0][1], to_sell[0][1] + "fee")
-                if not transfer_fee_paid:
+                if transfer_fee_paid:
+                    buy_qty = min(to_buy[0][1], to_sell[0][1])
+                else:
+                    buy_qty = min(to_buy[0][1], to_sell[0][1] + m1.transfer_fee(instrument))
                     transfer_fee_paid = True
+
                 buy_value = m1.order_value(to_buy[0][0], buy_qty, instrument)
                 sell_value = m2.order_value(to_sell[0][0], buy_qty, instrument)
+
                 if buy_value < sell_value:
                     volume += buy_qty
                     total_buy += buy_value
@@ -326,7 +336,6 @@ def arbitrage_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: 
                         print(f"\tSell {buy_qty} {instrument} at market {m2} for {to_sell[0][0]} {instrument}{base}")
                         print(f"\tTotal profit on order: {sell_value} {base} - {buy_value} {base} ="
                               f" {sell_value - buy_value} {base}\n")
-                        print(f"TOTAL VOLUME{volume}")
                     if to_buy[0][1] < to_sell[0][1]:
                         del to_buy[0]
                         to_sell[0][1] -= buy_qty
@@ -339,22 +348,16 @@ def arbitrage_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: 
             if verbose and profit == 0.0:
                 print(f"No orders were found to be profitable for buy of {instrument} at {m1} and sell at {m2}\n")
 
+            print(f"Total volume: {volume}, total price: {total_buy}, profitability: {100 * profit / total_buy} %")
+
             yield profit
 
-            sleep(5.0)
+            sleep(DEFAULT_TIMOUT)
         except TypeError:
-            retries -= 1 if retries != -1 else 0
             if verbose:
-                print(f"Fetching data for {instrument} failed. ", end='')
-
-            if retries != 0:
-                if verbose:
-                    print(f"Retrying in {DEFAULT_TIMOUT} sec")
-            else:
-                if verbose:
-                    print(f"Arbitrage stream failed to establish connection for pair {instrument}{base} "
-                          f"at markets {m1}, {m2} after {MAX_RETRIES} retries. Terminating generator...")
-                    break
+                print(f"Connection to market was established but arbitrage stream couldn't interpret response data for"
+                      f" {instrument}{base} at markets {m1}, {m2}")
+                print(f"Retrying in {DEFAULT_TIMOUT} sec")
 
             yield 0.0
             sleep(DEFAULT_TIMOUT)
@@ -377,11 +380,10 @@ def _onload():
         config = load_config(CONFIG_PATH)
         preferences = config["preferences"]
 
-        global DEFAULT_TIMOUT, DEFAULT_ORDER_NUM, BASE_CURRENCY, MAX_RETRIES
+        global DEFAULT_TIMOUT, DEFAULT_ORDER_NUM, BASE_CURRENCY
         DEFAULT_TIMOUT = preferences["default_timout"]
         DEFAULT_ORDER_NUM = preferences["default_order_num"]
         BASE_CURRENCY = preferences["base_currency"]
-        MAX_RETRIES = preferences["max_retries"]
 
         print("User preferences loaded successfully\n")
     except KeyError:
