@@ -19,7 +19,7 @@ if __name__ == "__main__":
     ss = md.compare_transfer_stream(bitbay, bittrex, "BTC")
 
     # Zad 2 (5 pkt)
-    aw = md.arbitrage_stream(bittrex, bitbay, "BTC")
+    aw = md.arbitrage_stream(bittrex, bitbay, "ETH")
 
     while True:
         next(aw)

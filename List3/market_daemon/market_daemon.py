@@ -145,12 +145,12 @@ class MarketDaemon:
             yield buys, sells
             sleep(timeout_sec)
 
-    def order_value(self, price: float, quantity: float, instrument: str):
+    def order_value(self, price: float, quantity: float, instrument: str, kind: str = "buy"):
         """Returns total price of fulfilling (taking) an order including taker fees if they are provided
         If not returns bare value of the order. Kind can take values 'buy' or 'sell'"""
         try:
             total = price * quantity
-            return total * (1 + self._settings["taker_fee"])
+            return total * (1 + self._settings["taker_fee"] * (1 if kind == "buy" else -1 if kind == "sell" else 0))
         except KeyError:
             print(f"Settings for market {self} do not have information about taker_fee or transfer_fee "
                   f"for {instrument}. Returning bare order value.")
@@ -318,8 +318,11 @@ def arbitrage_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: 
             profit = 0.0
             volume = 0.0
             total_buy = 0.0
-            transfer_fee_paid = False
+
+            transfer_paid_number = 0
             order_num = 0
+
+            transfer_to_pay = m1.transfer_fee(instrument)
 
             while to_buy and to_sell and to_buy[0][0] < to_sell[0][0]:
                 buy_qty = min(to_buy[0][1], to_sell[0][1])
@@ -327,12 +330,23 @@ def arbitrage_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: 
 
                 order_num += 1
 
+                if transfer_to_pay > 0.0:
+                    if transfer_to_pay < sell_qty:
+                        sell_qty -= transfer_to_pay
+                        transfer_to_pay = 0
+                        transfer_paid_number = order_num
+                    else:
+                        transfer_to_pay -= buy_qty
+                        sell_qty = 0
+
+                """
                 if not transfer_fee_paid:
                     sell_qty -= m1.transfer_fee(instrument)
                     transfer_fee_paid = True
+                """
 
                 buy_value = m1.order_value(to_buy[0][0], buy_qty, instrument)
-                sell_value = m2.order_value(to_sell[0][0], sell_qty, instrument)
+                sell_value = m2.order_value(to_sell[0][0], sell_qty, instrument, kind="sell")
 
                 if buy_value < sell_value:
                     volume += buy_qty
@@ -350,7 +364,7 @@ def arbitrage_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: 
                         del to_sell[0]
                         to_buy[0][1] -= buy_qty
                 else:
-                    if order_num == 1:
+                    if transfer_to_pay == 0.0 and transfer_paid_number == order_num:
                         if verbose:
                             print("\tConsidering negative profit : %s\n" % (sell_value - buy_value))
                         volume += buy_qty
@@ -358,7 +372,7 @@ def arbitrage_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: 
                         profit += sell_value - buy_value
                         if to_buy[0][1] < to_sell[0][1]:
                             del to_buy[0]
-                            to_sell[0][1] -= buy_qty if sell_qty < 0 else sell_qty
+                            to_sell[0][1] -= sell_qty
                         else:
                             del to_sell[0]
                             to_buy[0][1] -= buy_qty
@@ -372,7 +386,7 @@ def arbitrage_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: 
             else:
                 profitability = 100 * profit / total_buy if total_buy else 0.0
                 print(f"Total volume: {volume}, total value: {total_buy} {base}, profit: {profit} {base},"
-                      f"profitability: {profitability}%\n")
+                      f"profitability: {profitability:.4f}%\n")
 
                 yield profit
 

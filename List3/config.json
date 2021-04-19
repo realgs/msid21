@@ -35,7 +35,7 @@
       "taker_fee": 0.0035,
       "transfer_fee": {
         "BTC": 0.0003,
-        "ETH": 0.0173,
+        "ETH": 0.006,
         "XLM": 0.05
       }
     }
