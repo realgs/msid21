@@ -1,7 +1,7 @@
 import requests
 import time
 
-CRYPTOCURRIRNCIES = ["BTC", "ETH", "XRP"]
+CRYPTOCURRIRNCIES = ["ETH", "BTC", "XRP"]
 NORMALIZED_OPERATIONS = ['bids', 'asks']
 REAL_CURRENCY = "USD"
 WAITING_TIME = 5
@@ -101,7 +101,7 @@ def calculate_order_value(price, amount):
     return price * amount
 
 
-def calculate_arbitrage(offerstobuy, offerstosell, buyingmarket, sellingmarket, currency):
+def calculate_arbitrage(offerstobuyfrom, offerstosellto, buyingmarket, sellingmarket, currency):
     volume = 0.0
     spentMoney = 0.0
     gainedMoney = 0.0
@@ -109,9 +109,9 @@ def calculate_arbitrage(offerstobuy, offerstosell, buyingmarket, sellingmarket, 
     transferFeePaidNumber = 0
     operationNumber = 0
 
-    while offerstobuy and offerstosell and offerstobuy[0][0] < offerstosell[0][0]:
+    while offerstobuyfrom and offerstosellto and offerstobuyfrom[0][0] < offerstosellto[0][0]:
         operationNumber += 1
-        buyVolume = min(offerstobuy[0][1], offerstosell[0][1])
+        buyVolume = min(offerstobuyfrom[0][1], offerstosellto[0][1])
         sellVolume = buyVolume
         if transferFee > 0:
             if sellVolume > transferFee:
@@ -121,36 +121,27 @@ def calculate_arbitrage(offerstobuy, offerstosell, buyingmarket, sellingmarket, 
             else:
                 transferFee -= buyVolume
                 sellVolume = 0
-        buyValue = calculate_order_value(offerstobuy[0][0], buyVolume)
+        buyValue = calculate_order_value(offerstobuyfrom[0][0], buyVolume)
         buyCost = include_taker_fee(buyValue, buyingmarket, NORMALIZED_OPERATIONS[1])
-        sellValue = calculate_order_value(offerstosell[0][0], sellVolume)
+        sellValue = calculate_order_value(offerstosellto[0][0], sellVolume)
         sellGain = include_taker_fee(sellValue, sellingmarket, NORMALIZED_OPERATIONS[0])
 
-        if buyCost < sellGain:
+        if buyCost < sellGain or transferFee > 0 or (transferFee == 0.0 and operationNumber == transferFeePaidNumber):
             volume += buyVolume
             spentMoney += buyCost
             gainedMoney += sellGain
 
-            if offerstobuy[0][1] < offerstosell[0][1]:
-                del offerstobuy[0]
-                offerstosell[0][1] -= sellVolume
-            else:
-                del offerstosell[0]
-                offerstobuy[0][1] -= buyVolume
-        elif transferFee == 0.0 and operationNumber == transferFeePaidNumber:
-            volume += buyVolume
-            spentMoney += buyCost
-            gainedMoney += sellGain
+            if transferFee > 0 or (transferFee == 0.0 and operationNumber == transferFeePaidNumber):
+                print(f" Checking for negative profit until transfer fee is covered:"
+                      f" {round(gainedMoney - spentMoney, 2)} {REAL_CURRENCY}")
 
-            print(f" Checking for one time negative profit to cover for transfer fee:"
-                  f" {round(gainedMoney - spentMoney, 2)}")
+            offerstosellto[0][1] -= sellVolume
+            if offerstosellto[0][1] == 0:
+                del offerstosellto[0]
+            offerstobuyfrom[0][1] -= buyVolume
+            if offerstobuyfrom[0][1] == 0:
+                del offerstobuyfrom[0]
 
-            if offerstobuy[0][1] < offerstosell[0][1]:
-                del offerstobuy[0]
-                offerstosell[0][1] -= sellVolume
-            else:
-                del offerstosell[0]
-                offerstobuy[0][1] -= buyVolume
         else:
             break
 
@@ -175,20 +166,20 @@ def zad1():
             if offer1 is not None and offer2 is not None:
                 if offer1.get(NORMALIZED_OPERATIONS[0], None) and offer1.get(NORMALIZED_OPERATIONS[1], None) \
                         and offer2.get(NORMALIZED_OPERATIONS[0], None) and offer2.get(NORMALIZED_OPERATIONS[1], None):
-                    print(f'{API_INFO[0]["name"]} - best selling price: {offer1[NORMALIZED_OPERATIONS[0]][0][0]},'
-                          f' best buying price: {offer1[NORMALIZED_OPERATIONS[1]][0][0]}')
-                    print(f'{API_INFO[1]["name"]} - best selling price: {offer2[NORMALIZED_OPERATIONS[0]][0][0]},'
-                          f' best buying price: {offer2[NORMALIZED_OPERATIONS[1]][0][0]}')
+                    print(f'{API_INFO[0]["name"]} - best selling price: {offer1[NORMALIZED_OPERATIONS[1]][0][0]},'
+                          f' best buying price: {offer1[NORMALIZED_OPERATIONS[0]][0][0]}')
+                    print(f'{API_INFO[1]["name"]} - best selling price: {offer2[NORMALIZED_OPERATIONS[1]][0][0]},'
+                          f' best buying price: {offer2[NORMALIZED_OPERATIONS[0]][0][0]}')
                     print(f'Buying price difference ({API_INFO[0]["name"]} to {API_INFO[1]["name"]}):'
-                          f' {calculate_percentage_difference(offer1[NORMALIZED_OPERATIONS[1]][0][0], offer2[NORMALIZED_OPERATIONS[1]][0][0])} %')
-                    print(f'Selling price difference ({API_INFO[0]["name"]} to {API_INFO[1]["name"]}):'
                           f' {calculate_percentage_difference(offer1[NORMALIZED_OPERATIONS[0]][0][0], offer2[NORMALIZED_OPERATIONS[0]][0][0])} %')
+                    print(f'Selling price difference ({API_INFO[0]["name"]} to {API_INFO[1]["name"]}):'
+                          f' {calculate_percentage_difference(offer1[NORMALIZED_OPERATIONS[1]][0][0], offer2[NORMALIZED_OPERATIONS[1]][0][0])} %')
                     print(f'Difference for buying price in {API_INFO[0]["name"]}'
                           f' to selling price in {API_INFO[1]["name"]}:'
-                          f' {calculate_percentage_difference(offer1[NORMALIZED_OPERATIONS[1]][0][0], offer2[NORMALIZED_OPERATIONS[0]][0][0])} %')
+                          f' {calculate_percentage_difference(offer1[NORMALIZED_OPERATIONS[0]][0][0], offer2[NORMALIZED_OPERATIONS[1]][0][0])} %')
                     print(f'Difference for buying price in {API_INFO[1]["name"]}'
                           f' to selling price in {API_INFO[0]["name"]}:'
-                          f' {calculate_percentage_difference(offer2[NORMALIZED_OPERATIONS[1]][0][0], offer1[NORMALIZED_OPERATIONS[0]][0][0])} %')
+                          f' {calculate_percentage_difference(offer2[NORMALIZED_OPERATIONS[0]][0][0], offer1[NORMALIZED_OPERATIONS[1]][0][0])} %')
                 else:
                     print("Orderbooks do not contain buying and selling prices!")
             else:
@@ -212,10 +203,10 @@ def zad2():
             if offer1 is not None and offer2 is not None:
                 if offer1.get(NORMALIZED_OPERATIONS[0], None) and offer1.get(NORMALIZED_OPERATIONS[1], None) \
                         and offer2.get(NORMALIZED_OPERATIONS[0], None) and offer2.get(NORMALIZED_OPERATIONS[1], None):
-                    print(f'{API_INFO[0]["name"]} - selling offers: {offer1[NORMALIZED_OPERATIONS[0]]}\n'
-                          f'{API_INFO[0]["name"]} - buying offers: {offer1[NORMALIZED_OPERATIONS[1]]}')
-                    print(f'{API_INFO[1]["name"]} - selling offer: {offer2[NORMALIZED_OPERATIONS[0]]}\n'
-                          f'{API_INFO[1]["name"]} - buying offers: {offer2[NORMALIZED_OPERATIONS[1]]}')
+                    print(f'{API_INFO[0]["name"]} - selling offers: {offer1[NORMALIZED_OPERATIONS[1]]}\n'
+                          f'{API_INFO[0]["name"]} - buying offers: {offer1[NORMALIZED_OPERATIONS[0]]}')
+                    print(f'{API_INFO[1]["name"]} - selling offer: {offer2[NORMALIZED_OPERATIONS[1]]}\n'
+                          f'{API_INFO[1]["name"]} - buying offers: {offer2[NORMALIZED_OPERATIONS[0]]}')
                     resultFrom1To2 = calculate_arbitrage(offer1[NORMALIZED_OPERATIONS[1]],
                                                          offer2[NORMALIZED_OPERATIONS[0]],
                                                          API_INFO[0], API_INFO[1], crypto)
@@ -245,7 +236,6 @@ def zad2():
             time.sleep(WAITING_TIME)
             i += 1
             print()
-        print()
 
 
 if __name__ == '__main__':
