@@ -333,25 +333,26 @@ def arbitrage_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: 
                 if transfer_to_pay > 0.0:
                     if transfer_to_pay < sell_qty:
                         sell_qty -= transfer_to_pay
-                        transfer_to_pay = 0
+                        transfer_to_pay = 0.0
                         transfer_paid_number = order_num
                     else:
-                        transfer_to_pay -= buy_qty
-                        sell_qty = 0
-
-                """
-                if not transfer_fee_paid:
-                    sell_qty -= m1.transfer_fee(instrument)
-                    transfer_fee_paid = True
-                """
+                        transfer_to_pay -= sell_qty
+                        sell_qty = 0.0
 
                 buy_value = m1.order_value(to_buy[0][0], buy_qty, instrument)
                 sell_value = m2.order_value(to_sell[0][0], sell_qty, instrument, kind="sell")
 
-                if buy_value < sell_value:
+                consider_negative_profit: bool = transfer_to_pay > 0.0 or (transfer_to_pay == 0.0 and
+                                                                           transfer_paid_number == order_num)
+
+                if buy_value < sell_value or consider_negative_profit:
+                    if consider_negative_profit and verbose:
+                        print("\tConsidering negative profit...")
+
                     volume += buy_qty
                     total_buy += buy_value
                     profit += sell_value - buy_value
+
                     if verbose:
                         print(f"\tBuy {buy_qty} {instrument} at market {m1} for {to_buy[0][0]} {instrument}{base}")
                         print(f"\tSell {sell_qty} {instrument} at market {m2} for {to_sell[0][0]} {instrument}{base}")
@@ -364,20 +365,7 @@ def arbitrage_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: 
                         del to_sell[0]
                         to_buy[0][1] -= buy_qty
                 else:
-                    if transfer_to_pay == 0.0 and transfer_paid_number == order_num:
-                        if verbose:
-                            print("\tConsidering negative profit : %s\n" % (sell_value - buy_value))
-                        volume += buy_qty
-                        total_buy += buy_value
-                        profit += sell_value - buy_value
-                        if to_buy[0][1] < to_sell[0][1]:
-                            del to_buy[0]
-                            to_sell[0][1] -= sell_qty
-                        else:
-                            del to_sell[0]
-                            to_buy[0][1] -= buy_qty
-                    else:
-                        break
+                    break
 
             if profit <= 0.0:
                 if verbose:
