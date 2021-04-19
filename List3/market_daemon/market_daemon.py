@@ -116,8 +116,13 @@ class MarketDaemon:
         if response:
             content = dict(response.json())
             try:
-                buys = content[self._settings["asks"]][:size]
+                buys = content[self._settings["asks"]]
                 sells = content[self._settings["bids"]][:size]
+
+                if size != -1:
+                    buys = buys[:size]
+                    sells = sells[:size]
+
                 buys, sells = self._normalize_response_contents(buys, sells)
                 if not buys or not sells:
                     return None
@@ -304,20 +309,23 @@ def arbitrage_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: 
 
             if verbose:
                 print(f"Analyzing query for {instrument}{base}:")
-                print(s2)
                 print(b1)
+                print(s2)
 
-            to_buy = [[price, qty] for price, qty in s2.items()]
-            to_sell = [[price, qty] for price, qty in b1.items()]
+            to_buy = [[price, qty] for price, qty in b1.items()]
+            to_sell = [[price, qty] for price, qty in s2.items()]
 
             profit = 0.0
             volume = 0.0
             total_buy = 0.0
             transfer_fee_paid = False
+            order_num = 0
 
             while to_buy and to_sell and to_buy[0][0] < to_sell[0][0]:
                 buy_qty = min(to_buy[0][1], to_sell[0][1])
                 sell_qty = buy_qty
+
+                order_num += 1
 
                 if not transfer_fee_paid:
                     sell_qty -= m1.transfer_fee(instrument)
@@ -342,10 +350,17 @@ def arbitrage_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: 
                         del to_sell[0]
                         to_buy[0][1] -= buy_qty
                 else:
-                    break
+                    if order_num == 1:
+                        print("Profit neg : %s " % (sell_value - buy_value))
+                        volume += buy_qty
+                        total_buy += buy_value
+                        profit += sell_value - buy_value
+                    else:
+                        break
 
-            if verbose and profit == 0.0:
+            if verbose and profit <= 0.0:
                 print(f"No orders were found to be profitable for buy of {instrument} at {m1} and sell at {m2}")
+                yield 0.0
 
             profitability = 100 * profit / total_buy if total_buy else 0.0
             print(f"Total volume: {volume}, total value: {total_buy} {base}, profit: {profit} {base},"
