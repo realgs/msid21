@@ -16,15 +16,6 @@ class BitBayAPI:
             response = self.__query(query)
             if response.status_code == 200:
                 return response.json()
-                # if category == "trades":
-                #     return parse__trades(response.text)
-                # if category == "orderbook":
-                # if category == "market":
-                # if category == "ticker":
-                # if category == "all":
-
-    def __parse__trades(self, response_json):
-        pass
 
     def __query(self, query):
         print("INFO: Querying : " + query)

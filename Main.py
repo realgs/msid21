@@ -1,55 +1,80 @@
 import time
 
+from BitBayAPI import BitBayAPI
 from BittRexAPI import BittRexAPI
 
-CURRENCY1_LIST = ["BTC", "LTC", "DASH"]
-FIRST_CURRENCY = "BTC"
-SECOND_CURRENCY = "LTC"
+CRYPTO_CURRENCY = "BTC"
+BASE_CURRENCY = "USD"
 SLEEP_TIME = 5
 
 
-def exc_1(bitt_rex, first_currency, second_currency):
+def exc_1(bitt_rex, bit_bay, first_currency, second_currency):
     print("EXC 1")
     print("a")
-    get_percentage_diff_for_best_buy_sell(bitt_rex, first_currency, second_currency, "buy")
+    get_percentage_diff_for_best_buy_sell_on_diff_stock_ex(bitt_rex, bit_bay, first_currency, second_currency, "buy")
     print("b")
-    get_percentage_diff_for_best_buy_sell(bitt_rex, first_currency, second_currency, "sell")
+    get_percentage_diff_for_best_buy_sell_on_diff_stock_ex(bitt_rex, bit_bay, first_currency, second_currency, "sell")
     print("c")
-    get_percentage_diff_for_best_buy_sell(bitt_rex, first_currency, second_currency, "both")
+    get_percentage_diff_for_best_buy_sell_on_diff_stock_ex(bitt_rex, bit_bay, first_currency, second_currency, "both")
 
 
-def get_percentage_diff_for_best_buy_sell(bitt_rex, first_currency, second_currency, type):
+def exc_2():
+    pass
+
+
+def get_percentage_diff_for_best_buy_sell_on_diff_stock_ex(bitt_rex, bit_bay, crypto_currency, base_currency, type):
     if type == "buy" or type == "sell" or type == "both":
-        previous_best = -1
         while True:
-            order_book_json = bitt_rex.get_orderbook(first_currency, second_currency, type)
+            bitt_rex_order_book_json = bitt_rex.get_orderbook(crypto_currency, base_currency, type)
+            bit_bay_order_book_json = bit_bay.get_transactions(crypto_currency, base_currency, "orderbook")
             if type == "buy" or type == "sell":
-                all_buy_sell = order_book_json['result']
-                quick_sort_by_rate(all_buy_sell)
+                bitt_rex_buy_sell = bitt_rex_order_book_json['result']
+                quick_sort_bitt_rex_by_rate(bitt_rex_buy_sell)
                 if type == "buy":
-                    current_best = all_buy_sell[len(all_buy_sell) - 1]['Rate']
+                    bit_bay_buy = bit_bay_order_book_json['bids']
+                    quick_sort_bit_bay_by_rate(bit_bay_buy)
+                    bit_bay_best_buy = bit_bay_buy[len(bit_bay_buy) - 1][0]
+                    bitt_rex_best_buy = bitt_rex_buy_sell[len(bitt_rex_buy_sell) - 1]['Rate']
+                    print("Difference for buying " + crypto_currency + base_currency + " on bitbay and bittrex: " + bit_bay_best_buy/bitt_rex_best_buy - 1)
                 else:
-                    current_best = all_buy_sell[0]['Rate']
+                    bit_bay_sell = bit_bay_order_book_json['asks']
+                    quick_sort_bit_bay_by_rate(bit_bay_sell)[0]
+                    bit_bay_best_sell = bit_bay_sell[0][0]
+                    bitt_rex_best_sell = bitt_rex_buy_sell[0]['Rate']
+                    print("Difference for selling " + crypto_currency + base_currency + " on bitbay and bittrex: " + bit_bay_best_sell / bitt_rex_best_sell - 1)
             else:
-                all_buy = order_book_json['result']['buy']
-                all_sell = order_book_json['result']['sell']
-                quick_sort_by_rate(all_buy)
-                quick_sort_by_rate(all_sell)
-                best_buy = all_buy[len(all_buy) - 1]['Rate']
-                best_sell = all_sell[0]['Rate']
-                current_best = best_sell - best_buy
+                bitt_rex_buy = bitt_rex_order_book_json['result']['buy']
+                quick_sort_bitt_rex_by_rate(bitt_rex_buy)
+                bitt_rex_best_buy = bitt_rex_buy[len(bitt_rex_buy) - 1]['Rate']
+                bit_bay_sell = bit_bay_order_book_json['asks']
+                quick_sort_bit_bay_by_rate(bit_bay_sell)[0]
+                bit_bay_best_sell = bit_bay_sell[0][0]
+                print("Difference for buying " + crypto_currency + base_currency + " on bittrex and selling on bitbay: " + bitt_rex_best_buy / bit_bay_best_sell - 1)
 
-            if previous_best == -1:  # first round
-                previous_best = current_best
-            else:
-                print(current_best / previous_best - 1)
-                previous_best = current_best
             time.sleep(SLEEP_TIME)
     else:
         print("Wrong type provided. Type has to be either buy, sell or both. Not: " + type)
 
 
-def quick_sort_by_rate(unsorted):
+def quick_sort_bit_bay_by_rate(unsorted):
+    if len(unsorted) <= 1:
+        return unsorted
+
+    pivot = unsorted.pop()
+
+    lower = []
+    greater = []
+
+    for item in unsorted:
+        if item[0] < pivot[0]:
+            lower.append(item)
+        else:
+            greater.append(item)
+
+    return quick_sort_bit_bay_by_rate(lower) + [pivot] + quick_sort_bit_bay_by_rate(greater)
+
+
+def quick_sort_bitt_rex_by_rate(unsorted):
     if len(unsorted) <= 1:
         return unsorted
 
@@ -64,8 +89,9 @@ def quick_sort_by_rate(unsorted):
         else:
             greater.append(item)
 
-    return quick_sort_by_rate(lower) + [pivot] + quick_sort_by_rate(greater)
+    return quick_sort_bitt_rex_by_rate(lower) + [pivot] + quick_sort_bitt_rex_by_rate(greater)
 
 
 bitt_rex = BittRexAPI()
-exc_1(bitt_rex, FIRST_CURRENCY, SECOND_CURRENCY)
+bit_bay = BitBayAPI()
+exc_1(bitt_rex, bit_bay, CRYPTO_CURRENCY, BASE_CURRENCY)
