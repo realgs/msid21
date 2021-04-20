@@ -4,8 +4,14 @@ import requests
 class BittRexAPI:
     BASEURL = 'https://api.bittrex.com/api/v1.1/public/'
     VALID_CRYPTO_CURR = {"BTC", "LTC", "DASH"}
-    VALID_BASE_CURR = {"USD", "EUR", "CHF", "CAD", "AUD", "JPY", "GBP", "LTC"}
+    VALID_BASE_CURR = {"USD", "EUR", "CHF", "CAD", "AUD", "JPY", "GBP"}
     VALID_TYPE = {"buy", "sell", "both"}
+    TAKER_FEE = 0.0035
+    TRANSFER_FEE: {
+        "BTC": 0.0005,
+        "LTC": 0.01,
+        "DASH": 0.05
+    }
 
     def get_orderbook(self, crypto, base_curr, type):
         crypto = crypto.upper()

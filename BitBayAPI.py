@@ -3,9 +3,15 @@ import requests
 
 class BitBayAPI:
     BASEURL = 'https://bitbay.net/API/Public/'
-    VALID_CURRENCY1 = {"BTC", "LTC", "DASH"}
-    VALID_CURRENCY2 = {"USD", "EUR", "CHF", "CAD", "AUD", "JPY", "GBP"}
+    VALID_CRYPTO_CURR = {"BTC", "LTC", "DASH"}
+    VALID_BASE_CURR = {"USD", "EUR", "CHF", "CAD", "AUD", "JPY", "GBP"}
     VALID_CATEGORY = {"trades", "orderbook", "market", "ticker", "all"}
+    TAKER_FEE = 0.0043
+    TRANSFER_FEE: {
+        "BTC": 0.0005,
+        "LTC": 0.001,
+        "DASH": 0.001
+    }
 
     def get_transactions(self, currency1, currency2, category):
         currency1 = currency1.upper()
@@ -28,10 +34,10 @@ class BitBayAPI:
         return response
 
     def __is_valid(self, currency1, currency2, category):
-        if currency1 not in self.VALID_CURRENCY1:
+        if currency1 not in self.VALID_CRYPTO_CURR:
             print("ERROR: Wrong value for Currency1: " + currency1)
             return False
-        elif currency2 not in self.VALID_CURRENCY2:
+        elif currency2 not in self.VALID_BASE_CURR:
             print("ERROR: Wrong value for Currency2. " + currency2)
             return False
         elif category not in self.VALID_CATEGORY:
