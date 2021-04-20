@@ -38,7 +38,7 @@ def get_percentage_diff_for_best_buy_sell_on_diff_stock_ex(bitt_rex, bit_bay, cr
                     print("Difference for buying " + crypto_currency + base_currency + " on bitbay and bittrex: " + bit_bay_best_buy/bitt_rex_best_buy - 1)
                 else:
                     bit_bay_sell = bit_bay_order_book_json['asks']
-                    quick_sort_bit_bay_by_rate(bit_bay_sell)[0]
+                    quick_sort_bit_bay_by_rate(bit_bay_sell)
                     bit_bay_best_sell = bit_bay_sell[0][0]
                     bitt_rex_best_sell = bitt_rex_buy_sell[0]['Rate']
                     print("Difference for selling " + crypto_currency + base_currency + " on bitbay and bittrex: " + bit_bay_best_sell / bitt_rex_best_sell - 1)
@@ -47,7 +47,7 @@ def get_percentage_diff_for_best_buy_sell_on_diff_stock_ex(bitt_rex, bit_bay, cr
                 quick_sort_bitt_rex_by_rate(bitt_rex_buy)
                 bitt_rex_best_buy = bitt_rex_buy[len(bitt_rex_buy) - 1]['Rate']
                 bit_bay_sell = bit_bay_order_book_json['asks']
-                quick_sort_bit_bay_by_rate(bit_bay_sell)[0]
+                quick_sort_bit_bay_by_rate(bit_bay_sell)
                 bit_bay_best_sell = bit_bay_sell[0][0]
                 print("Difference for buying " + crypto_currency + base_currency + " on bittrex and selling on bitbay: " + bitt_rex_best_buy / bit_bay_best_sell - 1)
 
