@@ -1,42 +1,63 @@
 import time
 
-from FinancialMarketAPI import FinancialMarketAPI
+from BittRexAPI import BittRexAPI
 
 CURRENCY1_LIST = ["BTC", "LTC", "DASH"]
+FIRST_CURRENCY = "BTC"
+SECOND_CURRENCY = "LTC"
 SLEEP_TIME = 5
 
 
-# Stworzyć prostą funkcję, która łączy się z danym API, pobiera listę ofert kupna/sprzedaży trzech par zasobów (np. BTCUSD, LTCUSD i DASHUSD)
-# i printuje do konsoli. (5pkt)
-def first_exc(financialMarketAPI, currency1List):
+def exc_1(bittRex, FIRST_CURRENCY, SECOND_CURRENCY):
     print("EXC 1")
-    for currency1 in currency1List:
-        orderbookJSON = financialMarketAPI.get_transactions(currency1, "usd", "orderbook")
-
-        print(currency1.upper() + "USD")
-        print("BIDS: ", orderbookJSON['bids'])
-        print("ASKS: ", orderbookJSON['asks'])
+    print("a")
+    get_percentage_diff_for_best_buy_sell(bittRex, FIRST_CURRENCY, SECOND_CURRENCY, "buy")
+    print("b")
+    get_percentage_diff_for_best_buy_sell(bittRex, FIRST_CURRENCY, SECOND_CURRENCY, "sell")
 
 
-# Uzyskać dyskretny strumień danych odświeżając (pobierając) dane co 5 sekund, następnie kalkulując różnicę pomiędzy kupnem a sprzedażą i podając ją w procentach (np. 1 - (cena sprzedaży - cena kupna) / cena kupna).
-# Uwaga: jeśli będziecie pobierać dane w sposób ciągły (np 10x na sekundę) prawdopodobnie dostaniecie ban od dostawcy danych na jakiś czas (1-24h).
-def average_rate(rateAmountArray):
-    sum = 0
-    for rateAmount in rateAmountArray:
-        sum += rateAmount[0]
-    return sum / len(rateAmountArray)
+def get_percentage_diff_for_best_buy_sell(bittRex, first_currency, second_currency, type):
+    print(type)
+    if type == "buy" or type == "sell":
+        previousBest = -1
+        while True:
+            orderBookJSON = bittRex.get_orderbook(first_currency, second_currency, type)
+            if type == "buy":
+                allBuy = orderBookJSON['result']
+                quick_sort_by_rate(allBuy)
+                currentBest = allBuy[len(allBuy) - 1]['Rate']
+            else:
+                allSell = orderBookJSON['result']
+                quick_sort_by_rate(allSell)
+                currentBest = allSell[0]['Rate']
+
+            if previousBest == -1: #first round
+                previousBest = currentBest
+            else:
+                print(currentBest/previousBest - 1)
+                previousBest = currentBest
+            time.sleep(SLEEP_TIME)
+    else:
+        print("Wrong type provided. Type has to be either buy or sell. Not: " + type)
 
 
-def second_exc(financialMarketAPI, currency1):
-    print("EXC 2")
-    while True:
-        orderbookJSON = financialMarketAPI.get_transactions(currency1, "usd", "orderbook")
-        average_rate_bids = average_rate(orderbookJSON['bids'])
-        average_rate_asks = average_rate(orderbookJSON['asks'])
-        print(1 - (abs(average_rate_bids - average_rate_asks) / average_rate_asks), "%")
-        time.sleep(SLEEP_TIME)
+def quick_sort_by_rate(unsorted):
+    if len(unsorted) <= 1:
+        return unsorted
+
+    pivot = unsorted.pop()
+
+    lower = []
+    greater = []
+
+    for item in unsorted:
+        if item['Rate'] < pivot['Rate']:
+            lower.append(item)
+        else:
+            greater.append(item)
+
+    return quick_sort_by_rate(lower) + [pivot] + quick_sort_by_rate(greater)
 
 
-financialMarketAPI = FinancialMarketAPI()
-first_exc(financialMarketAPI, CURRENCY1_LIST)
-second_exc(financialMarketAPI, CURRENCY1_LIST[0])
+bittRex = BittRexAPI()
+exc_1(bittRex, FIRST_CURRENCY, SECOND_CURRENCY)

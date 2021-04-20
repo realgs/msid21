@@ -1,7 +1,7 @@
 import requests
 
 
-class FinancialMarketAPI:
+class BitBayAPI:
     BASEURL = 'https://bitbay.net/API/Public/'
     VALID_CURRENCY1 = {"BTC", "LTC", "DASH"}
     VALID_CURRENCY2 = {"USD", "EUR", "CHF", "CAD", "AUD", "JPY", "GBP"}
