@@ -82,10 +82,10 @@ def include_fees(api_name, fee_name, cost):
 def get_arbitrage_info(api_name_1, api_name_2):
     offer_api_1 = get_offers(api_name_1, SINGLE_OFFER)
     offer_api_2 = get_offers(api_name_2, SINGLE_OFFER)
-    amount = min(offer_api_1['asks'][0][0], offer_api_2['bids'][0][0])
+    amount = min(offer_api_1['asks'][0][1], offer_api_2['bids'][0][1])
     spent = include_fees(api_name_1, "taker", offer_api_1['asks'][0][1]) * amount
     earned = include_fees(api_name_2, "transfer", offer_api_2['bids'][0][1]) * amount
-    return {'amount': amount, 'USD': earned - spent, 'profit': (earned - spent) / earned * 100}
+    return {'amount': amount, 'USD': earned - spent, 'profit': (earned - spent) / spent * 100}
 
 
 def print_ex1(api_name_1, api_name_2):
@@ -104,9 +104,9 @@ def print_ex2(api_name_1, api_name_2):
     buy_at_1_sell_at_2 = get_arbitrage_info(api_name_1, api_name_2)
     sell_at_1_buy_at_2 = get_arbitrage_info(api_name_2, api_name_1)
     print(f'\tBuy at {api_name_1}, sell at {api_name_2}:\n\tResource quantity: {buy_at_1_sell_at_2["amount"]}, '
-          f'profit: {buy_at_1_sell_at_2["profit"]:.2f}%, profit in USD: {buy_at_1_sell_at_2["USD"]:.2f}$')
+          f'profit: {buy_at_1_sell_at_2["profit"]:.2f}%, profit in USD: {buy_at_1_sell_at_2["USD"]:.10f}$')
     print(f'\tBuy at {api_name_2}, sell at {api_name_1}:\n\tResource quantity: {sell_at_1_buy_at_2["amount"]}, '
-          f'profit: {sell_at_1_buy_at_2["profit"]:.2f}%, profit in USD: {sell_at_1_buy_at_2["USD"]:.2f}$')
+          f'profit: {sell_at_1_buy_at_2["profit"]:.2f}%, profit in USD: {sell_at_1_buy_at_2["USD"]:.10f}$')
 
 
 def print_ex1_ex2(api_name_1, api_name_2):
