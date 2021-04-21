@@ -2,7 +2,7 @@ import requests
 import time
 import math
 
-CURRENCIES = [
+EXCHANGE = [
     {
         'name': 'BITBAY',
         'taker_fee': 0.001,
@@ -111,45 +111,33 @@ def find_best_arbitrage(bid_offers, ask_offers, ask_taker, bid_taker, ask_transf
     return best_arbitrage
 
 
-def print_arbitrage_differ():
+def print_arbitrage_differ(buy_exchange_name, sell_exchange_name):
     [bid_bittrex, ask_bittrex] = download_data_bittrex(API_FIRST, NO_OF_OFFERS)
     [bid_bitbay, ask_bitbay] = download_data_bitbay(API_SECOND, NO_OF_OFFERS)
 
-    print('Buy on BITTREX - sell on BITBAY (arbitrage): ')
+    print(f'Buy on {buy_exchange_name} - sell on {sell_exchange_name} (arbitrage): ')
     bid_offers = []
     ask_offers = []
     for i in range(NO_OF_OFFERS):
-        bid_offers.append([retrieve_data_bitbay(bid_bitbay, i, RATE),
-                           retrieve_data_bitbay(bid_bitbay, i, QUANTITY)])
-        ask_offers.append([retrieve_data_bittrex(ask_bittrex, i, RATE),
-                           retrieve_data_bittrex(ask_bittrex, i, QUANTITY)])
+        if buy_exchange_name == EXCHANGE[1]['name']:
+            bid_offers.append([retrieve_data_bitbay(bid_bitbay, i, RATE),
+                               retrieve_data_bitbay(bid_bitbay, i, QUANTITY)])
+            ask_offers.append([retrieve_data_bittrex(ask_bittrex, i, RATE),
+                               retrieve_data_bittrex(ask_bittrex, i, QUANTITY)])
+        else:
+            bid_offers.append([retrieve_data_bittrex(bid_bittrex, i, RATE),
+                               retrieve_data_bittrex(bid_bittrex, i, QUANTITY)])
+            ask_offers.append([retrieve_data_bitbay(ask_bitbay, i, RATE),
+                               retrieve_data_bitbay(ask_bitbay, i, QUANTITY)])
 
     [bought, left, invest, revenue] = find_best_arbitrage(bid_offers, ask_offers,
-                                                          CURRENCIES[0]['taker_fee'],
-                                                          CURRENCIES[1]['taker_fee'],
-                                                          CURRENCIES[0]['transfer_fee']['BTC'])
+                                                          EXCHANGE[0]['taker_fee'],
+                                                          EXCHANGE[1]['taker_fee'],
+                                                          EXCHANGE[0]['transfer_fee']['BTC'])
 
-    print(f'Volume: {bought} \t Left volume: {left} \t Spending: {invest} \t Revenue: {revenue}')
+    print(f'Volume: {bought} \t Left volume: {left} \t Spending: {round(invest, 2)} \t Revenue: {round(revenue, 2)}')
     print(f'Income in percentage: {get_percentage_differ(invest, revenue)}')
-    print(f'Income in base currency: {revenue - invest}')
-
-    print('Buy on BITBAY - sell on BITTREX (arbitrage): ')
-    bid_offers = []
-    ask_offers = []
-    for i in range(NO_OF_OFFERS):
-        bid_offers.append([retrieve_data_bittrex(bid_bittrex, i, RATE),
-                           retrieve_data_bittrex(bid_bittrex, i, QUANTITY)])
-        ask_offers.append([retrieve_data_bitbay(ask_bitbay, i, RATE),
-                           retrieve_data_bitbay(ask_bitbay, i, QUANTITY)])
-
-    [bought, left, invest, revenue] = find_best_arbitrage(bid_offers, ask_offers,
-                                                          CURRENCIES[0]['taker_fee'],
-                                                          CURRENCIES[1]['taker_fee'],
-                                                          CURRENCIES[0]['transfer_fee']['BTC'])
-
-    print(f'Volume: {bought} \t Left volume: {left} \t Spending: {invest} \t Revenue: {revenue}')
-    print(f'Income in percentage: {get_percentage_differ(invest, revenue)}')
-    print(f'Income in base currency: {revenue - invest}')
+    print(f'Income in base currency: {round(revenue - invest, 2)} {SEARCH_CURRENCIES[1]}')
 
 
 def print_currency_differ():
@@ -183,7 +171,8 @@ def print_currency_differ():
 def main():
     while 1:
         # print_currency_differ()
-        print_arbitrage_differ()
+        print_arbitrage_differ('BITTREX', 'BITBAY')
+        print_arbitrage_differ('BITBAY', 'BITTREX')
         time.sleep(DELAY)
         print('//////////////////////////////////////////////////////')
 
