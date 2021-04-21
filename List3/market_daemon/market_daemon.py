@@ -228,7 +228,7 @@ def price_diff(lhs: dict[float, float], rhs: dict[float, float]):
     return diff * 100
 
 
-# Zad 1 a-b (5 pkt)
+# Zad 1 a-c (5 pkt)
 def compare_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: str = BASE_CURRENCY,
                    kind: str = "buy", verbose: bool = True):
     """Creates a generator comparing buy, sell or transfer prices for a given instrument at two markets m1, m2.
