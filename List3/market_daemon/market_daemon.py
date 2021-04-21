@@ -231,7 +231,7 @@ def price_diff(lhs: dict[float, float], rhs: dict[float, float]):
 # Zad 1 a-b (5 pkt)
 def compare_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: str = BASE_CURRENCY,
                    kind: str = "buy", verbose: bool = True):
-    """Creates a generator comparing buy or sell prices for a given instrument at two markets m1, m2.
+    """Creates a generator comparing buy, sell or transfer prices for a given instrument at two markets m1, m2.
     Update frequency is constrained by a timeout.
 
     Args:
@@ -239,46 +239,29 @@ def compare_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: st
         m2: MarketDaemon monitoring market 2
         instrument: Symbol for an instrument to query
         base: Base currency
-        kind: 'buy' for comparing buy prices, 'sell' for comparing sell prices
+        kind: 'buy' for comparing buy prices, 'sell' for comparing sell prices, 'transfer' for transfer stream
         verbose: prints the results if set to True
 
     Returns:
         Price difference between buy or sell between markets m1, m2.
         Positive percentage implies the price is lower at market m2, negative implies the contrary.
+        Transfer operation is profitable iff the return percentage difference is negative
     """
     while True:
         b1, s1 = m1.get_orders(instrument, base, size=1, verbose=verbose)
         b2, s2 = m2.get_orders(instrument, base, size=1, verbose=verbose)
-        diff = price_diff(b1, b2) if kind == "buy" else (price_diff(s1, s2) if kind == "sell" else None)
+
+        if kind == "buy":
+            diff = price_diff(b1, b2)
+        elif kind == "sell":
+            diff = price_diff(s1, s2)
+        elif kind == "transfer":
+            diff = price_diff(b1, s1)
+        else:
+            diff = None
+
         if verbose:
             print(f"{m1} vs {m2} is {diff:.4f}% for {kind} of pair {instrument}{base}\n")
-        yield diff
-        sleep(DEFAULT_TIMOUT)
-
-
-# Zad 1 c
-def compare_transfer_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: str = BASE_CURRENCY,
-                            verbose: bool = True):
-    """Creates a generator tracking price differences as a percentage between buy market 'm1' and sell market 'm2'
-    for a given instrument. Does not take fees into account. Update frequency is constrained by a timeout.
-
-    Args:
-        m1: Buy market for given instrument
-        m2: Sell market for given instrument
-        instrument: Instrument intended to buy at m1 and sell at m2
-        base: Base currency
-        verbose: prints the results if set to True
-
-    Returns:
-        Price difference between buy at market m1 and sell at market m2 expressed as percentage.
-        Negative percentage implies lack of profitability of arbitrage between markets m1, m2 for a given instrument.
-    """
-    while True:
-        b1, s1 = m1.get_orders(instrument, base, size=1, verbose=verbose)
-        b2, s2 = m2.get_orders(instrument, base, size=1, verbose=verbose)
-        diff = price_diff(b1, s2)
-        if verbose:
-            print(f"Buy at {m1}, sell at {m2} for {instrument}{base} - profitability = {-diff:.4f}%\n")
         yield diff
         sleep(DEFAULT_TIMOUT)
 
