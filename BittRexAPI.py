@@ -6,8 +6,8 @@ class BittRexAPI:
     VALID_CRYPTO_CURR = {"BTC", "LTC", "DASH"}
     VALID_BASE_CURR = {"USD", "EUR", "CHF", "CAD", "AUD", "JPY", "GBP"}
     VALID_TYPE = {"buy", "sell", "both"}
-    TAKER_FEE = 0.0035
-    TRANSFER_FEE: {
+    TAKER_FEE = 0.0035  # percentage
+    TRANSFER_FEE = {
         "BTC": 0.0005,
         "LTC": 0.01,
         "DASH": 0.05
