@@ -37,9 +37,13 @@ def connect_api(URL):
     response = requests.get(URL)
     if is_valid_code(response.status_code):
         return response.json()
-    else:
-        # TODO return codes
-        return None
+    elif response.status_code is range(300, 399):
+        raise Exception('Redirection. Need additional action in order to complete request.')
+    elif response.status_code is range(400, 499):
+        raise Exception('Client error. Server cannot understand the request.')
+    elif response.status_code is range(500, 599):
+        raise Exception('Server error. Please contact with API providers.')
+    return None
 
 
 def download_data_bittrex(URL, offers):
@@ -84,30 +88,30 @@ def get_percentage_differ(first, second):
     return (1 - (first - second) / second) * 100
 
 
-def get_price_buy(volumen, rate, transfer_fee, taker_fee):
-    return volumen * (1 + transfer_fee + (volumen * taker_fee)) * rate
+def get_price_buy(volume, rate, transfer_fee, taker_fee):
+    return volume * (1 + transfer_fee + (volume * taker_fee)) * rate
 
 
-def get_price_sell(volumen, rate, taker_fee):
-    return volumen * (1 - volumen * taker_fee) * rate
+def get_price_sell(volume, rate, taker_fee):
+    return volume * (1 - volume * taker_fee) * rate
 
 
 def find_best_arbitrage(bid_offers, ask_offers, ask_taker, bid_taker, ask_transfer):
     best_arbitrage = [0, 0, -math.inf, math.inf]
     for [ask_rate, ask_quantity] in ask_offers:
-        hold_volumen = ask_quantity
+        hold_volume = ask_quantity
         investment = get_price_buy(ask_quantity, ask_rate, ask_transfer, ask_taker)
         revenue = 0
         num_of_offer = 0
-        while hold_volumen > 0 and num_of_offer < len(bid_offers):
-            volumen_to_buy = bid_offers[num_of_offer][1]
-            if hold_volumen >= volumen_to_buy:
-                revenue += get_price_sell(volumen_to_buy, bid_offers[num_of_offer][0], bid_taker)
-                hold_volumen -= volumen_to_buy
+        while hold_volume > 0 and num_of_offer < len(bid_offers):
+            volume_to_buy = bid_offers[num_of_offer][1]
+            if hold_volume >= volume_to_buy:
+                revenue += get_price_sell(volume_to_buy, bid_offers[num_of_offer][0], bid_taker)
+                hold_volume -= volume_to_buy
             num_of_offer += 1
 
         if revenue - investment > best_arbitrage[2] - best_arbitrage[3]:
-            best_arbitrage = [ask_quantity, hold_volumen, investment, revenue]
+            best_arbitrage = [ask_quantity, hold_volume, investment, revenue]
     return best_arbitrage
 
 
