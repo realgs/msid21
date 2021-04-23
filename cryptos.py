@@ -1,4 +1,4 @@
-import time
+import random
 
 import requests
 
@@ -27,6 +27,24 @@ class Offer:
 
     def __repr__(self):
         return f'{self.transaction_type} offer for {self.market}, quantity = {self.quantity}, price = {self.price}'
+
+
+class Arbitrage:
+    def __init__(self, bid_site, ask_site, market, quantity, profit, percentage, bid, ask):
+        self.bid_site = bid_site
+        self.ask_site = ask_site
+        self.market = market
+        self.quantity = quantity
+        self.profit = profit
+        self.percentage = percentage
+        self.bid = bid
+        self.ask = ask
+
+    def __repr__(self):
+        return f'Profit for arbitrage {self.bid_site} - {self.ask_site} {self.market} is ' + \
+               '{:.5f}$. Ratio is: {:.5f}% (with respect to ask value - {:.5f}$), quantity is {:.5f}, price is {:.5f}'.\
+                   format(self.profit, self.percentage * 100, self.quantity * self.ask.price, self.quantity,
+                          self.ask.price)
 
 
 def get_transaction_fees_json(site):
@@ -79,8 +97,11 @@ def convert_json_to_offerlist(market, from_api, how_many):
                 offers.append(Offer(market=market, transaction_type=transaction_type,
                                     quantity=float(offer_json[1]), price=float(offer_json[0])))
 
-    bid_offer_list = list(filter(lambda offer: offer.transaction_type == 'bid', offers))[:how_many]
-    ask_offer_list = list(filter(lambda offer: offer.transaction_type == 'ask', offers))[:how_many]
+    bid_offer_list = list(filter(lambda offer: offer.transaction_type == 'bid', offers))
+    ask_offer_list = list(filter(lambda offer: offer.transaction_type == 'ask', offers))
+    num_offers = min(how_many, len(bid_offer_list), len(ask_offer_list))
+    bid_offer_list = bid_offer_list[:num_offers]
+    ask_offer_list = ask_offer_list[:num_offers]
 
     return bid_offer_list + ask_offer_list
 
@@ -152,68 +173,85 @@ def count_profit(bid, bid_site, ask, ask_site):
         if bid.market.split('-')[0] in FEES[bid_site]['transfer'].keys() else ask.quantity
     quantity_in_deposit = quantity_in_deposit - FEES[ask_site]['transfer'][ask.market.split('-')[0]] \
         if ask.market.split('-')[0] in FEES[ask_site]['transfer'].keys() else quantity_in_deposit
-    quantity = quantity_in_deposit if quantity_in_deposit < bid.quantity else bid.quantity
+    quantity = max(quantity_in_deposit, bid.quantity)
+    quantity = max(quantity, 0)
     bid_value = quantity * bid.price * (1 - FEES[bid_site]['taker'])
     ask_value = quantity * ask.price * (1 - FEES[ask_site]['taker'])
 
     profit = bid_value - ask_value
-    profit_percentage = profit / (ask.price * quantity)
+    profit_percentage = profit / (ask.price * quantity)  # if ask.price * quantity != 0 else 0
 
-    return profit, profit_percentage
+    return profit, profit_percentage, quantity
 
 
-def find_best_arbitrage(bids, asks, sites):
-    site_pairs = [(sites[0], sites[1]), (sites[1], sites[0])]
-    biggest_profit = 0.0
+def find_best_arbitrage(bids, asks, site_list):
+    site_pairs = [(site_list[0], site_list[1]), (site_list[1], site_list[0])]
+    biggest_profit = None
     best_bid = None
     best_ask = None
     best_site_pair = ()
+    best_arbitrage_results = ()
     for pair in site_pairs:
-        for bid, ask in zip(bids[pair[0]], asks[pair[1]]):
-            if count_profit(bid, pair[0], ask, pair[1])[0] > biggest_profit:
-                biggest_profit = count_profit(bid, pair[0], ask, pair[1])[0]
-                best_bid = bid
-                best_ask = ask
-                best_site_pair = pair
+        for bid in bids[pair[0]]:
+            for ask in asks[pair[1]]:
+                biggest_profit = count_profit(bid, pair[0], ask, pair[1])[0] if not biggest_profit else biggest_profit
+                if count_profit(bid, pair[0], ask, pair[1])[0] >= biggest_profit:
+                    biggest_profit = count_profit(bid, pair[0], ask, pair[1])[0]
+                    best_bid = bid
+                    best_ask = ask
+                    best_arbitrage_results = count_profit(bid, pair[0], ask, pair[1])
+                    best_site_pair = pair
 
-    return best_bid, best_ask, best_site_pair
-
-
-def print_profit_info(bid, bid_site, ask, ask_site):
-    profits = count_profit(bid, bid_site, ask, ask_site)
-    quantity = bid.quantity if bid.quantity < ask.quantity else ask.quantity
-    print(f'Profit for arbitrage {bid_site} - {ask_site} {bid.market} is ' +
-          '{:.2f}$. Ratio is: {:.1f}% (with respect to ask value - {:.2f}$), quantity is {:.5f}, price is {:.2f}'
-          .format(profits[0], profits[1] * 100, quantity * ask.price, quantity, ask.price))
+    return best_bid, best_ask, best_site_pair, best_arbitrage_results
 
 
-def print_data(sites, markets, offers):
-    print(f'{sites[0]} - {sites[1]} ratios:')
+def get_profit_info(bid, bid_site, ask, ask_site, best_arbitrage_results):
+    return Arbitrage(bid_site, ask_site, bid.market, best_arbitrage_results[2], best_arbitrage_results[0],
+                     best_arbitrage_results[1], bid, ask)
+
+
+def get_arbitrages(site_list, markets, offers):
     bid_offers = {}
     ask_offers = {}
+    arbitrage_list = []
     for market_name in markets:
-        for site in sites:
+        for site in site_list:
             temp_offer_list = list(filter(lambda offer: offer.market == market_name, offers[site]))
             bid_offers[site] = list(filter(lambda offer: offer.transaction_type == 'bid', temp_offer_list))
             ask_offers[site] = list(filter(lambda offer: offer.transaction_type == 'ask', temp_offer_list))
 
-        best_bid, best_ask, best_sites_pair = find_best_arbitrage(bid_offers, ask_offers, sites)
-        print_profit_info(best_bid, best_sites_pair[0], best_ask, best_sites_pair[1])
+        best_bid, best_ask, best_sites_pair, best_arbitrage_results = \
+            find_best_arbitrage(bid_offers, ask_offers, site_list)
+
+        arbitrage_list.append(get_profit_info(best_bid, best_sites_pair[0], best_ask, best_sites_pair[1],
+                                              best_arbitrage_results))
         bid_offers.clear()
         ask_offers.clear()
 
+    return arbitrage_list
 
-def get_datastream():
-    market_list = [market + '-' + BASE_CURRENCY for market in CRYPTOS]
-    site_list = ['bittrex', 'bitbay']
-    while True:
-        data = get_data(site_list, market_list)
-        print_data(site_list, market_list, data)
-        print('\n')
-        time.sleep(5)
+
+def print_arbitrages(arbitrages):
+    print_list(sorted(arbitrages, key=lambda arbitrage: arbitrage.profit, reverse=True))
+
+
+def get_random_arbitrages(site_list, market_list):
+    markets = random.sample(market_list, 3)
+    data = get_data(site_list, markets)
+    arbitrages = get_arbitrages(site_list, markets, data)
+    print_arbitrages(arbitrages)
+    print()
+
+
+def get_all_arbitrages(site_list, market_list):
+    data = get_data(site_list, market_list)
+    arbitrages = get_arbitrages(site_list, market_list, data)
+    print_arbitrages(arbitrages)
 
 
 if __name__ == '__main__':
     update_transaction_fees('bittrex')
-    get_datastream()
-
+    sites = ['bittrex', 'bitbay']
+    available_markets = get_common_markets_for_sites(sites[0], sites[1])
+    get_random_arbitrages(sites, available_markets)
+    get_all_arbitrages(sites, available_markets)
