@@ -7,10 +7,12 @@ CRYPTOS = ['BTC', 'LTC', 'ETH']
 FEES = {'bittrex': {'taker': 0.25, 'transfer': {'BTC': 0.0005, 'LTC': 0.01, 'ETH': 0.006}},
         'bitbay': {'taker': 0.4, 'transfer': {'BTC': 0.0001, 'LTC': 0.1, 'ETH': 0.01}}}
 
-BASE_URLS = {'bittrex': 'https://api.bittrex.com/v3/markets/', 'bitbay': 'https://bitbay.net/API/Public/'}
+BASE_URLS = {'bittrex': 'https://api.bittrex.com/v3/', 'bitbay': 'https://bitbay.net/API/Public/'}
 GET_MARKETS_URLS = {'bittrex': 'https://api.bittrex.com/v3/markets/',
                     'bitbay': 'https://api.bitbay.net/rest/trading/ticker'}
-ORDERBOOK_URL_SUFFIXES = {'bittrex': '', 'bitbay': '.json'}
+FEES_URL_INFIXES = {'bittrex': 'currencies'}
+ORDERBOOK_URL_INFIXES = {'bittrex': 'markets/', 'bitbay': ''}
+ORDERBOOK_URL_SUFFIXES = {'bittrex': '/orderbook', 'bitbay': '/orderbook.json'}
 MARKETS_DICT_KEYS = {'bittrex': 'symbol', 'bitbay': 'items'}
 
 SEPARATORS = {'bittrex': '-', 'bitbay': ''}
@@ -27,12 +29,37 @@ class Offer:
         return f'{self.transaction_type} offer for {self.market}, quantity = {self.quantity}, price = {self.price}'
 
 
+def get_transaction_fees_json(site):
+    try:
+        headers = {'content-type': 'application/json'}
+        response = requests.get(BASE_URLS[site] + FEES_URL_INFIXES[site], headers=headers)
+
+        return response.json()
+    except requests.exceptions.ConnectionError:
+        print("ERROR. API not available")
+
+    return None
+
+
+def get_transaction_fees_dict(from_api):
+    res_dict = {}
+    for currency in from_api:
+        res_dict[currency['symbol']] = float(currency['txFee'])
+
+    return res_dict
+
+
+def update_transaction_fees(site):
+    from_api = get_transaction_fees_json(site)
+    FEES[site]['transfer'] = get_transaction_fees_dict(from_api)
+
+
 def get_orders_from_api(site, market):
     try:
         headers = {'content-type': 'application/json'}
         currencies = market.split('-')
-        response = requests.get(BASE_URLS[site] + currencies[0] + SEPARATORS[site] + currencies[1] + '/orderbook' +
-                                ORDERBOOK_URL_SUFFIXES[site], headers=headers)
+        response = requests.get(BASE_URLS[site] + ORDERBOOK_URL_INFIXES[site] + currencies[0] + SEPARATORS[site]
+                                + currencies[1] + ORDERBOOK_URL_SUFFIXES[site], headers=headers)
 
         return response.json()
     except requests.exceptions.ConnectionError:
@@ -72,7 +99,7 @@ def get_offerlist(site, markets, num_offers):
 def get_data(site_list, markets):
     offers = {}
     for site in site_list:
-        offers[site] = get_offerlist(site, markets, 1)
+        offers[site] = get_offerlist(site, markets, 25)
 
     return offers
 
@@ -122,7 +149,9 @@ def count_ratio(offer1, offer2):
 
 def count_profit(bid, bid_site, ask, ask_site):
     quantity_in_deposit = ask.quantity - FEES[bid_site]['transfer'][bid.market.split('-')[0]] \
-                          - FEES[ask_site]['transfer'][ask.market.split('-')[0]]
+        if bid.market.split('-')[0] in FEES[bid_site]['transfer'].keys() else ask.quantity
+    quantity_in_deposit = quantity_in_deposit - FEES[ask_site]['transfer'][ask.market.split('-')[0]] \
+        if ask.market.split('-')[0] in FEES[ask_site]['transfer'].keys() else quantity_in_deposit
     quantity = quantity_in_deposit if quantity_in_deposit < bid.quantity else bid.quantity
     bid_value = quantity * bid.price * (1 - FEES[bid_site]['taker'])
     ask_value = quantity * ask.price * (1 - FEES[ask_site]['taker'])
@@ -133,9 +162,21 @@ def count_profit(bid, bid_site, ask, ask_site):
     return profit, profit_percentage
 
 
-def print_ratio_info(offer1, offer2, ratio_type):
-    print(f'{offer1.market} {ratio_type} ratio: ' + '{:.1f}%'.format(count_ratio(offer1, offer2) * 100) +
-          f' for prices: {offer2.price}$ and {offer1.price}$')
+def find_best_arbitrage(bids, asks, sites):
+    site_pairs = [(sites[0], sites[1]), (sites[1], sites[0])]
+    biggest_profit = 0.0
+    best_bid = None
+    best_ask = None
+    best_site_pair = ()
+    for pair in site_pairs:
+        for bid, ask in zip(bids[pair[0]], asks[pair[1]]):
+            if count_profit(bid, pair[0], ask, pair[1])[0] > biggest_profit:
+                biggest_profit = count_profit(bid, pair[0], ask, pair[1])[0]
+                best_bid = bid
+                best_ask = ask
+                best_site_pair = pair
+
+    return best_bid, best_ask, best_site_pair
 
 
 def print_profit_info(bid, bid_site, ask, ask_site):
@@ -146,13 +187,6 @@ def print_profit_info(bid, bid_site, ask, ask_site):
           .format(profits[0], profits[1] * 100, quantity * ask.price, quantity, ask.price))
 
 
-def print_ratios(bid_offers, ask_offers, sites):
-    print_ratio_info(bid_offers[sites[0]], ask_offers[sites[1]], 'arbitrage')
-    print_profit_info(bid_offers[sites[0]], sites[0], ask_offers[sites[1]], sites[1])
-    print_ratio_info(bid_offers[sites[1]], ask_offers[sites[0]], 'reverse arbitrage')
-    print_profit_info(bid_offers[sites[1]], sites[1], ask_offers[sites[0]], sites[0])
-
-
 def print_data(sites, markets, offers):
     print(f'{sites[0]} - {sites[1]} ratios:')
     bid_offers = {}
@@ -160,10 +194,11 @@ def print_data(sites, markets, offers):
     for market_name in markets:
         for site in sites:
             temp_offer_list = list(filter(lambda offer: offer.market == market_name, offers[site]))
-            bid_offers[site] = list(filter(lambda offer: offer.transaction_type == 'bid', temp_offer_list))[0]
-            ask_offers[site] = list(filter(lambda offer: offer.transaction_type == 'ask', temp_offer_list))[0]
+            bid_offers[site] = list(filter(lambda offer: offer.transaction_type == 'bid', temp_offer_list))
+            ask_offers[site] = list(filter(lambda offer: offer.transaction_type == 'ask', temp_offer_list))
 
-        print_ratios(bid_offers, ask_offers, sites)
+        best_bid, best_ask, best_sites_pair = find_best_arbitrage(bid_offers, ask_offers, sites)
+        print_profit_info(best_bid, best_sites_pair[0], best_ask, best_sites_pair[1])
         bid_offers.clear()
         ask_offers.clear()
 
@@ -179,5 +214,6 @@ def get_datastream():
 
 
 if __name__ == '__main__':
+    update_transaction_fees('bittrex')
     get_datastream()
-    print(get_common_markets_for_sites('bittrex', 'bitbay'))
+
