@@ -7,6 +7,10 @@ CRYPTOS = ['BTC', 'LTC', 'ETH']
 FEES = {'bittrex': {'taker': 0.25, 'transfer': {'BTC': 0.0005, 'LTC': 0.01, 'ETH': 0.006}},
         'bitbay': {'taker': 0.4, 'transfer': {'BTC': 0.0001, 'LTC': 0.1, 'ETH': 0.01}}}
 
+BASE_URLS = {'bittrex': 'https://api.bittrex.com/v3/markets/', 'bitbay': 'https://bitbay.net/API/Public/'}
+SEPARATORS = {'bittrex': '-', 'bitbay': ''}
+TYPE_URL_SUFFIXES = {'bittrex': '', 'bitbay': '.json'}
+
 
 class Offer:
     def __init__(self, market, transaction_type, quantity, price):
@@ -19,65 +23,42 @@ class Offer:
         return f'{self.transaction_type} offer for {self.market}, quantity = {self.quantity}, price = {self.price}'
 
 
-def get_orders_from_api(site, market, how_many):
+def get_orders_from_api(site, market):
     try:
-        if site == 'bittrex':
-            return get_orders_from_bittrex(market, how_many)
-        elif site == 'bitbay':
-            return get_orders_from_bitbay(market)
-        else:
-            print("ERROR. API not recognized; empty list returned")
+        headers = {'content-type': 'application/json'}
+        currencies = market.split('-')
+        response = requests.get(BASE_URLS[site] + currencies[0] + SEPARATORS[site] + currencies[1] + '/orderbook' +
+                                TYPE_URL_SUFFIXES[site], headers=headers)
+
+        return response.json()
     except requests.exceptions.ConnectionError:
         print("ERROR. API not available")
 
     return None
 
 
-def get_orders_from_bittrex(market, how_many):
-    return requests.get(f'https://api.bittrex.com/v3/markets/{market}/orderbook?depth={how_many}').json()
-
-
-def get_orders_from_bitbay(market):
-    currencies = market.split('-')
-    return requests.get(f'https://bitbay.net/API/Public/{currencies[0]}/{currencies[1]}/orderbook.json').json()
-
-
-def convert_json_to_offerlist(site, market, from_api, how_many):
-    if site == 'bittrex':
-        return convert_bittrex_json_to_offerlist(market, from_api)
-    elif site == 'bitbay':
-        return convert_bitbay_json_to_offerlist(market, from_api, how_many)
-    else:
-        print("ERROR. API not recognized; empty list returned")
-
-
-def convert_bittrex_json_to_offerlist(market, data):
+def convert_json_to_offerlist(market, from_api, how_many):
     offers = []
-    for transaction_type in ['bid', 'ask']:
-        for offer_json in data[transaction_type]:
-            offers.append(Offer(market=market, transaction_type=transaction_type,
-                                quantity=float(offer_json['quantity']), price=float(offer_json['rate'])))
-
-    return offers
-
-
-def convert_bitbay_json_to_offerlist(market, data, how_many):
-    offers = []
-    for transaction_type in ['bids', 'asks']:
-        for offer_json in data[transaction_type]:
-            offers.append(Offer(market=market, transaction_type=transaction_type,
-                                quantity=float(offer_json[1]), price=float(offer_json[0])))
+    for transaction_type in from_api.keys():
+        for offer_json in from_api[transaction_type]:
+            if isinstance(offer_json, dict):
+                offers.append(Offer(market=market, transaction_type=transaction_type,
+                                    quantity=float(offer_json['quantity']), price=float(offer_json['rate'])))
+            else:
+                offers.append(Offer(market=market, transaction_type=transaction_type,
+                                    quantity=float(offer_json[1]), price=float(offer_json[0])))
 
     bid_offer_list = list(filter(lambda offer: offer.transaction_type == 'bid', offers))[:how_many]
     ask_offer_list = list(filter(lambda offer: offer.transaction_type == 'ask', offers))[:how_many]
+
     return bid_offer_list + ask_offer_list
 
 
 def get_offerlist(site, markets, num_offers):
     res_offerlist = []
     for market in markets:
-        from_api = get_orders_from_api(site, market, num_offers)
-        current_market_offer_list = convert_json_to_offerlist(site, market, from_api, num_offers)
+        from_api = get_orders_from_api(site, market)
+        current_market_offer_list = convert_json_to_offerlist(market, from_api, num_offers)
         for offer in current_market_offer_list:
             res_offerlist.append(offer)
 
