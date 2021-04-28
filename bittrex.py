@@ -45,3 +45,17 @@ def getBestOrders(cryptos):
             return {"success": False, "cause": "There is not enough data"}
     else:
         return {"success": False, "cause": "Cannot retrieve data"}
+
+
+def getAvailableMarkets():
+    apiResult = getApiResponse(f"{API_BASE_URL}/getmarkets", SUCCESS_KEY, SUCCESS_VALUE)
+
+    if apiResult and apiResult['success'] and apiResult['result']:
+        markets = []
+        for market in apiResult['result']:
+            if not market['IsRestricted']:
+                # markets.append({'currency1': market['MarketCurrency'], 'currency2': market['BaseCurrency'], 'minTrade': market['MinTradeSize']})
+                markets.append({'currency1': market['MarketCurrency'], 'currency2': market['BaseCurrency']})
+        return {"success": True, 'markets': markets}
+    else:
+        return {"success": False, "cause": "Cannot retrieve data"}

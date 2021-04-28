@@ -12,7 +12,7 @@ WITHDRAWAL_FEES = {"AAVE": 0.1, "ALG": 157.0, "AMLT": 1176.0, "BAT": 61.0, "BCC"
                    "REP": 2.1, "SRN": 606.0, "SUSHI": 0.1, "TRX": 1.0, "UNI": 0.0000001, "USDC": 42.0, "USDT": 78.0,
                    "XBX": 1243.0, "XIN": 5.0, "XLM": 0.005, "XRP": 0.1, "XTZ": 0.1, "ZEC": 0.004, "ZRX": 63.0}
 
-API_BASE_URL = "https://api.bitbay.net/rest/trading/orderbook-limited/"
+API_BASE_URL = "https://api.bitbay.net/rest/trading/"
 STATUS_OK = "Ok"
 STATUS_KEY = "status"
 
@@ -32,7 +32,7 @@ def getTransferFee(currency):
 
 
 def getBestOrders(cryptos):
-    apiResult = getApiResponse(f"{API_BASE_URL}/{cryptos[1]}-{cryptos[0]}/10", STATUS_KEY, STATUS_OK)
+    apiResult = getApiResponse(f"{API_BASE_URL}orderbook-limited/{cryptos[1]}-{cryptos[0]}/10", STATUS_KEY, STATUS_OK)
 
     if apiResult:
         if apiResult['buy'] and apiResult['sell']:
@@ -45,5 +45,21 @@ def getBestOrders(cryptos):
                     "sell": {"price": float(lowestSell['ra']), "quantity": float(lowestSell['ca'])}}
         else:
             return {"success": False, "cause": "There is not enough data"}
+    else:
+        return {"success": False, "cause": "Cannot retrieve data"}
+
+
+def getAvailableMarkets():
+    apiResult = getApiResponse(f"{API_BASE_URL}stats", STATUS_KEY, STATUS_OK)
+
+    if apiResult and apiResult['status'] == 'Ok' and apiResult['items']:
+        markets = []
+        for marketKeys in apiResult['items']:
+            split = marketKeys.split('-')
+            if split and len(split) == 2:
+                markets.append({'currency1': split[0], 'currency2': split[1]})
+            else:
+                print("Error, incorrect numer of lines")
+        return {"success": True, 'markets': markets}
     else:
         return {"success": False, "cause": "Cannot retrieve data"}

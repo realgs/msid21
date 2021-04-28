@@ -1,9 +1,18 @@
 from finance import ProfitSeeker
 import bittrex
 import bitbay
+import apiConnection
 
-cryptos = [("BTC", "ETH"), ("USD", "BTC"), ("ETH", "LTC")]
+# cryptos = [("BTC", "ETH"), ("USD", "BTC"), ("ETH", "LTC")]
+#
+# bittrexBitbaySeeker = ProfitSeeker(bittrex, bitbay)
+#
+# bittrexBitbaySeeker.displayMarketsDifferenceRateStream(cryptos)
 
-bittrexBitbaySeeker = ProfitSeeker(bittrex, bitbay)
+# bittrexMarkets = bittrex.getAvailableMarkets()
+# if bittrexMarkets['success']:
+#     print(bittrexMarkets['markets'])
 
-bittrexBitbaySeeker.displayMarketsDifferenceRateStream(cryptos)
+bitbayMarkets = bitbay.getAvailableMarkets()
+if bitbayMarkets['success']:
+    print(bitbayMarkets['markets'])

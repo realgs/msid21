@@ -1,0 +1,14 @@
+1. Upewnić się, że przynajmniej jeden z 2 wykorzystywanych endpointów udostępnia listę wszystkich rynków (wszystkich par walutowych) - przykład https://api.bittrex.com/v3/markets
+W sposób automatyczny znaleźć wspólny zbiór par walutowych oferowanych przez dwie analizowane giełdy.
+(10pkt)
+2. Wykorzystując rozwiązanie szukające możliwości arbitrażu z listy poprzedniej (z uwzględnieniem opłat i wolumenów) sprawdzić możliwość wykonania arbitrażu na dowolnych trzech zasobach ze zbioru uzyskanego w zadaniu 1.
+Upewnić się, że Wasze rozwiązanie szuka wgłąb rynku, a nie jedynie wśród pierwszych (najlepszych) ofert. Dla każdej pary walutowej zwrócić informację o potencjalnej wielkości zysku lub jego braku.
+(2pkt)
+3. Przeprowadzić operację poszukiwania możliwości arbitrażowych na wszystkich zasobach z punktu 1. Upewnić się, że Wasze rozwiązanie szuka wgłąb rynku, a nie jedynie wśród pierwszych (najlepszych) ofert.
+Wyniki zebrać w całość, posortować i stworzyć ranking zasobów pod kątem możliwości arbitrażu.
+Na górze rankingu powinny znaleźć się pary walutowe z największym potencjalnym zyskiem, na dole te dla których potencjalny "zysk" jest najmniejszy (najbardziej ujemny).
+W niektórych API istnieją informacje dotyczące opłaty transferu danego zasobu, przykładowo w bittrex jest to txCost - będzie to przydatną informacją.
+(8pkt)
+
+
+Dla grup tygodnia parzystego deadline 12.05.2021r, dla grup z tygodnia nieparzystego 19.05.2021r
