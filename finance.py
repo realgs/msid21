@@ -6,23 +6,44 @@ SUCCESS_KEY = 'success'
 
 class ProfitSeeker:
     def __init__(self, firstApi, secondApi):
-        self.firstApi = firstApi
-        self.secondApi = secondApi
-        self.firstApiName = firstApi.getName()
-        self.secondApiName = secondApi.getName()
+        self.__firstApi = firstApi
+        self.__secondApi = secondApi
+        self.__commonMarkets = []
+        self.retrieveCommonAvailableMarkets()
+
+    def retrieveCommonAvailableMarkets(self):
+        firstApiMarkets = self.__firstApi.getAvailableMarkets()
+        secondApiMarkets = self.__secondApi.getAvailableMarkets()
+        if not firstApiMarkets['success'] or not secondApiMarkets['success']:
+            return None
+
+        firstApiMarkets = firstApiMarkets['markets']
+        secondApiMarkets = secondApiMarkets['markets']
+        if len(secondApiMarkets) < len(firstApiMarkets):
+            secondApiMarkets, firstApiMarkets = firstApiMarkets, secondApiMarkets
+
+        for market in firstApiMarkets:
+            if any(m for m in secondApiMarkets
+                    if m['currency1'] == market['currency1'] and m['currency2'] == market['currency2']
+                    or m['currency2'] == market['currency1'] and m['currency1'] == market['currency2']):
+                self.__commonMarkets.append(market)
+
+    @property
+    def commonMarkets(self):
+        return self.__commonMarkets
 
     def _displayRate(self, firstApiData, secondApiData, source, message):
         firstApiBuy = firstApiData[source]['price']
         secondApiBuy = secondApiData[source]['price']
         rateFixed = "{:.6f}".format(firstApiBuy / secondApiBuy * 100)
-        print(f"{message}: {self.firstApiName} / {self.secondApiName} = {rateFixed} %")
+        print(f"{message}: {self.__firstApi.getName()} / {self.__secondApi.getName()} = {rateFixed} %")
 
     def _displayBuyRate(self, firstApiData, secondApiData):
         self._displayRate(firstApiData, secondApiData, 'buy', 'Buy rate')
 
     def displayBuyRate(self, cryptos):
-        bestFirst = self.firstApi.getBestOrders(cryptos)
-        bestSecond = self.secondApi.getBestOrders(cryptos)
+        bestFirst = self.__firstApi.getBestOrders(cryptos)
+        bestSecond = self.__secondApi.getBestOrders(cryptos)
 
         if bestFirst[SUCCESS_KEY] and bestSecond[SUCCESS_KEY]:
             self._displayBuyRate(bestFirst, bestSecond)
@@ -33,8 +54,8 @@ class ProfitSeeker:
         self._displayRate(firstApiData, secondApiData, 'sell', 'Sell rate')
 
     def displaySellRate(self, cryptos):
-        bestFirst = self.firstApi.getBestOrders(cryptos)
-        bestSecond = self.secondApi.getBestOrders(cryptos)
+        bestFirst = self.__firstApi.getBestOrders(cryptos)
+        bestSecond = self.__secondApi.getBestOrders(cryptos)
 
         if bestFirst[SUCCESS_KEY] and bestSecond[SUCCESS_KEY]:
             self._displayBuyRate(bestFirst, bestSecond)
@@ -45,7 +66,7 @@ class ProfitSeeker:
         rate = buyOrder['price'] * (1 - market1TakerFee) / sellOrder['price'] * (1 - market2TakerFee)
         quantity = min(buyOrder['quantity'], sellOrder['quantity'])
         priceDiffer = (rate - 1) * quantity
-        profit = priceDiffer - self.firstApi.getTransferFee(currency) - self.secondApi.getTransferFee(currency)
+        profit = priceDiffer - self.__firstApi.getTransferFee(currency) - self.__secondApi.getTransferFee(currency)
         return rate, quantity, profit
 
     @staticmethod
@@ -63,18 +84,18 @@ class ProfitSeeker:
         firstApiBuy, firstApiSell = firstApiData['buy'], firstApiData['sell']
         secondApiBuy, secondApiSell = secondApiData['buy'], secondApiData['sell']
 
-        rate1, quantity1, profit1 = self._getTransactionData(firstApiBuy, secondApiSell, self.firstApi.getTakerFee(),
-                                                             self.secondApi.getTakerFee(), currency)
-        rate2, quantity2, profit2 = self._getTransactionData(secondApiBuy, firstApiSell, self.secondApi.getTakerFee(),
-                                                             self.firstApi.getTakerFee(), currency)
+        rate1, quantity1, profit1 = self._getTransactionData(firstApiBuy, secondApiSell, self.__firstApi.getTakerFee(),
+                                                             self.__secondApi.getTakerFee(), currency)
+        rate2, quantity2, profit2 = self._getTransactionData(secondApiBuy, firstApiSell, self.__secondApi.getTakerFee(),
+                                                             self.__firstApi.getTakerFee(), currency)
 
         print("Profit percentage (100% - 0 profit):")
-        self._printFullInfo(self.firstApiName, self.secondApiName, rate1, quantity1, profit1, currency)
-        self._printFullInfo(self.secondApiName, self.firstApiName, rate2, quantity2, profit2, currency)
+        self._printFullInfo(self.__firstApi.getName(), self.__secondApi.getName(), rate1, quantity1, profit1, currency)
+        self._printFullInfo(self.__secondApi.getName(), self.__firstApi.getName(), rate2, quantity2, profit2, currency)
 
     def displayCrossProfitRate(self, cryptos):
-        bestFirst = self.firstApi.getBestOrders(cryptos)
-        bestSecond = self.secondApi.getBestOrders(cryptos)
+        bestFirst = self.__firstApi.getBestOrders(cryptos)
+        bestSecond = self.__secondApi.getBestOrders(cryptos)
 
         if bestFirst[SUCCESS_KEY] and bestSecond[SUCCESS_KEY]:
             self._displayCrossProfitRate(bestFirst, bestSecond, cryptos[1])
@@ -85,8 +106,8 @@ class ProfitSeeker:
         while True:
             for cryptos in allCryptos:
                 print("\n", datetime.now().strftime("%H:%M:%S"), f"{cryptos[0]} -> {cryptos[1]}")
-                bestFirst = self.firstApi.getBestOrders(cryptos)
-                bestSecond = self.secondApi.getBestOrders(cryptos)
+                bestFirst = self.__firstApi.getBestOrders(cryptos)
+                bestSecond = self.__secondApi.getBestOrders(cryptos)
 
                 if bestFirst[SUCCESS_KEY] and bestSecond[SUCCESS_KEY]:
                     self._displayBuyRate(bestFirst, bestSecond)
