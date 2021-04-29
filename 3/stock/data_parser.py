@@ -3,6 +3,7 @@ from stock.fees_provider import *
 from stock.currency_exchanger import *
 
 kraken = krakenex.API()
+bitbay = "https://bitbay.net/API/Public"
 NUMBER_OF_OFFERS = 10
 
 
@@ -35,7 +36,7 @@ class DataParser:
         return sorted_by_exchange_rate(withdrawn_trades, False)
 
     def bitbay_trades(self, type):
-        data = connect("https://bitbay.net/API/Public/{0}{1}/orderbook.json".format(self.cryptocurrency, self.currency))
+        data = connect("{}/{}{}/orderbook.json".format(bitbay, self.cryptocurrency, self.currency))
         trades = []
         for trade in data[type][0:min(NUMBER_OF_OFFERS, len(data[type]))]:
             cost = float(trade[0]) * float(trade[1])
@@ -49,6 +50,52 @@ class DataParser:
             cost = float(trade[0]) * float(trade[1])
             trades.append([cost, float(trade[1])])
         return trades
+
+    @staticmethod
+    def common_pairs():
+        kraken_pairs = DataParser.kraken_pairs()
+        bitbay_pairs = DataParser.bitbay_pairs()
+        common_keys = kraken_pairs.keys() & bitbay_pairs.keys()
+
+        return {key: set(kraken_pairs[key]) & set(bitbay_pairs[key]) for key in common_keys}
+
+
+    @staticmethod
+    def kraken_pairs():
+        dataRetrieved = kraken.query_public("AssetPairs")
+        pairs = {}
+
+        for valuePair in dataRetrieved['result']:
+            if dataRetrieved['result'][valuePair].get('wsname') is not None:
+                splitted = re.split('/', dataRetrieved['result'][valuePair]['wsname'])
+
+                if splitted[0] == 'XBT':
+                    splitted[0] = 'BTC'
+
+                if splitted[1] == 'XBT':
+                    splitted[1] = 'BTC'
+
+                if pairs.get(splitted[1]) is None:
+                    pairs[splitted[1]] = []
+
+                pairs[splitted[1]].append(splitted[0])
+
+        return pairs
+
+    @staticmethod
+    def bitbay_pairs():
+        data = connect("https://api.bitbay.net/rest/trading/stats".format(bitbay))
+        pairs = {}
+
+        for entry in data['items']:
+            splitted = re.split('-', entry)
+
+            if pairs.get(splitted[1]) is None:
+                pairs[splitted[1]] = []
+
+            pairs[splitted[1]].append(splitted[0])
+
+        return pairs
 
     def trades_after_fees(self, trades, fees, base_currency, target_currency, type):
         trades_after_fees = []

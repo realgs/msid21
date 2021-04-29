@@ -160,4 +160,4 @@ class Main:
 
 
 if __name__ == '__main__':
-    Main.exercise_4()
+    print(DataParser.common_pairs())
