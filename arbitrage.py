@@ -149,3 +149,4 @@ def printArbitrages(arbitrages: dict, limitDisplay: int = None):
         print(f'Initial investment: {transactionVolume * arb["bidRate"]} {marketSymbol[1]}')
         print()
 
+
