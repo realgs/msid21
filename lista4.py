@@ -1,23 +1,23 @@
+from math import fabs
+from time import sleep
+
 import requests
 
 BITTREX_MARKET_URL = 'https://api.bittrex.com/v3/markets/'
 BITBAY_MARKET_URL = 'https://api.bitbay.net/rest/trading/ticker'
 DEFAULT_SEARCHING_DEPTH = 5
 EXTENDED_SEARCHING_DEPTH = 20
-BASECURRENCY = {'bitcoin': 'BTC', 'ethereum': 'ETH', 'dolar': 'USD', 'litecoin': 'LTC'}
+TIME_TO_SLEEP = 10
+
+EXAMPLE_RESOURCES = ['BTC-USD', 'ETH-USD', 'LTC-USD']
 
 BITTREX_ORDER_URL = 'https://api.bittrex.com/v3/markets/'
 BITTREX_ORDER_URL_2 = '/orderbook'
-BITTREX_FEES = {
-    'taker': 0.0035,
-    'transfer': { 'BTC': 0.0005, 'ETH': 0.006 , 'USD': 0 }
-}
+BITTREX_TAKER_FEE = 0.0035
+
 BITBAY_ORDER_URL = 'https://bitbay.net/API/Public/'
 BITBAY_ORDER_URL_2 = '/orderbook.json'
-BITBAY_FEES = {
-    'taker': 0.0042,
-    'transfer': { 'BTC': 0.0005, 'ETH': 0.01 , 'USD': 3 }
-}
+BITBAY_TAKER_FEE = 0.0042
 
 # returns list resources on Bittrex
 def getBittrexMarket():
@@ -58,6 +58,17 @@ def getCommonMarket(market1, market2):
 
     return result
 
+# returns list of common base currencies
+def getBaseCurrencies(data):
+    dict = {}
+
+    for element in data:
+        splited = element.split('-')
+        dict[splited[1]] = 'newOne'
+
+    return list(dict.keys())
+
+# leaves resources with given base currency
 def dataFilter(data, filtr):
     result = []
     for element in data:
@@ -84,14 +95,19 @@ def getOffers(resource, depth=DEFAULT_SEARCHING_DEPTH):
 
         bittrexJson = bittrexDownload.json()
 
-        for i in range(depth):
-            result['bittrex']['bidPrice'].append(float(bittrexJson['bid'][i]['rate']))
-        for i in range(depth):
-            result['bittrex']['bidAmmount'].append(float(bittrexJson['bid'][i]['quantity']))
-        for i in range(depth):
-            result['bittrex']['askPrice'].append(float(bittrexJson['ask'][i]['rate']))
-        for i in range(depth):
-            result['bittrex']['askAmmount'].append(float(bittrexJson['ask'][i]['quantity']))
+        try:
+            for i in range(depth):
+                result['bittrex']['bidPrice'].append(float(bittrexJson['bid'][i]['rate']))
+            for i in range(depth):
+                result['bittrex']['bidAmmount'].append(float(bittrexJson['bid'][i]['quantity']))
+            for i in range(depth):
+                result['bittrex']['askPrice'].append(float(bittrexJson['ask'][i]['rate']))
+            for i in range(depth):
+                result['bittrex']['askAmmount'].append(float(bittrexJson['ask'][i]['quantity']))
+        except:
+            return None
+
+
 
 
     result['bitbay']['bidPrice'] = []
@@ -104,35 +120,46 @@ def getOffers(resource, depth=DEFAULT_SEARCHING_DEPTH):
 
         bitbayJson = bitbayDownload.json()
 
-        for i in range(depth):
-            result['bitbay']['bidPrice'].append(bitbayJson['bids'][i][0])
-        for i in range(depth):
-            result['bitbay']['bidAmmount'].append(bitbayJson['bids'][i][1])
-        for i in range(depth):
-            result['bitbay']['askPrice'].append(bitbayJson['asks'][i][0])
-        for i in range(depth):
-            result['bitbay']['askAmmount'].append(bitbayJson['asks'][i][1])
+        try:
+            for i in range(depth):
+                result['bitbay']['bidPrice'].append(bitbayJson['bids'][i][0])
+            for i in range(depth):
+                result['bitbay']['bidAmmount'].append(bitbayJson['bids'][i][1])
+            for i in range(depth):
+                result['bitbay']['askPrice'].append(bitbayJson['asks'][i][0])
+            for i in range(depth):
+                result['bitbay']['askAmmount'].append(bitbayJson['asks'][i][1])
+        except:
+            return None
+
 
     return result
 
 
-def calculateProfit(resourceInfo, bittrexToBitbay=1):
+def calculateProfit(resourceInfo, bittrexToBitbay=True, feeIncluded=False):
     bidDepth = 0
     askDepth = 0
+    taken = 0
     profit = 0
 
     if (bittrexToBitbay):
         while (bidDepth < DEFAULT_SEARCHING_DEPTH and askDepth < DEFAULT_SEARCHING_DEPTH):
             ammountToTransfer = min(resourceInfo['bittrex']['askAmmount'][askDepth], resourceInfo['bitbay']['bidAmmount'][bidDepth])
+            taken += ammountToTransfer
             priceDifferencial = resourceInfo['bitbay']['bidPrice'][bidDepth] - resourceInfo['bittrex']['askPrice'][askDepth]
 
 
             # return loss if no ability to trade
             if (priceDifferencial <= 0 and askDepth == 0 and bidDepth == 0):
-                return priceDifferencial * ammountToTransfer
+                profit = priceDifferencial * ammountToTransfer
+                if ( feeIncluded ):
+                    profit -= fabs( profit * BITTREX_TAKER_FEE)
+                return profit
 
             # return profit if there is ability to earn money
             if (priceDifferencial <= 0):
+                if ( feeIncluded ):
+                    profit -= fabs( profit * BITTREX_TAKER_FEE)
                 return profit
 
             resourceInfo['bittrex']['askAmmount'][askDepth] -= ammountToTransfer
@@ -145,7 +172,11 @@ def calculateProfit(resourceInfo, bittrexToBitbay=1):
 
             profit += priceDifferencial * ammountToTransfer
 
-        if (askDepth > 10): return profit
+        if (askDepth > 10):
+            if (feeIncluded):
+                profit -= fabs(profit * BITTREX_TAKER_FEE)
+            return profit
+
         return calculateProfit(getOffers(resourceInfo['resource'], EXTENDED_SEARCHING_DEPTH), bittrexToBitbay)
 
     else:
@@ -156,10 +187,15 @@ def calculateProfit(resourceInfo, bittrexToBitbay=1):
 
             # return loss if no ability to trade
             if (priceDifferencial <= 0 and askDepth == 0 and bidDepth == 0):
-                return priceDifferencial * ammountToTransfer
+                profit = priceDifferencial * ammountToTransfer
+                if ( feeIncluded ):
+                    profit -= fabs( profit * BITBAY_TAKER_FEE)
+                return profit
 
             # return profit if there is ability to earn money
             if (priceDifferencial <= 0):
+                if ( feeIncluded ):
+                    profit -= fabs( profit * BITBAY_TAKER_FEE)
                 return profit
 
             resourceInfo['bitbay']['askAmmount'][askDepth] -= ammountToTransfer
@@ -172,16 +208,22 @@ def calculateProfit(resourceInfo, bittrexToBitbay=1):
 
             profit += priceDifferencial * ammountToTransfer
 
-        if (askDepth > 10): return profit
+        if (askDepth > 10):
+            if (feeIncluded):
+                profit -= fabs(profit * BITBAY_TAKER_FEE)
+            return profit
+
         return calculateProfit(getOffers(resourceInfo['resource'], EXTENDED_SEARCHING_DEPTH), bittrexToBitbay)
 
-def prepareStatement(data):
+
+# returns list of resources
+def prepareStatement(data, feeIncluded=False):
     result = []
     for element in data:
         elementOffer = getOffers(element)
 
-        bitbaytoBittrexProfit = calculateProfit(elementOffer, 0)
-        bittrexToBitbayProfit = calculateProfit(elementOffer, 1)
+        bitbaytoBittrexProfit = calculateProfit(elementOffer, False, feeIncluded)
+        bittrexToBitbayProfit = calculateProfit(elementOffer, True, feeIncluded)
         if ( bitbaytoBittrexProfit > bittrexToBitbayProfit ):
             direction = 'bitbayToBittrex'
             profit = bitbaytoBittrexProfit
@@ -193,6 +235,8 @@ def prepareStatement(data):
 
     return result
 
+
+
 def sortStatement(statement):
     for i in range(len(statement)):
         for j in range(len(statement)-1):
@@ -202,6 +246,8 @@ def sortStatement(statement):
                 statement[j+1] = k
 
     return statement
+
+
 
 def printStatement(statement):
     number = 1
@@ -215,10 +261,36 @@ def printStatement(statement):
         print(str(number) + ') ' + sign + str(element[0]) + ' ' + splited[1] + '   (' + element[1] + ') ' + element[2])
         number += 1
 
-if __name__ == '__main__':
-    commonMarket = (getCommonMarket(getBitbayMarket(), getBittrexMarket()))
-    selected = dataFilter(commonMarket, BASECURRENCY['bitcoin'])
-    table = prepareStatement(selected)
-    x = sortStatement(table)
-    printStatement(x)
+    print('\n\n')
 
+
+
+def printExample():
+    print('Example:')
+    selected = EXAMPLE_RESOURCES
+    statement = prepareStatement(selected, False)
+    statement = sortStatement(statement)
+    printStatement(statement)
+
+    
+
+if __name__ == '__main__':
+    # ex1
+    commonMarket = (getCommonMarket(getBitbayMarket(), getBittrexMarket()))
+    baseCurrencies = getBaseCurrencies(commonMarket)
+    
+    
+    # ex2
+    printExample()
+    
+    
+    # ex3
+    while ( True ):
+
+        for currency in baseCurrencies:
+            selected = dataFilter(commonMarket, currency)
+            statement = prepareStatement(selected, False)
+            statement = sortStatement(statement)
+            printStatement(statement)
+
+            sleep(TIME_TO_SLEEP)
