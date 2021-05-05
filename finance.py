@@ -25,9 +25,11 @@ class ProfitSeeker:
             secondApiMarkets, firstApiMarkets = firstApiMarkets, secondApiMarkets
 
         for market in firstApiMarkets:
-            if any(m for m in secondApiMarkets if m['currency1'] == market['currency1'] and m['currency2'] == market['currency2']):
+            if any(m for m in secondApiMarkets if
+                   m['currency1'] == market['currency1'] and m['currency2'] == market['currency2']):
                 self.__commonMarkets.append({'data': market, 'reverse': False})
-            elif any(m for m in secondApiMarkets if m['currency2'] == market['currency1'] and m['currency1'] == market['currency2']):
+            elif any(m for m in secondApiMarkets if
+                     m['currency2'] == market['currency1'] and m['currency1'] == market['currency2']):
                 self.commonMarkets.append({'data': market, 'reverse': True})
 
     @property
@@ -66,25 +68,23 @@ class ProfitSeeker:
 
     def _getProfit(self, buyOrders, sellOrders, market1TakerFee, market2TakerFee, currency1, currency2):
         buyIdx, sellIdx = 0, 0
-        fullQuantity, fullProfit = 0, 0
+        fullQuantity, fullProfit, fullRate = 0, 0, 100
         canEarn = True
 
-        while buyIdx < ORDER_AMOUNT and sellIdx < ORDER_AMOUNT and canEarn:
+        while canEarn:
             quantity, profit = self._getTransactionData(buyOrders[buyIdx], sellOrders[sellIdx], market1TakerFee, market2TakerFee)
-
             self._updateQuantities(fullQuantity, profit, quantity, buyOrders[buyIdx], sellOrders[sellIdx])
             if fullQuantity < ACCURACY or profit > 0:
                 fullProfit += profit
                 fullQuantity += quantity
+
             if abs(buyOrders[buyIdx]['quantity']) < ACCURACY:
                 buyIdx += 1
             else:
                 sellIdx += 1
-            canEarn = buyOrders[buyIdx]['price'] / sellOrders[sellIdx]['price'] > 1
+            canEarn = buyIdx > ORDER_AMOUNT and sellIdx > ORDER_AMOUNT and buyOrders[buyIdx]['price'] / sellOrders[sellIdx]['price'] > 1
 
-        print("profit przed:", fullProfit)
         fullProfit = fullProfit - self.__firstApi.getTransferFee(currency1) - self.__secondApi.getTransferFee(currency2)
-        print("profit po:", fullProfit)
         return fullQuantity, fullProfit
 
     @staticmethod
@@ -98,7 +98,6 @@ class ProfitSeeker:
             else:
                 buyOrder['quantity'] -= quantity
 
-
     @staticmethod
     def _getTransactionData(buyOrder, sellOrder, market1TakerFee, market2TakerFee):
         rate = buyOrder['price'] * (1 - market1TakerFee) / sellOrder['price'] * (1 - market2TakerFee)
@@ -107,28 +106,31 @@ class ProfitSeeker:
         return quantity, profit
 
     @staticmethod
-    def _printFullInfo(buyIn, sellIn, quantity, profit, currencySource, currencyTarget):
+    def _printFullInfo(names, quantity, profit, currencies):
         quantityFixed = "{:.6f}".format(quantity)
+        rate = profit / quantity
         if profit > 0:
             colorPrefix, colorSuffix = '\x1b[6;30;42m', '\x1b[0m'
         else:
             colorPrefix, colorSuffix = '\x1b[6;30;41m', '\x1b[0m'
-        #TODO: profit from currencyTarget to USD
-        print(f"{colorPrefix}Buy in {buyIn}, sell in {sellIn}\t\t{currencySource} -> {currencyTarget},\t\t"
-              f"Quantity: {quantityFixed},\t\tFull profit: {profit} USD{colorSuffix}")
+        print(f"{colorPrefix}{currencies[0]} -> {currencies[1]},\t\tRate: {rate}%,\t\tFull profit: {profit} "
+              f"{currencies[1]},\t\tBuy in {names[0]}, sell in {names[1]},\t\tQuantity: {quantityFixed}{colorSuffix}")
 
-    def _displayCrossProfitRate(self, firstApiData, secondApiData, currency1, currency2):
+    def _getCrossProfitRate(self, firstApiData, secondApiData, currency1, currency2):
         firstApiBuy, firstApiSell = firstApiData['buys'], firstApiData['sells']
         secondApiBuy, secondApiSell = secondApiData['buys'], secondApiData['sells']
 
-        quantity1, profit1 = self._getProfit(firstApiBuy, secondApiSell, self.__firstApi.getTakerFee(),
-                                             self.__secondApi.getTakerFee(), currency1, currency2)
-        quantity2, profit2 = self._getProfit(secondApiBuy, firstApiSell, self.__secondApi.getTakerFee(),
-                                             self.__firstApi.getTakerFee(), currency2, currency1)
+        quantity1, profit1 = self._getProfit(firstApiBuy, secondApiSell, self.__firstApi.getTakerFee(), self.__secondApi.getTakerFee(), currency1, currency2)
+        quantity2, profit2 = self._getProfit(secondApiBuy, firstApiSell, self.__secondApi.getTakerFee(), self.__firstApi.getTakerFee(), currency2, currency1)
 
-        print("Profit percentage (100% - 0 profit):")
-        self._printFullInfo(self.__firstApi.getName(), self.__secondApi.getName(), quantity1, profit1, currency1, currency2)
-        self._printFullInfo(self.__secondApi.getName(), self.__firstApi.getName(), quantity2, profit2, currency2, currency1)
+        return quantity1, profit1, profit1 / quantity1, quantity2, profit2, profit2 / quantity2
+
+    def _displayCrossProfitRate(self, firstApiData, secondApiData, currency1, currency2):
+        quantity1, profit1, rate1, quantity2, profit2, rate2 = self._getCrossProfitRate(firstApiData, secondApiData,
+                                                                                        currency1, currency2)
+        print("Profit percentage (0% - 0 profit):")
+        self._printFullInfo((self.__firstApi.getName(), self.__secondApi.getName()), quantity1, profit1, (currency1, currency2))
+        self._printFullInfo((self.__secondApi.getName(), self.__firstApi.getName()), quantity2, profit2, (currency2, currency1))
 
     def displayCrossProfitRate(self, allCryptos):
         for cryptos in allCryptos:
@@ -141,30 +143,38 @@ class ProfitSeeker:
                 print("The profit rate cannot be calculated")
 
     def displayAllPossibleProfits(self):
-        # TODO: While loop
-        marketsProfits = []
-        for markets in self.__commonMarkets:
-            currency1, currency2 = markets['data']['currency1'], markets['data']['currency2']
-            bestMarket1 = self.__firstApi.getBestOrders((currency2, currency1), ORDER_AMOUNT)
+        while True:
+            marketsProfits = []
+            print(f'<{"-"* (len(self.commonMarkets)-2)}>')
 
-            if not markets['reverse']:
-                bestMarket2 = self.__secondApi.getBestOrders((currency2, currency1), ORDER_AMOUNT)
-            else:
-                bestMarket2 = self.__secondApi.getBestOrders((currency1, currency2), ORDER_AMOUNT)
+            for markets in self.__commonMarkets:
+                currency1, currency2 = markets['data']['currency1'], markets['data']['currency2']
+                market1Data, market2Data = self._getMarketOrders(currency1, currency2, markets['reverse'])
+                quantity1, profit1, rate1, quantity2, profit2, rate2 = self._getCrossProfitRate(market1Data, market2Data, currency1, currency2)
 
-            firstApiBuy, firstApiSell = bestMarket1['buys'], bestMarket1['sells']
-            secondApiBuy, secondApiSell = bestMarket2['buys'], bestMarket2['sells']
-            quantity1, profit1 = self._getProfit(firstApiBuy, secondApiSell, self.__firstApi.getTakerFee(),
-                                                 self.__secondApi.getTakerFee(), currency1, currency2)
-            quantity2, profit2 = self._getProfit(secondApiBuy, firstApiSell, self.__secondApi.getTakerFee(),
-                                                 self.__firstApi.getTakerFee(), currency2, currency1)
-            if profit1 > profit2:
-                marketsProfits.append((profit1, quantity1, currency1, currency2, self.__firstApi.getName(), self.__secondApi.getName()))
-            else:
-                marketsProfits.append((profit2, quantity2, currency2, currency1, self.__secondApi.getName(), self.__firstApi.getName()))
-        marketsProfits.sort(key=lambda data: data[0], reverse=True)
-        for data in marketsProfits:
-            self._printFullInfo(data[4], data[5], data[1], data[0], data[2], data[3])
+                if profit1 > profit2:
+                    marketsProfits.append(
+                        {'rate': rate1, 'profit': profit1, 'quantity': quantity1, 'currencies': (currency1, currency2),
+                         'names': (self.__firstApi.getName(), self.__secondApi.getName())})
+                else:
+                    marketsProfits.append(
+                        {'rate': rate2, 'profit': profit2, 'quantity': quantity2, 'currencies': (currency2, currency1),
+                         'names': (self.__secondApi.getName(), self.__firstApi.getName())})
+                print('#', end='')
+
+            marketsProfits.sort(key=lambda profitData: profitData['rate'], reverse=True)
+            print(f"\nBest profits: {datetime.now()}")
+            for data in marketsProfits:
+                self._printFullInfo(data['names'], data['quantity'], data['profit'], data['currencies'])
+
+    def _getMarketOrders(self, currency1, currency2, reverse):
+        market1Data = self.__firstApi.getBestOrders((currency2, currency1), ORDER_AMOUNT)
+
+        if not reverse:
+            market2Data = self.__secondApi.getBestOrders((currency2, currency1), ORDER_AMOUNT)
+        else:
+            market2Data = self.__secondApi.getBestOrders((currency1, currency2), ORDER_AMOUNT)
+        return market1Data, market2Data
 
     def displayMarketsDifferenceRateStream(self, allCryptos, interval=5):
         while True:

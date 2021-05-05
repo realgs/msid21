@@ -8,6 +8,8 @@ API_BASE_URL = "https://api.bittrex.com/api/v1.1/public/"
 SUCCESS_KEY = 'success'
 SUCCESS_VALUE = True
 
+__transferFees = {}
+
 
 def getName():
     return NAME
@@ -18,12 +20,15 @@ def getTakerFee():
 
 
 def getTransferFee(currency):
+    if currency in __transferFees:
+        return __transferFees[currency]
     # https://api.bittrex.com/api/v1.1/public/getcurrencies
     apiResult = getApiResponse(f"{API_BASE_URL}getcurrencies", SUCCESS_KEY, SUCCESS_VALUE)
 
     if apiResult and apiResult['result']:
         for currencyData in apiResult['result']:
             if currencyData['Currency'] == currency:
+                __transferFees[currency] = currencyData['TxFee']
                 return currencyData['TxFee']
     return DEFAULT_TRANSFER_FEE
 
