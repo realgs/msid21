@@ -1,5 +1,7 @@
+import asyncio
 from typing import Tuple, List
 
+import aiohttp
 import requests
 
 from constants import APIS, NUMBER_OF_OFFERS
@@ -18,6 +20,36 @@ def fetchData(url: str):
         print("System timeout. Could not connect to the API.")
 
     return None
+
+
+async def get(url, client):
+    try:
+        async with client.get(url=url) as response:
+            resp = await response.json()
+            return resp
+    except Exception as e:
+        print("Unable to get url {} due to {}.".format(url, e.__class__))
+
+
+async def getOffersAsync(marketSymbol: Tuple[str, str], numberOfOffers: int, apiObject: dict, client):
+    if numberOfOffers <= 0:
+        raise Exception("Number of offers should be positive.")
+
+    tradeOffers = await get(apiObject['urlFormatFunction'](apiObject['baseUrl'], marketSymbol, apiObject['orderBookEndpoint']), client)
+    if tradeOffers:
+        for key, value in tradeOffers.items():
+            value = value[:numberOfOffers]
+            value = list(map(lambda offer: {
+                'quantity': float(offer["quantity"] if isinstance(offer, dict) else offer[1]),
+                'rate': float(offer["rate"] if isinstance(offer, dict) else offer[0])
+            }, value))
+            tradeOffers[key] = sorted(value, key=lambda val: val["rate"])
+
+        bids = tradeOffers["bids" if "bids" in tradeOffers else "bid"]
+        asks = tradeOffers["asks" if "asks" in tradeOffers else "ask"]
+        return {"bids": bids, "asks": asks}
+    else:
+        raise Exception(f'Unable to load a market for {marketSymbol[0]}-{marketSymbol[1]}.')
 
 
 def getOffers(marketSymbol: Tuple[str, str], numberOfOffers: int, apiObject: dict):
@@ -82,6 +114,20 @@ def collectOffers(apiNames: List[str], markets: List[str]):
     return offers
 
 
+async def collectOffersAsync(apiNames: List[str], markets: List[str]):
+    offers = {}
+    for apiName in apiNames:
+        async with aiohttp.ClientSession() as client:
+            apiOffers = {}
+            allOffers = await asyncio.gather(*[getOffersAsync(tuple(market.split('-')[:2]), NUMBER_OF_OFFERS, APIS[apiName], client) for market in markets])
+            for index, market in enumerate(markets):
+                apiOffers[market] = allOffers[index]
+
+        offers[apiName] = apiOffers
+
+    return offers
+
+
 def calculateFees(takerApi: str, transferApi: str, marketSymbol: Tuple[str, str], volume: float):
     takerFee = APIS[takerApi]["takerFee"]
     transferFee = APIS[transferApi]["transferFee"][marketSymbol[0]]
@@ -110,6 +156,9 @@ def findArbitages(apiNames: Tuple[str, str], exchangeMarkets: dict):
                 # for each bid, loop through all asks and check arbitrage
                 try:
                     volumeAfterFees, totalFee, profit, percentageProfit = findArbitrage(bid, ask, apiNames, marketName.split('-'))
+                    if profit <= 0:
+                        break
+
                     arbitrageDetails = {
                         'market': marketName,
                         'exchangeMarkets': apiNames,
