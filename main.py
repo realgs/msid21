@@ -1,21 +1,21 @@
 from api.apis import APIS
 
 
-def findCommonPairs(api1, api2):
+def findCommonMarkets(api1, api2):
     results = []
 
-    api1Pairs = api1.markets
-    api2Pairs = api2.markets
+    api1Markets = api1.markets
+    api2Markets = api2.markets
 
-    for pair in api1Pairs:
-        if pair in api2Pairs:
-            results.append(pair)
+    for market in api1Markets:
+        if market in api2Markets:
+            results.append(market)
 
     return results
 
 
 def main():
-    print(findCommonPairs(APIS['BITBAY'], APIS['BITTREX']))
+    print(findCommonMarkets(APIS['BITBAY'], APIS['BITTREX']))
 
 if __name__ == "__main__":
     main()
