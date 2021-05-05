@@ -20,7 +20,8 @@ if __name__ == "__main__":
 
     # allOffers = loadDataFromFile('./data.json')
     allOffers = collectOffers(list(APIS.keys()), intersectionMarkets)
-    arbitrages = findArbitages(exchangeMarkets, allOffers)
-    printArbitrages(arbitrages, 100)
+    arbitrages1 = findArbitages(exchangeMarkets, allOffers)
+    arbitrages2 = findArbitages(exchangeMarkets[::-1], allOffers)
+    printArbitrages(arbitrages1, arbitrages2, 100)
 
 

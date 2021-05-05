@@ -103,8 +103,6 @@ def findArbitrage(bid: dict, ask: dict, apiNames: Tuple[str, str], marketSymbol:
 
 
 def findArbitages(apiNames: Tuple[str, str], exchangeMarkets: dict):
-    apiNames = apiNames[::-1]
-
     arbitrageOffers = {}
     for (marketName, offers) in exchangeMarkets[apiNames[0]].items():  # loop through exchange1
         for bid in offers["bids"]:  # loop through given market bids
@@ -132,13 +130,17 @@ def findArbitages(apiNames: Tuple[str, str], exchangeMarkets: dict):
     return arbitrageOffers
 
 
-def sortArbitrages(arbitrages: dict):
-    listOfArbitrages = sum(arbitrages.values(), [])
+def sortArbitrages(*arbitrages: dict):
+    listOfArbitrages = []
+    for arb in arbitrages:
+        listOfArbitrages += sum(arb.values(), [])
+
     return sorted(listOfArbitrages, key=lambda arbitrage: arbitrage["percentageProfit"], reverse=True)
 
 
-def printArbitrages(arbitrages: dict, limitDisplay: int = None):
-    sortedArbitrages = sortArbitrages(arbitrages)[:limitDisplay]
+def printArbitrages(arbitrages1: dict, arbitrages2: dict, limitDisplay: int = None):
+    sortedArbitrages = sortArbitrages(arbitrages1, arbitrages2)[:limitDisplay]
+
     for i, arb in enumerate(sortedArbitrages):
         marketSymbol = arb["market"].split('-')
         transactionVolume = arb["volumeAfterFees"] + arb["totalFee"]
