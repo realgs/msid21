@@ -55,7 +55,6 @@ def getAvailableMarkets():
         markets = []
         for market in apiResult['result']:
             if not market['IsRestricted']:
-                # markets.append({'currency1': market['MarketCurrency'], 'currency2': market['BaseCurrency'], 'minTrade': market['MinTradeSize']})
                 markets.append({'currency1': market['MarketCurrency'], 'currency2': market['BaseCurrency']})
         return {"success": True, 'markets': markets}
     else:
