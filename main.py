@@ -9,4 +9,5 @@ bittrexBitbaySeeker = ProfitSeeker(bittrex, bitbay)
 
 print(bittrexBitbaySeeker.commonMarkets)
 
-bittrexBitbaySeeker.displayMarketsDifferenceRateStream(cryptos)
+# bittrexBitbaySeeker.displayMarketsDifferenceRateStream(cryptos)
+bittrexBitbaySeeker.displayAllPossibleProfits()
