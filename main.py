@@ -1,9 +1,18 @@
+import asyncio
+
 from finance import ProfitSeeker
 import bittrex
 import bitbay
 
-bittrexBitbaySeeker = ProfitSeeker(bittrex, bitbay)
+interval = 5
 
-print(bittrexBitbaySeeker.commonMarkets)
 
-bittrexBitbaySeeker.displayAllPossibleProfits()
+async def main():
+    bittrexBitbaySeeker = ProfitSeeker(bittrex, bitbay)
+
+    print(await bittrexBitbaySeeker.commonMarkets)
+
+    await bittrexBitbaySeeker.displayAllPossibleProfits(interval)
+
+asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+asyncio.run(main())

@@ -19,11 +19,11 @@ def getTakerFee():
     return TAKER_FEE
 
 
-def getTransferFee(currency):
+async def getTransferFee(currency):
     if currency in __transferFees:
         return __transferFees[currency]
     # https://api.bittrex.com/api/v1.1/public/getcurrencies
-    apiResult = getApiResponse(f"{API_BASE_URL}getcurrencies", SUCCESS_KEY, SUCCESS_VALUE)
+    apiResult = await getApiResponse(f"{API_BASE_URL}getcurrencies", SUCCESS_KEY, SUCCESS_VALUE)
 
     if apiResult and apiResult['result']:
         for currencyData in apiResult['result']:
@@ -33,8 +33,8 @@ def getTransferFee(currency):
     return DEFAULT_TRANSFER_FEE
 
 
-def getBestOrders(cryptos, amount):
-    apiResult = getApiResponse(f"{API_BASE_URL}getorderbook?market={cryptos[0]}-{cryptos[1]}&type=both", SUCCESS_KEY, SUCCESS_VALUE)
+async def getBestOrders(cryptos, amount):
+    apiResult = await getApiResponse(f"{API_BASE_URL}getorderbook?market={cryptos[0]}-{cryptos[1]}&type=both", SUCCESS_KEY, SUCCESS_VALUE)
 
     if apiResult and apiResult['result']:
         if apiResult['result']['buy'] and apiResult['result']['sell']:
@@ -48,8 +48,8 @@ def getBestOrders(cryptos, amount):
         return {"success": False, "cause": "Cannot retrieve data"}
 
 
-def getAvailableMarkets():
-    apiResult = getApiResponse(f"{API_BASE_URL}/getmarkets", SUCCESS_KEY, SUCCESS_VALUE)
+async def getAvailableMarkets():
+    apiResult = await getApiResponse(f"{API_BASE_URL}/getmarkets", SUCCESS_KEY, SUCCESS_VALUE)
 
     if apiResult and apiResult['success'] and apiResult['result']:
         markets = []

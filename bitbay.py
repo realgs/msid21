@@ -25,14 +25,14 @@ def getTakerFee():
     return TAKER_FEE
 
 
-def getTransferFee(currency):
+async def getTransferFee(currency):
     if currency in WITHDRAWAL_FEES:
         return WITHDRAWAL_FEES[currency]
     return DEFAULT_TRANSFER_FEE
 
 
-def getBestOrders(cryptos, amount):
-    apiResult = getApiResponse(f"{API_BASE_URL}orderbook-limited/{cryptos[1]}-{cryptos[0]}/{amount}", STATUS_KEY, STATUS_OK)
+async def getBestOrders(cryptos, amount):
+    apiResult = await getApiResponse(f"{API_BASE_URL}orderbook-limited/{cryptos[1]}-{cryptos[0]}/{amount}", STATUS_KEY, STATUS_OK)
 
     if apiResult:
         if apiResult['buy'] and apiResult['sell']:
@@ -46,8 +46,8 @@ def getBestOrders(cryptos, amount):
         return {"success": False, "cause": "Cannot retrieve data"}
 
 
-def getAvailableMarkets():
-    apiResult = getApiResponse(f"{API_BASE_URL}stats", STATUS_KEY, STATUS_OK)
+async def getAvailableMarkets():
+    apiResult = await getApiResponse(f"{API_BASE_URL}stats", STATUS_KEY, STATUS_OK)
 
     if apiResult and apiResult['status'] == 'Ok' and apiResult['items']:
         markets = []
