@@ -31,18 +31,15 @@ def getTransferFee(currency):
     return DEFAULT_TRANSFER_FEE
 
 
-def getBestOrders(cryptos):
-    apiResult = getApiResponse(f"{API_BASE_URL}orderbook-limited/{cryptos[1]}-{cryptos[0]}/10", STATUS_KEY, STATUS_OK)
+def getBestOrders(cryptos, amount):
+    apiResult = getApiResponse(f"{API_BASE_URL}orderbook-limited/{cryptos[1]}-{cryptos[0]}/{amount}", STATUS_KEY, STATUS_OK)
 
     if apiResult:
         if apiResult['buy'] and apiResult['sell']:
-            buys = apiResult['buy']
-            sells = apiResult['sell']
-            highestBuy = buys[len(buys)-1]
-            lowestSell = sells[0]
-            return {"success": True,
-                    "buy": {"price": float(highestBuy['ra']), "quantity": float(highestBuy['ca'])},
-                    "sell": {"price": float(lowestSell['ra']), "quantity": float(lowestSell['ca'])}}
+            buys = [{"price": float(b['ra']), 'quantity': float(b['ca'])} for b in reversed(apiResult['buy'])]
+            sells = [{"price": float(s['ra']), 'quantity': float(s['ca'])} for s in apiResult['sell']]
+            if len(buys) == amount and len(sells) == amount:
+                return {"success": True, "buys": buys, "sells": sells}
         else:
             return {"success": False, "cause": "There is not enough data"}
     else:

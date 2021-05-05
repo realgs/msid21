@@ -28,19 +28,15 @@ def getTransferFee(currency):
     return DEFAULT_TRANSFER_FEE
 
 
-def getBestOrders(cryptos):
+def getBestOrders(cryptos, amount):
     apiResult = getApiResponse(f"{API_BASE_URL}getorderbook?market={cryptos[0]}-{cryptos[1]}&type=both", SUCCESS_KEY, SUCCESS_VALUE)
 
     if apiResult and apiResult['result']:
         if apiResult['result']['buy'] and apiResult['result']['sell']:
-            buys = apiResult['result']['buy']
-            sells = apiResult['result']['sell']
-            highestBuy = buys[0]
-            lowestSell = sells[0]
-
-            return {"success": True,
-                    "buy": {"price": highestBuy['Rate'], "quantity": highestBuy['Quantity']},
-                    "sell": {"price": lowestSell['Rate'], "quantity": lowestSell['Quantity']}}
+            buys = [{"price": b['Rate'], "quantity": b['Quantity']} for b in apiResult['result']['buy']]
+            sells = [{"price": s['Rate'], "quantity": s['Quantity']} for s in apiResult['result']['sell']]
+            if len(buys) >= amount and len(sells) >= amount:
+                return {"success": True, "buys": buys[:amount], "sells": sells[:amount]}
         else:
             return {"success": False, "cause": "There is not enough data"}
     else:
