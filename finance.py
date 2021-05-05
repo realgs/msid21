@@ -54,7 +54,7 @@ class ProfitSeeker:
                 buyIdx += 1
             else:
                 sellIdx += 1
-            canEarn = buyIdx > ORDER_AMOUNT and sellIdx > ORDER_AMOUNT and rate > 1
+            canEarn = buyIdx < ORDER_AMOUNT and sellIdx < ORDER_AMOUNT and rate > 1
 
         transferFee1, transferFee2 = await self.__firstApi.getTransferFee(currency1), await self.__secondApi.getTransferFee(currency2)
         fullProfit = fullProfit - transferFee1 - transferFee2
