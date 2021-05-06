@@ -7,7 +7,7 @@ class BitBay(Api):
 
     @property
     def transactionFee(self):
-        return 0.001
+        return 0.0043
 
     def withdrawalFee(self, symbol):
         fees = {
