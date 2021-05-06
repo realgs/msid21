@@ -1,10 +1,12 @@
 import requests
 
+BASE_LIMIT = 10
 
 class Api:
-    def __init__(self, name, url):
+    def __init__(self, name, url, limit = BASE_LIMIT):
         self._name = name
         self._url = url
+        self._limit = limit
 
     def __str__(self):
         return f"{self._name} ({self._url})"
@@ -43,9 +45,3 @@ class Api:
     def orderbook(self, symbol):
         raise NotImplementedError()
 
-    @property
-    def tickers(self):
-        raise NotImplementedError()
-
-    def ticker(self, symbol):
-        raise NotImplementedError()
