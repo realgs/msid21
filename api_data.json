@@ -1,9 +1,9 @@
 {
     "BITBAY": {
-        "limit": 60,
+        "limit": 50,
         "markets": "/trading/ticker",
         "name": "BITBAY",
-        "orderbook": "/trading/orderbook-limited/{market}/{limit}",
+        "orderbook": "/trading/orderbook/{market}",
         "taker": 0.0043,
         "transfer": {
             "AAVE": 0.42,
@@ -58,7 +58,7 @@
         "url": "https://api.bitbay.net/rest"
     },
     "BITTREX": {
-        "limit": 60,
+        "limit": 50,
         "markets": "/markets",
         "name": "BITTREX",
         "orderbook": "markets/{market}/orderbook",
