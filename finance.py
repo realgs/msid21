@@ -74,14 +74,19 @@ class ProfitSeeker:
         profit = (rate - 1) * quantity
         return quantity, profit, rate
 
-    async def _getCrossProfitRate(self, firstApiData, secondApiData, currency1, currency2):
+    async def _getCrossProfitRate(self, firstApiData, secondApiData, reverse, currency1, currency2):
         firstApiBuy, firstApiSell = firstApiData['buys'], firstApiData['sells']
         secondApiBuy, secondApiSell = secondApiData['buys'], secondApiData['sells']
+        if reverse:
+            print(currency1, currency2)
+            secondApiBuy, secondApiSell = list(reversed(secondApiSell)), list(reversed(secondApiBuy))
 
-        quantity1, profit1 = await self._getProfit(firstApiBuy, secondApiSell, self.__firstApi.getTakerFee(), self.__secondApi.getTakerFee(), currency1, currency2)
-        quantity2, profit2 = await self._getProfit(secondApiBuy, firstApiSell, self.__secondApi.getTakerFee(), self.__firstApi.getTakerFee(), currency2, currency1)
+        quantity1, profit1 = await self._getProfit(firstApiBuy, secondApiSell, self.__firstApi.getTakerFee(),
+                                                   self.__secondApi.getTakerFee(), currency1, currency2)
+        quantity2, profit2 = await self._getProfit(secondApiBuy, firstApiSell, self.__secondApi.getTakerFee(),
+                                                   self.__firstApi.getTakerFee(), currency2, currency1)
 
-        return quantity1, profit1, profit1 / quantity1, quantity2, profit2, profit2 / quantity2
+        return quantity1, profit1, profit1/quantity1, quantity2, profit2, profit2/quantity2
 
     @staticmethod
     def _printFullInfo(names, quantity, profit, currencies):
@@ -100,9 +105,7 @@ class ProfitSeeker:
             orders = await asyncio.gather(*[self._retrieveOrders(market) for market in self.__commonMarkets])
             orders = [o for o in orders if o[2]['success'] and o[3]['success']]
 
-            for marketOrders in orders:
-                marketsProfits.append(await self._getTransferData(marketOrders))
-
+            marketsProfits = [await self._getTransferData(marketOrders) for marketOrders in orders]
             marketsProfits.sort(key=lambda profitData: profitData['rate'], reverse=True)
 
             endTime = datetime.now()
@@ -113,8 +116,9 @@ class ProfitSeeker:
                 self._printFullInfo(data['names'], data['quantity'], data['profit'], data['currencies'])
 
     async def _getTransferData(self, marketOrders):
-        currency1, currency2, market1Data, market2Data = marketOrders
-        quantity1, profit1, rate1, quantity2, profit2, rate2 = await self._getCrossProfitRate(market1Data, market2Data, currency1, currency2)
+        currency1, currency2, market1Data, market2Data, reverse = marketOrders
+        quantity1, profit1, rate1, quantity2, profit2, rate2 = \
+            await self._getCrossProfitRate(market1Data, market2Data, reverse, currency1, currency2)
         if profit1 > profit2:
             return {'rate': rate1, 'profit': profit1, 'quantity': quantity1, 'currencies': (currency1, currency2),
                     'names': (self.__firstApi.getName(), self.__secondApi.getName())}
@@ -130,4 +134,4 @@ class ProfitSeeker:
             market2Data = await self.__secondApi.getBestOrders((currency2, currency1), ORDER_AMOUNT)
         else:
             market2Data = await self.__secondApi.getBestOrders((currency1, currency2), ORDER_AMOUNT)
-        return currency1, currency2, market1Data, market2Data
+        return currency1, currency2, market1Data, market2Data, markets['reverse']
