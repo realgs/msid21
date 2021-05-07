@@ -3,8 +3,9 @@
         "name": "BITBAY",
         "url": "https://api.bitbay.net/rest",
         "orderbook": "/trading/orderbook-limited/{market}/{limit}",
-        "markets": "https://api.bitbay.net/rest/trading/ticker",
+        "markets": "/trading/ticker",
         "taker": 0.0043,
+        "limit": 60,
         "transfer": {
             "AAVE": 0.42000000,
             "ALG":  196.00000000,
@@ -60,7 +61,9 @@
         "name": "BITTREX",
         "url": "https://api.bittrex.com/v3",
         "orderbook": "markets/{market}/orderbook",
+        "markets": "/markets",
         "taker": 0.0075,
+        "limit": 60,
         "transfer": {
             "BTC": 0.0003,
             "LTC": 0.01,
