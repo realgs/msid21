@@ -43,9 +43,4 @@ def runProgram2():
 
 
 if __name__ == "__main__":
-    start = time.time()
-    runProgram()
-    print(time.time() - start)
-    start = time.time()
     runProgram2()
-    print(time.time() - start)
