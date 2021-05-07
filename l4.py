@@ -139,27 +139,49 @@ def ex2():
     print()
 
 
-""""
-Finds common value pairs for given market api's
+# Changes markets format so they look the same no matter which api was used
+def format_markets(api, markets):
+    if markets is None:
+        return None
+    markets_list = list()
+    if api == MARKET_API["BITBAY"]:
+        markets = markets["items"]
+        for m in markets:
+            markets_list.append(m)
+    elif api == MARKET_API["BITTREX"]:
+        for m in markets:
+            markets_list.append(m["symbol"])
+    else:
+        return None
+    return markets_list
 
-:param api_1: The first api in pair
-:param api_2: The second api in pair
-:return: list of market pairs symbols
-:rtype: list[str]
-"""
+
+# Returns all markets of given api
+def get_all_markets(api):
+    if api == MARKET_API["BITBAY"]:
+        markets = get_data_from_url(f"{api['url']}{api['markets']}")
+        if markets['status'] != "Ok":
+            return None
+        return format_markets(api, markets)
+
+    if api == MARKET_API["BITTREX"]:
+        markets = get_data_from_url(f"{api['url']}{api['markets']}")
+        return format_markets(api, markets)
+    return None
 
 
+# Find common value pairs for given market api's
+# Returns list of market pairs symbols
 def find_common_markets(api_1, api_2):
     common_markets_symbols = []
-    markets_bittrex = get_data_from_url("https://api.bittrex.com/v3/markets")
-    markets_bitbay = get_data_from_url("https://api.bitbay.net/rest/trading/ticker")
-    for i in markets_bittrex:
-        # print(i['symbol'])
-        for j in markets_bitbay['items']:
+    markets_api_1 = get_all_markets(api_1)
+    markets_api_2 = get_all_markets(api_2)
+    for i in markets_api_1:
+        for j in markets_api_2:
             # print("Pair: " + str(markets_bitbay['items'][j]['market']['code']) + ", " + str(i['symbol']))
-            if markets_bitbay['items'][j]['market']['code'] == i['symbol']:
+            if j == i:
                 # print("Pair: " + str(markets_bitbay['items'][j]['market']['code']) + ", " + str(i['symbol']))
-                common_markets_symbols.append((i['symbol']).split("-"))
+                common_markets_symbols.append(i)
                 break
     return common_markets_symbols
 
@@ -172,15 +194,33 @@ def lab_4():
     for api_1_index in range(0, len(MARKET_API) - 1):
         for api_2_index in range(api_1_index + 1, len(MARKET_API)):
             if api_1_index != api_2_index:
-                common_markets.append(find_common_markets(markets_api_list[api_1_index], markets_api_list[api_2_index]))
+                common_markets.append(find_common_markets(MARKET_API[markets_api_list[api_1_index]],
+                                                          MARKET_API[markets_api_list[api_2_index]]))
     # Print all found common market pairs
-    for symbol in common_markets:
-        for s in symbol:
-            print(s)
+    #for pair in common_markets:
+    #    for symbol in pair:
+    #        print(symbol)
 
+    # Get 3 random market pairs
     random_pairs = random.sample(range(0, len(common_markets[0])), 3)
     for i in random_pairs:
         print(common_markets[0][i])
+
+
+# Get current fees for bittrex and save to file
+def update_bittrex_fees():
+    try:
+        data = get_data_from_url("https://api.bittrex.com/api/v1.1/public/getcurrencies")["result"]
+        for cl in data:
+            # print(f"{cl['Currency']} {cl['TxFee']}")
+            MARKET_API["BITTREX"]["transfer"][cl["Currency"]] = cl["TxFee"]
+    except KeyError:
+        print("Failed to update bittrex fees")
+    try:
+        with open(DEFAULT_API_PATH, "w") as file:
+            json.dump(MARKET_API, file, indent=4, sort_keys=True)
+    except IOError:
+        print("Failed to save updated bittrex fees")
 
 
 def common_test():
@@ -196,7 +236,7 @@ def common_test():
 
     print(market_pairs_apis)
     print(common_markets)
-
+    print(len(common_markets))
     return 0
     # For every api in market api, match it with every other api
     for apis in market_pairs_apis:
@@ -236,18 +276,12 @@ def common_test():
 
 
 def main():
-    #lab_4()
+    read_api_data_from_file()
+    update_bittrex_fees()
+    lab_4()
     #common_test()
     #ex2()
-    read_api_data_from_file()
 
-
-def get_current_bittrex_fees():
-    data = get_data_from_url("https://api.bittrex.com/api/v1.1/public/getcurrencies")
-    # for c in d['result']:
-    #    print('"' + c['Currency'] + '":' + " " + str(c['TxFee']) + ",")
-    # print(d['result']['Currency'] + " " + d['result']['Currency'])
-    return data
 
 
 if __name__ == "__main__":
