@@ -9,8 +9,8 @@ URL = {'BITBAY': {'orders': 'https://api.bitbay.net/rest/trading/orderbook/',
 API_RESPONSE_OPTIONS = {'BITBAY': {'code': 'status', 'info': 'errors', 'success': 'Ok'},
                         'BITTREX': {'code': 'success', 'info': 'message', 'success': True}
                         }
-ORDERS_OPTION = {'BITBAY': {'buy': 'sell', 'sell': 'buy', 'price': 'ra', 'amount': 'ca'},
-                 'BITTREX': {'buy': 'ask', 'sell': 'bid', 'price': 'rate', 'amount': 'quantity'}
+ORDERS_OPTION = {'BITBAY': {'buy': 'sell', 'sell': 'buy', 'rate': 'ra', 'amount': 'ca'},
+                 'BITTREX': {'buy': 'ask', 'sell': 'bid', 'rate': 'rate', 'amount': 'quantity'}
                  }
 TRANSFER_FEES = {'BITBAY': {'AAVE': 0.23, 'ALG': 258.00, 'AMLT': 965.00, 'BAT': 29.00, 'BCC': 0.001, 'BCP': 665.00,
                             'BOB': 4901.00, 'BSV': 0.003, 'BTC': 0.0005, 'BTG': 0.001, 'COMP': 0.025, 'DAI': 19.00,
@@ -54,15 +54,16 @@ class Api:
             return self.__bitbay_markets
 
     @classmethod
-    def orders(cls, api, cryptocurrency, currency, orderType, depth=LIMIT):
-        data = cls.__get_orders(api, cryptocurrency, currency)
+    def orders(cls, api, market, orderType, depth=LIMIT):
+        data = cls.__get_orders(api, market)
         orders = []
         if data is not None:
             if 'result' in data:
                 data = data['result']
             offers = data[ORDERS_OPTION[api][orderType]]
             for offer in offers[:depth]:
-                order = {'price': offer[ORDERS_OPTION[api]['price']], 'amount': offer[ORDERS_OPTION[api]['amount']]}
+                order = {'rate': float(offer[ORDERS_OPTION[api]['rate']]),
+                         'amount': float(offer[ORDERS_OPTION[api]['amount']])}
                 orders.append(order)
         return orders
 
@@ -100,11 +101,11 @@ class Api:
         return result
 
     @classmethod
-    def __get_orders(cls, api, cryptocurrency, currency):
+    def __get_orders(cls, api, market):
         if not(api in URL):
             print('unknown API')
             return None
-        url = URL[api]['orders'] + cryptocurrency + URL[api]['separator'] + currency + URL[api]['suffix']
+        url = URL[api]['orders'] + market + URL[api]['suffix']
         response = cls.__data_request(url)
         data = response.json()
         if API_RESPONSE_OPTIONS[api]['code'] not in data:
