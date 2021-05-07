@@ -5,7 +5,6 @@ import time
 # Default variables
 BASE_CURRENCY = "USD"
 ORDERS_COUNT = 30
-DEFAULT_ORDER_LIMIT = 30
 DEFAULT_API_PATH = "api_data.json"
 
 # Decides when two volumes are considered equal
@@ -15,12 +14,13 @@ ARBITRAGE_EQUAL_PRECISION = 1.0E-9
 MARKET_API = {}
 
 
+# Read api configuration file
 def read_api_data_from_file(filename=DEFAULT_API_PATH):
     global MARKET_API
     try:
         with open(filename) as json_file:
             MARKET_API = json.load(json_file)
-    except (FileNotFoundError, IOError, OSError) as e:
+    except (FileNotFoundError, IOError, OSError):
         return False
     return True
 
@@ -33,11 +33,8 @@ def get_data_from_url(url):
         return None
 
 
+# Format given orders depending on api
 def format_orders(api, orders, quantity=ORDERS_COUNT):
-    sel_price = ""
-    sel_volume = ""
-    sel_bid = "bid"
-    sel_ask = "ask"
     if api == MARKET_API["BITBAY"]:
         sel_price = "ra"
         sel_volume = "ca"
@@ -72,6 +69,7 @@ def format_orders(api, orders, quantity=ORDERS_COUNT):
     return None
 
 
+# Get specific amount of market orders from given api, in universal format
 def get_market_orders(api, fst_currency, snd_currency=BASE_CURRENCY, quantity=ORDERS_COUNT):
     if api == MARKET_API["BITBAY"]:
         market = f"{fst_currency}-{snd_currency}"
@@ -115,6 +113,7 @@ def calculate_arbitrage(cryptocurrency, api_bid, api_ask, bids, asks):
         volume = float(bid["volume"])
         if float(ask["volume"]) < volume:
             volume = float(ask["volume"])
+
         # Calculate base profit
         buy_price = volume * float(ask["price"])
         total_buy_price += buy_price
@@ -136,7 +135,7 @@ def calculate_arbitrage(cryptocurrency, api_bid, api_ask, bids, asks):
             return total_profit
         first_iteration = False
 
-        # Move to next offers
+        # Move to the next offers
         # If volumes were equal
         if abs(float(ask["volume"]) - float(bid["volume"])) <= ARBITRAGE_EQUAL_PRECISION:
             # print(f"Equal: {ask['volume']}, {bid['volume']}")
@@ -211,11 +210,54 @@ def print_ranking(arbitrages_list):
         print("{0:.2f}% {1}-{2} {3} {4} ".format(a['profit'], a['currency'], a['base'], a['fst_api'], a['snd_api']))
 
 
+# Calculates arbitrage for all common markets, finds best profit and saves to arbitrages_list
+def calculate_arbitrage_for_apis(api_1, api_2, common_markets, common_markets_index, arbitrages_list):
+    limit = api_1["limit"]
+    if api_2["limit"] < api_1["limit"]:
+        limit = api_2["limit"]
+
+    for i in range(0, len(common_markets[common_markets_index])):
+        # print(common_markets[common_markets_index][i])
+        crypto, base = common_markets[common_markets_index][i]
+
+        # Get market orders
+        fst_orders = get_market_orders(api_1, crypto, base)
+        snd_orders = get_market_orders(api_2, crypto, base)
+
+        if fst_orders is None:
+            print(f"Failed to get {crypto} {base} data from {api_1['name']}")
+        elif snd_orders is None:
+            print(f"Failed to get {crypto} {base} data from {api_2['name']}")
+        else:
+            # Calculate possible profit from arbitrage
+            profit = calculate_arbitrage(crypto, api_1, api_2, fst_orders["bids"], snd_orders["asks"])
+            rev_profit = calculate_arbitrage(crypto, api_1, api_2, snd_orders["bids"], fst_orders["asks"])
+            # Check which way it's more beneficial to do arbitrage
+            if rev_profit > profit:
+                profit = rev_profit
+                temp = api_1
+                api_1 = api_2
+                api_2 = temp
+            # Save profit to list with information about apis and currencies
+            arbitrages_list.append({
+                "fst_api": api_1["name"],
+                "snd_api": api_2["name"],
+                "currency": crypto,
+                "base": base,
+                "profit": profit
+            })
+            # print(f"{profit} {base}")
+            # print(f"{rev_profit} {base}")
+        # Sleep for 1 second in order to not get banned for too many requests
+        if i % limit == 0:
+            time.sleep(1)
+
+
 def lab_4():
     markets_api_list = list(MARKET_API)
     common_markets = list()
     arbitrages_list = list()
-    # Find common markets for each market api pair, store common markets and market api pair
+    # Find common markets for each market api pair, store common markets
     common_markets_index = 0
     for api_1_index in range(0, len(MARKET_API) - 1):
         for api_2_index in range(api_1_index + 1, len(MARKET_API)):
@@ -224,49 +266,12 @@ def lab_4():
                 api_2 = MARKET_API[markets_api_list[api_2_index]]
                 common_markets.append(find_common_markets(api_1, api_2))
 
-                limit = api_1["limit"]
-                if api_2["limit"] < api_1["limit"]:
-                    limit = api_2["limit"]
-
                 # print(f"{api_1['name']} {api_2['name']}")
+
                 # Get all market pairs and calculate arbitrage for them
-                for i in range(0, len(common_markets[common_markets_index])):
-                    # print(common_markets[common_markets_index][i])
-                    crypto, base = common_markets[common_markets_index][i]
-
-                    # Get market orders
-                    fst_orders = get_market_orders(api_1, crypto, base)
-                    snd_orders = get_market_orders(api_2, crypto, base)
-
-                    if fst_orders is None:
-                        print(f"Failed to get {crypto} {base} data from {api_1['name']}")
-                    elif snd_orders is None:
-                        print(f"Failed to get {crypto} {base} data from {api_2['name']}")
-
-                    else:
-                        # Calculate possible profit from arbitrage
-                        profit = calculate_arbitrage(crypto, api_1, api_2, fst_orders["bids"], snd_orders["asks"])
-                        rev_profit = calculate_arbitrage(crypto, api_1, api_2, snd_orders["bids"], fst_orders["asks"])
-                        # Check which way it's more beneficial to do arbitrage
-                        if rev_profit > profit:
-                            profit = rev_profit
-                            temp = api_1
-                            api_1 = api_2
-                            api_2 = temp
-                        # Save profit to list with information about apis and currencies
-                        arbitrages_list.append({
-                            "fst_api": api_1["name"],
-                            "snd_api": api_2["name"],
-                            "currency": crypto,
-                            "base": base,
-                            "profit": profit
-                        })
-                        # print(f"{profit} {base}")
-                        # print(f"{rev_profit} {base}")
-                    # Sleep for 1 second in order to not get banned for too many requests
-                    if i % limit == 0:
-                        time.sleep(1)
+                calculate_arbitrage_for_apis(api_1, api_2, common_markets, common_markets_index, arbitrages_list)
             common_markets_index += 1
+
     arbitrages_list.sort(key=lambda x: x['profit'], reverse=True)
     print_ranking(arbitrages_list)
 
@@ -284,6 +289,7 @@ def update_bittrex_fees():
         return False
 
 
+# Save current api data
 def save_api_data(file_path=DEFAULT_API_PATH):
     try:
         with open(file_path, "w") as file:
@@ -297,7 +303,6 @@ def main():
     fees_updated = update_bittrex_fees()
     if fees_updated:
         save_api_data()
-
     lab_4()
 
 
