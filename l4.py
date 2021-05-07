@@ -4,11 +4,13 @@ import json
 
 # Default variables
 BASE_CURRENCY = "USD"
-ORDERS_COUNT = 4
+ORDERS_COUNT = 30
 DIFFERENCE_PRECISION = 2
 INTERVAL = 5
 DEFAULT_ORDER_LIMIT = 10
 DEFAULT_API_PATH = "api_data.json"
+# Decides when two volumes are considered equal
+ARBITRAGE_EQUAL_PRECISION = 1.0E-9
 
 # Api
 MARKET_API = {}
@@ -89,29 +91,67 @@ def get_market_orders(api, fst_currency, snd_currency=BASE_CURRENCY, quantity=OR
     return None
 
 
-def calculate_arbitrage(cryptocurrency, base_currency, api_bid, api_ask, bid, ask):
-    volume = float(bid["volume"])
-    if float(ask["volume"]) < volume:
-        volume = float(ask["volume"])
-    buy_price = volume * float(ask["price"])
-    sell_price = volume * float(bid["price"])
-    base_profit = sell_price - buy_price
+# Calculate if arbitrage between two platforms is profitable
+def calculate_arbitrage(cryptocurrency, api_bid, api_ask, bids, asks):
+    bids_index = 0
+    asks_index = 0
+    bids_len = len(bids)
+    asks_len = len(asks)
+    # Total earnings in base currency
+    total_profit = 0
+    # If it's first calculation, return profit even if it's negative
+    first_iteration = True
 
-    try:
+    # While there are offers
+    while bids_index < bids_len and asks_index < asks_len:
+        bid = bids[bids_index]
+        ask = asks[asks_index]
+        # print(f"bid: {bid}", end=", ")
+        # print(f"ask: {ask}")
+        # Find smallest volume
+        volume = float(bid["volume"])
+        if float(ask["volume"]) < volume:
+            volume = float(ask["volume"])
+        # Calculate base profit
+        buy_price = volume * float(ask["price"])
+        sell_price = volume * float(bid["price"])
+        base_profit = sell_price - buy_price
+
+        # Calculate fees
         buy_fee = buy_price * api_ask["taker"] + api_ask["transfer"][cryptocurrency] * float(ask["price"])
         sell_fee = sell_price * api_bid["taker"] + api_bid["transfer"][cryptocurrency] * float(bid["price"])
-    except (ValueError, KeyError):
-        buy_fee = buy_price * MARKET_API["DEFAULT"]["taker"] + MARKET_API["DEFAULT"]["transfer"] * float(ask["price"])
-        sell_fee = sell_price * MARKET_API["DEFAULT"]["taker"] + MARKET_API["DEFAULT"]["transfer"] * float(bid["price"])
-    total_fee = buy_fee + sell_fee
-    total_profit = base_profit - total_fee
+        total_fee = buy_fee + sell_fee
+        # Calculate profit
+        current_profit = base_profit - total_fee
 
-    print(f"Arbitrage maximal volume: {volume}")
-    print(f"Profit: {(total_profit / (buy_price + total_fee) * 100):.2f}%")
-    print(f"Profit: {total_profit:.2f} {base_currency} (in base currency)")
+        # Stop if profit is not positive
+        if current_profit <= 0:
+            if first_iteration:
+                return current_profit
+            return total_profit
+        first_iteration = False
+
+        # Move to next offers
+        # If volumes were equal
+        if abs(float(ask["volume"]) - float(bid["volume"])) <= ARBITRAGE_EQUAL_PRECISION:
+            print(f"Equal: {ask['volume']}, {bid['volume']}")
+            bids_index += 1
+            asks_index += 1
+        # If we're left with bid volume
+        elif float(ask["volume"]) < float(bid["volume"]):
+            bid["volume"] = float(bid["volume"]) - float(ask["volume"])
+            asks_index += 1
+            print(f"Left bid: {bid}")
+        # If we're left with ask volume
+        else:
+            ask["volume"] = float(ask["volume"]) - float(bid["volume"])
+            bids_index += 1
+            print(f"Left ask: {ask}")
+        total_profit += current_profit
     return total_profit
 
 
+# Old, remove later
 def ex2():
     markets_pair = (MARKET_API["BITBAY"], MARKET_API["BITTREX"])
     for crypto in CRYPTOCURRENCIES:
@@ -181,7 +221,8 @@ def find_common_markets(api_1, api_2):
             # print("Pair: " + str(markets_bitbay['items'][j]['market']['code']) + ", " + str(i['symbol']))
             if j == i:
                 # print("Pair: " + str(markets_bitbay['items'][j]['market']['code']) + ", " + str(i['symbol']))
-                common_markets_symbols.append(i)
+                symbol = i.split("-")
+                common_markets_symbols.append((symbol[0], symbol[1]))
                 break
     return common_markets_symbols
 
@@ -194,30 +235,47 @@ def lab_4():
     for api_1_index in range(0, len(MARKET_API) - 1):
         for api_2_index in range(api_1_index + 1, len(MARKET_API)):
             if api_1_index != api_2_index:
-                common_markets.append(find_common_markets(MARKET_API[markets_api_list[api_1_index]],
-                                                          MARKET_API[markets_api_list[api_2_index]]))
+                api_1 = MARKET_API[markets_api_list[api_1_index]]
+                api_2 = MARKET_API[markets_api_list[api_2_index]]
+                common_markets.append(find_common_markets(api_1, api_2))
+
+                # Get 3 random market pairs
+                random_pairs = random.sample(range(0, len(common_markets[0])), 3)
+                for i in random_pairs:
+                    print(common_markets[0][i])
+                    # Calculate arbitrage for them
+                    crypto, base = common_markets[0][i]
+                    fst_orders = get_market_orders(api_1, crypto, base)
+                    snd_orders = get_market_orders(api_2, crypto, base)
+
+                    profit = calculate_arbitrage(crypto, api_1, api_2, fst_orders["bids"], snd_orders["asks"])
+                    rev_profit = calculate_arbitrage(crypto, api_1, api_2, snd_orders["bids"], fst_orders["asks"])
+                    print(f"{profit} {base}")
+                    print(f"{rev_profit} {base}")
     # Print all found common market pairs
     #for pair in common_markets:
     #    for symbol in pair:
     #        print(symbol)
 
-    # Get 3 random market pairs
-    random_pairs = random.sample(range(0, len(common_markets[0])), 3)
-    for i in random_pairs:
-        print(common_markets[0][i])
 
 
-# Get current fees for bittrex and save to file
+
+# Get current fees for bittrex
 def update_bittrex_fees():
     try:
         data = get_data_from_url("https://api.bittrex.com/api/v1.1/public/getcurrencies")["result"]
         for cl in data:
             # print(f"{cl['Currency']} {cl['TxFee']}")
             MARKET_API["BITTREX"]["transfer"][cl["Currency"]] = cl["TxFee"]
+        return True
     except KeyError:
         print("Failed to update bittrex fees")
+        return False
+
+
+def save_api_data(file_path=DEFAULT_API_PATH):
     try:
-        with open(DEFAULT_API_PATH, "w") as file:
+        with open(file_path, "w") as file:
             json.dump(MARKET_API, file, indent=4, sort_keys=True)
     except IOError:
         print("Failed to save updated bittrex fees")
@@ -277,7 +335,10 @@ def common_test():
 
 def main():
     read_api_data_from_file()
-    update_bittrex_fees()
+    fees_updated = update_bittrex_fees()
+    if fees_updated:
+        save_api_data()
+
     lab_4()
     #common_test()
     #ex2()
