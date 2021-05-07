@@ -1,7 +1,4 @@
 import json
-import time
-
-import aiohttp
 import asyncio
 
 from arbitrage import findArbitages, getTransferFees, getMarketsNames, printArbitrages, \

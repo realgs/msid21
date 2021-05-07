@@ -20,7 +20,7 @@ APIS: dict = {
         'orderBookEndpoint': 'orderbook.json',
         'urlFormatFunction': bitbayUrlFormat,
         # 'transferFeesEndpoint': 'currencies',
-        'takerFee': 0.001,
+        'takerFee': 0.0042,
         'transferFee': {
             'AAVE': 0.1,
             'BAT': 21.0,

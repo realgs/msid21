@@ -1,4 +1,5 @@
 import asyncio
+import uuid
 from typing import Tuple, List
 
 import aiohttp
@@ -145,7 +146,7 @@ def findArbitrage(bid: dict, ask: dict, apiNames: Tuple[str, str], marketSymbol:
     profit = rateDifference * volumeAfterFees
     percentageProfit = profit / (transactionVolume * bid["rate"])
 
-    return volumeAfterFees, totalFee, profit, percentageProfit
+    return volumeAfterFees, totalFee, profit, percentageProfit, transactionVolume
 
 
 def findArbitages(apiNames: Tuple[str, str], exchangeMarkets: dict):
@@ -155,24 +156,60 @@ def findArbitages(apiNames: Tuple[str, str], exchangeMarkets: dict):
             for ask in exchangeMarkets[apiNames[1]][marketName]["asks"]:  # loop through exchange2 asks for given market
                 # for each bid, loop through all asks and check arbitrage
                 try:
-                    volumeAfterFees, totalFee, profit, percentageProfit = findArbitrage(bid, ask, apiNames, marketName.split('-'))
+                    volumeAfterFees, totalFee, profit, percentageProfit, transactionVolume = findArbitrage(bid, ask, apiNames, marketName.split('-'))
                     if profit <= 0:
                         break
 
+                    transactionId = uuid.uuid4()
                     arbitrageDetails = {
                         'market': marketName,
                         'exchangeMarkets': apiNames,
-                        "totalFee": totalFee,
+                        'totalFee': totalFee,
                         'volumeAfterFees': volumeAfterFees,
                         'profit': profit,
                         'percentageProfit': percentageProfit,
-                        'bidRate': bid["rate"],
-                        'askRate': ask["rate"]
+                        'bid': bid,
+                        'ask': ask,
+                        'transactionId': transactionId
                     }
                     if marketName in arbitrageOffers:
                         arbitrageOffers[marketName].append(arbitrageDetails)
                     else:
                         arbitrageOffers[marketName] = [arbitrageDetails]
+
+                    # If chosen volume comes from ask offer, it means that there's some bid's volume left.
+                    # Check if the arbitrage is possible for the leftovers, but check if volume is greater than fee.
+                    volumeLeft = bid["quantity"] - transactionVolume
+                    if volumeLeft > 0:
+                        reducedQuantityBid = bid.copy()
+                        reducedQuantityBid["quantity"] = volumeLeft
+                        for askOffer in exchangeMarkets[apiNames[1]][marketName]["asks"]:
+                            try:
+                                volumeAfterFees, totalFee, profit, percentageProfit, transactionVolume = findArbitrage(reducedQuantityBid, askOffer, apiNames, marketName.split('-'))
+                                if profit <= 0:
+                                    break
+
+                                arbitrageDetails = {
+                                    'market': marketName,
+                                    'exchangeMarkets': apiNames,
+                                    'totalFee': totalFee,
+                                    'volumeAfterFees': volumeAfterFees,
+                                    'profit': profit,
+                                    'percentageProfit': percentageProfit,
+                                    'bid': reducedQuantityBid,
+                                    'ask': askOffer,
+                                    'transactionId': uuid.uuid4(),
+                                    'parentTransactionId': transactionId
+                                }
+
+                                if marketName in arbitrageOffers:
+                                    arbitrageOffers[marketName].append(arbitrageDetails)
+                                else:
+                                    arbitrageOffers[marketName] = [arbitrageDetails]
+
+                            except ValueError:
+                                pass
+
                 except ValueError:
                     pass
 
@@ -193,11 +230,14 @@ def printArbitrages(arbitrages1: dict, arbitrages2: dict, limitDisplay: int = No
     for i, arb in enumerate(sortedArbitrages):
         marketSymbol = arb["market"].split('-')
         transactionVolume = arb["volumeAfterFees"] + arb["totalFee"]
-        print(f'{i + 1}. [{arb["exchangeMarkets"][0]} -> {arb["exchangeMarkets"][1]}]', f'[{marketSymbol[0]} -> {marketSymbol[1]}]')
+        print(f'{i + 1}. [{arb["exchangeMarkets"][0]} -> {arb["exchangeMarkets"][1]}]', f'[{marketSymbol[0]} -> {marketSymbol[1]}] - transaction id: {arb["transactionId"]}')
+        if "parentTransactionId" in arb:
+            print(f'Transaction is based on the leftover volume of the transaction {arb["parentTransactionId"]}')
         print(f'Profit ' + '{0:.10f}'.format(arb["profit"]) + f' {marketSymbol[1]} ({"{0:.4f}".format(arb["percentageProfit"] * 100)}% of the initial investment)')
         print(f'Transaction volume: {transactionVolume} {marketSymbol[0]}', f' | Volume after fees: {arb["volumeAfterFees"]} {marketSymbol[0]}')
-        print(f'Bid rate: {"{0:.8f}".format(arb["bidRate"])} | Ask rate {"{0:.8f}".format(arb["askRate"])}')
-        print(f'Initial investment: {transactionVolume * arb["bidRate"]} {marketSymbol[1]}')
+        print(f'Bid rate: {"{0:.8f}".format(arb["bid"]["rate"])} | Ask rate {"{0:.8f}".format(arb["ask"]["rate"])}')
+        print(f'Bid quantity: {"{0:.6f}".format(arb["bid"]["quantity"])} | Ask quantity {"{0:.6f}".format(arb["ask"]["quantity"])}')
+        print(f'Initial investment: {transactionVolume * arb["bid"]["rate"]} {marketSymbol[1]}')
         print()
 
 
