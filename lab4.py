@@ -194,6 +194,7 @@ def count_arbitrage_multi_offer_profit(resp_buy, resp_sell, offer_buy_nbr,
     offer_sell = resp_sell.get_offer(offer_sell_nbr)['sell']
     profit_all = 0
     amount_all = 0
+    sum_pay = 0
     transactions = []
     amount = min(offer_buy[AMOUNT], offer_sell[AMOUNT])
     profitable = True
@@ -203,6 +204,7 @@ def count_arbitrage_multi_offer_profit(resp_buy, resp_sell, offer_buy_nbr,
         profit = transaction['profit']
         if profit > 0:
             profit_all += profit
+            sum_pay += transaction['sum_pay']
             amount_all += amount
             transactions.append({'offer_buy': offer_buy_nbr, 'offer_sell': offer_sell_nbr, 'amount': amount})
             if offer_buy[AMOUNT] > amount_all and resp_sell.get_offer_number - 2 > offer_sell_nbr:
@@ -214,14 +216,15 @@ def count_arbitrage_multi_offer_profit(resp_buy, resp_sell, offer_buy_nbr,
                 offer_buy = resp_buy.get_offer(offer_buy_nbr)['buy']
                 amount = min(offer_buy[AMOUNT], offer_sell[AMOUNT] - amount_all)
             else:
-                return {"transactions": transactions, "profit": profit_all, "amount": amount_all,
-                        "currencies": (resp_buy.get_currency_in, resp_buy.get_currency_out)}
+                profitable = False
         else:
             profitable = False
             transactions.append({'offer_buy': offer_buy_nbr, 'offer_sell': offer_sell_nbr, 'amount': amount})
             profit_all += profit
+            sum_pay += transaction['sum_pay']
             amount_all += amount
     return {"transactions": transactions, "profit": profit_all, "amount": amount_all,
+            "percent": count_percent_diff(sum_pay, profit_all + sum_pay),
             "currencies": (resp_buy.get_currency_in, resp_buy.get_currency_out)}
 
 
@@ -233,7 +236,8 @@ def count_arbitrage_one_offer_profit(offer_buy, offer_sell, buy_taker, sell_take
         sum_get = (amount - transfer_fee) * offer_sell[RATE]
         sum_get = sum_get * (1 - sell_taker)
     profit = sum_get - sum_pay
-    return {'percent': count_percent_diff(sum_pay, sum_get), 'profit': profit, 'amount': amount}
+    return {'percent': count_percent_diff(sum_pay, sum_get), 'profit': profit, 'amount': amount,
+            'sum_pay': sum_pay}
 
 
 def get_markets_ranking(markets, buy_api_nbr, sell_api_nbr):
@@ -248,8 +252,10 @@ def get_markets_ranking(markets, buy_api_nbr, sell_api_nbr):
             if transaction['currencies'] not in ranking:
                 ranking[transaction['currencies']] = {'transactions': transaction['transactions'],
                                                       'profit': transaction['profit'],
-                                                      'amount': transaction['amount']}
-        sorted_dict = {k: v for k, v in sorted(ranking.items(), key=lambda item: item[1]['profit'], reverse=True)}
+                                                      'amount': transaction['amount'],
+                                                      'percent profit': transaction['percent']}
+        sorted_dict = {k: v for k, v in sorted(ranking.items(),
+                                               key=lambda item: item[1]['percent profit'], reverse=True)}
         return sorted_dict
 
 
@@ -270,7 +276,9 @@ def print_markets_ranking(markets_ranking):
 
 if __name__ == '__main__':
     market = get_common_markets(BITTREX, BITBAY)
+    print("BITBAY BITTREX\n")
     print_markets_ranking(get_markets_ranking(market, BITBAY, BITTREX))
-    print()
+    print("\nBITTREX BITBAY\n")
     print_markets_ranking(get_markets_ranking(market, BITTREX, BITBAY))
+    print()
     task2(market)
