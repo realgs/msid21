@@ -196,7 +196,7 @@ if __name__ == '__main__':
     # profitList = calculateArbitrageProfit('bittrex', 'bitbay', 'LTC-USD')
     # sortedList = sorted(profitList, key=lambda x: x['profit'], reverse=True)
     # for profit in sortedList:
-    #   print(profit)
+    # print(profit)
     arbitrageOffers = calculateArbitrageForAllCommonCurrencyPairs('bittrex', 'bitbay')
     rankOffers = makeRankOfArbitrageOffers(arbitrageOffers)
     for offer in rankOffers:
