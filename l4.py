@@ -73,7 +73,10 @@ WITHDRAWAL_FEES = {'bitbay': {'AAVE': 0.23,
 BASE_CURRENCY = 'USD'
 DELAY_OF_EXPLORING_DATA = 5
 DATA_LIMIT = 10
-
+TAKER_FEES = {
+    'bitbay': 0.001,
+    'bittrex': 0.0025
+}
 
 def getAvailableCryptoCurrenciesFromApi(url):
     headers = {'content-type': "application/json"}
