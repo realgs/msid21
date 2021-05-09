@@ -19,6 +19,58 @@ ORDER_BOOKS_RATE_OFFERS_NAMES = {'bitbay': 'ra',
                                  'bittrex': 'rate'}
 MARKETS_CURRENCIES_SYMBOL_NAMES = {'bittrex': 'symbol',
                                    'bitbay': 'items'}
+MARKETS_WITHDRAWAL_FEES_URL = {'bittrex': 'https://api.bittrex.com/v3/currencies',
+                               'bitbay': ''}
+
+WITHDRAWAL_FEES = {'bitbay': {'AAVE': 0.23,
+                                     'ALG': 258.00,
+                                     'AMLT': 965.00,
+                                     'BAT': 29.00,
+                                     'BCC': 0.001,
+                                     'BCP': 665.00,
+                                     'BOB': 4901.00,
+                                     'BSV': 0.003,
+                                     'BTC': 0.0005,
+                                     'BTG': 0.001,
+                                     'COMP': 0.025,
+                                     'DAI': 19.00,
+                                     'DASH': 0.001,
+                                     'DOT': 0.10,
+                                     'EOS': 0.10,
+                                     'ETH': 0.006,
+                                     'EXY': 52.00,
+                                     'GAME': 279.00,
+                                     'GGC': 6.00,
+                                     'GNT': 66.00,
+                                     'GRT': 11.00,
+                                     'LINK': 1.85,
+                                     'LML': 150.00,
+                                     'LSK': 0.30,
+                                     'LTC': 0.001,
+                                     'LUNA': 0.02,
+                                     'MANA': 27.00,
+                                     'MKR': 0.014,
+                                     'NEU': 109.00,
+                                     'NPXS': 2240.00,
+                                     'OMG': 3.50,
+                                     'PAY': 278.00,
+                                     'QARK': 1133.00,
+                                     'REP': 1.55,
+                                     'SRN': 2905.00,
+                                     'SUSHI': 2.50,
+                                     'TRX': 1.00,
+                                     'UNI': 0.70,
+                                     'USDC': 75.50,
+                                     'USDT': 37.00,
+                                     'XBX': 3285.00,
+                                     'XIN': 5.00,
+                                     'XLM': 0.005,
+                                     'XRP': 0.10,
+                                     'XTZ': 0.10,
+                                     'ZEC': 0.004,
+                                     'ZRX': 16.00}
+                          }
+
 TAKER_FEES = {
     'bitbay': 0.001,
     'bittrex': 0.0025
@@ -91,7 +143,23 @@ def getMarketList(site, marketData):
         return list(item[MARKETS_CURRENCIES_SYMBOL_NAMES[site]] for item in marketData)
 
 
+def getWithdrawalFees(market):
+    headers = {'content-type': "application/json"}
+    response = requests.request("GET", MARKETS_WITHDRAWAL_FEES_URL[market], headers=headers)
+    if response.status_code in range(200, 299):
+        feesData = response.json()
+        fees = {market: {}}
+        for cryptocurrency in feesData:
+            fees[market][cryptocurrency['symbol']] = float(cryptocurrency['txFee'])
+        return fees
+    else:
+        return None
+
+
+def calculateProfit
+
 if __name__ == '__main__':
-    # print(getAvailableCryptoCurrenciesFromApi(MARKETS_URL['bitbay']))
-    print(findCommonCryptoCurrenciesPairsFromTwoMarkets('bitbay', 'bittrex'))
-    print(findCommonCryptoCurrenciesPairsFromTwoMarkets('bittrex', 'bitbay'))
+    #   print(getAvailableCryptoCurrenciesFromApi(MARKETS_URL['bitbay']))
+    #   print(findCommonCryptoCurrenciesPairsFromTwoMarkets('bitbay', 'bittrex'))
+    #   print(findCommonCryptoCurrenciesPairsFromTwoMarkets('bittrex', 'bitbay'))
+    print(getWithdrawalFees('bittrex'))
