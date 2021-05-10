@@ -1,4 +1,17 @@
 import requests
+import time
+
+DELAY = 5
+APIS = {"bitbay": {"orderbook": "https://bitbay.net/API/Public/{}/orderbook.json",
+                   "markets": "https://api.bitbay.net/rest/trading/ticker",
+                   "fees": {
+                       "taker_fee": 0.0042,
+                       "BTC_fee": 0.0005}},
+        "bittrex": {"orderbook": "https://api.bittrex.com/api/v1.1/public/getorderbook?market={}-{}&type=both",
+                    "markets": "https://api.bittrex.com/v3/markets",
+                    "fees":
+                        {"taker_fee": 0.0075,
+                         "BTC_fee": 0.0005}}}
 
 
 def get_common_currencies(market1, market2):
@@ -9,26 +22,97 @@ def get_common_currencies(market1, market2):
     return common
 
 
-def get_markets_from_bittrex():
+def get_markets(api_name):
     markets = []
-    req = requests.get("https://api.bittrex.com/v3/markets").json()
-    for i in range(0, len(req)):
-        markets.append(req[i]['symbol'])
-    return markets
+    try:
+        req = requests.get(APIS[api_name]['markets'])
+        if 199 < req.status_code < 300:
+            req = req.json()
+            if api_name == "bittrex":
+                for i in range(0, len(req)):
+                    markets.append(req[i]['symbol'])
+                return markets
+            if api_name == "bitbay":
+                for i in req['items'].keys():
+                    markets.append(i)
+                return markets
+            else:
+                return None
+    except requests.exceptions:
+        return None
 
 
-def get_markets_from_bitbay():
-    markets = []
-    req = requests.get("https://api.bitbay.net/rest/trading/ticker").json()
-    for i in req['items'].keys():
-        markets.append(i)
-    return markets
+def get_offers(api_name, curr1, curr2):
+    try:
+        if api_name == "bitbay":
+            offers = requests.get(APIS[api_name]['orderbook'].format(curr1 + curr2))
+            if 199 < offers.status_code < 300:
+                return offers.json()
+        if api_name == "bittrex":
+            offers = requests.get(APIS[api_name]["orderbook"].format(curr2, curr1))
+            if 199 < offers.status_code < 300:
+                return offers.json()
+        else:
+            return None
+    except requests.exceptions:
+        return None
+
+
+def possible_arbitrage(selling_price, buying_price):
+    return selling_price > buying_price # >
+
+
+def bid_with_fees(bid, fees):
+    return bid * (1 - fees['taker_fee']) - fees['BTC_fee']
+
+
+def ask_with_fees(ask, fees):
+    return ask * (1 + fees['taker_fee']) + fees['BTC_fee']
+
+
+def arbitrage(bitbay_offer, bittrex_offer):
+    bids_bitbay = bitbay_offer['bids']
+    asks_bitbay = bitbay_offer['asks']
+
+    bids_bittrex = bittrex_offer['result']['buy']
+    asks_bittrex = bittrex_offer['result']['sell']
+
+    i = 0
+    amount_of_res_to_arb = 0
+    profit = 0
+    while possible_arbitrage(bid_with_fees(bids_bittrex[i]['Rate'], APIS['bittrex']['fees']), ask_with_fees(asks_bitbay[i][0], APIS['bitbay']['fees'])):
+        #print("loooking for more")
+        amount_of_res_to_arb += min(asks_bitbay[i][1], bids_bittrex[i]['Quantity'])
+        profit = bid_with_fees(bids_bittrex[i]['Rate'], APIS['bittrex']['fees']) - ask_with_fees(asks_bitbay[i][0], APIS['bitbay']['fees'])
+        i += 1
+    while possible_arbitrage(bid_with_fees(bids_bitbay[i][0], APIS['bitbay']['fees']), ask_with_fees(asks_bittrex[i]['Rate'], APIS['bittrex']['fees'])):
+        #print("looking for more")
+        amount_of_res_to_arb += min(asks_bittrex[i]['Quantity'], bids_bitbay[i][1])
+        profit = bid_with_fees(bids_bitbay[i][0], APIS['bitbay']['fees']) - ask_with_fees(asks_bittrex[i]['Rate'], APIS['bittrex']['fees'])
+        i += 1
+
+    return amount_of_res_to_arb, profit
+
+
+def print_spread(bitbay_offer, bittrex_offer, base_curr):
+    arb = arbitrage(bitbay_offer, bittrex_offer)
+    if arb == (0, 0):
+        print("arbitrage not possible")
+    else:
+        print("quantity of resources that can be subjected to arbitrage: " + str(arb[0]))
+        print("profit in {} ".format(base_curr) + str(arb[1]))
 
 
 if __name__ == '__main__':
-    bitbay = get_markets_from_bitbay()
-    bittrex = get_markets_from_bittrex()
-    print(bitbay)
-    print(bittrex)
-    res = get_common_currencies(bitbay, bittrex)
-    print(res)
+
+    while(True):
+        bitbay = get_markets("bitbay")
+        bittrex = get_markets("bittrex")
+        common_curr = get_common_currencies(bitbay, bittrex)
+
+        for i in common_curr:
+            currencies = i.split('-')
+            offer1 = get_offers("bitbay", currencies[0], currencies[1])
+            offer2 = get_offers("bittrex", currencies[0], currencies[1])
+            print_spread(offer1, offer2, currencies[1])
+        time.sleep(DELAY)
