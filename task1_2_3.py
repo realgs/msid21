@@ -54,79 +54,12 @@ def get_json(api, address_type, currencies=None):
         return None
 
 
-def common_markets():
-    response_bittrex = get_json(BITTREX, MARKETS)
-    response_bitbay = get_json(BITBAY, MARKETS)
-    markets_list_bittrex = []
-    if response_bittrex is not None and response_bitbay is not None:
-        for markets in response_bittrex:
-            markets_list_bittrex.append(markets[DATA_CONST[BITTREX][MARKETS]])
-        markets_list_bitbay = list(response_bitbay[DATA_CONST[BITBAY][MARKETS]].keys())
-        return list(set(markets_list_bittrex).intersection(markets_list_bitbay))
-
-
 def get_data(response, sell_or_buy, quantity_or_rate, offer_number=0):
     return response[sell_or_buy][offer_number][quantity_or_rate]
 
 
 def get_percentage_difference(first, second):
     return (1 - (first - second) / second) * 100
-
-
-def get_payment(buy_rate, buy_quantity, buy_taker, with_fees):
-    if with_fees:
-        payment = buy_rate * buy_quantity * (1 + buy_taker)
-    else:
-        payment = buy_rate * buy_quantity
-    return payment
-
-
-def get_profit(sell_rate, sell_quantity, sell_taker, transfer_fee, with_fees):
-    if with_fees:
-        profit = sell_rate * (sell_quantity - transfer_fee) * (1 - sell_taker)
-    else:
-        profit = sell_rate * sell_quantity
-    return profit
-
-
-def get_arbitrage(arbitrage_code, currencies, response_bitbay, response_bittrex, buy_offer_number,
-                  sell_offer_number, input_quantity, with_fees):
-    if arbitrage_code == 0:
-        fee_source = BITTREX
-        buy_quantity = float(
-            get_data(response_bittrex, DATA_CONST[BITTREX][BUY], DATA_CONST[BITTREX][QUANTITY], buy_offer_number))
-        buy_rate = float(
-            get_data(response_bittrex, DATA_CONST[BITTREX][BUY], DATA_CONST[BITTREX][RATE], buy_offer_number))
-        sell_quantity = get_data(response_bitbay, DATA_CONST[BITBAY][SELL], DATA_CONST[BITBAY][QUANTITY],
-                                 sell_offer_number)
-        sell_rate = get_data(response_bitbay, DATA_CONST[BITBAY][SELL], DATA_CONST[BITBAY][RATE], sell_offer_number)
-    elif arbitrage_code == 1:
-        fee_source = BITBAY
-        sell_quantity = float(
-            get_data(response_bittrex, DATA_CONST[BITTREX][SELL], DATA_CONST[BITTREX][QUANTITY], sell_offer_number))
-        sell_rate = float(
-            get_data(response_bittrex, DATA_CONST[BITTREX][SELL], DATA_CONST[BITTREX][RATE], sell_offer_number))
-        buy_quantity = get_data(response_bitbay, DATA_CONST[BITBAY][BUY], DATA_CONST[BITBAY][QUANTITY],
-                                buy_offer_number)
-        buy_rate = get_data(response_bitbay, DATA_CONST[BITBAY][BUY], DATA_CONST[BITBAY][RATE], buy_offer_number)
-    else:
-        print("invalid arbitrage_code")
-        return None
-
-    if input_quantity > 0:
-        buy_quantity = input_quantity
-    elif input_quantity < 0:
-        sell_quantity = (-1) * input_quantity
-
-    transaction_quantity = min(buy_quantity, sell_quantity)
-    rest_quantity = buy_quantity - sell_quantity
-
-    payment = get_payment(buy_rate, transaction_quantity, FEES[fee_source][TAKER],
-                          with_fees)
-    profit = get_profit(sell_rate, transaction_quantity, FEES[fee_source][TAKER],
-                        FEES[fee_source][TRANSFER][currencies.split("-")[0]], with_fees)
-
-    return transaction_quantity, rest_quantity, payment, profit
 
 
 def change_format(currencies):
@@ -194,10 +127,60 @@ def get_arbitrage_rec(currencies, response_bitbay, response_bittrex, arbitrage_c
     return earning_list
 
 
-def print_updating_markets(delay=5, with_fees=True):
-    while True:
-        print_sorted_arbitrage_for_markets(common_markets(), with_fees)
-        time.sleep(delay)
+def get_arbitrage(arbitrage_code, currencies, response_bitbay, response_bittrex, buy_offer_number,
+                  sell_offer_number, input_quantity, with_fees):
+    if arbitrage_code == 0:
+        fee_source = BITTREX
+        buy_quantity = float(
+            get_data(response_bittrex, DATA_CONST[BITTREX][BUY], DATA_CONST[BITTREX][QUANTITY], buy_offer_number))
+        buy_rate = float(
+            get_data(response_bittrex, DATA_CONST[BITTREX][BUY], DATA_CONST[BITTREX][RATE], buy_offer_number))
+        sell_quantity = get_data(response_bitbay, DATA_CONST[BITBAY][SELL], DATA_CONST[BITBAY][QUANTITY],
+                                 sell_offer_number)
+        sell_rate = get_data(response_bitbay, DATA_CONST[BITBAY][SELL], DATA_CONST[BITBAY][RATE], sell_offer_number)
+    elif arbitrage_code == 1:
+        fee_source = BITBAY
+        sell_quantity = float(
+            get_data(response_bittrex, DATA_CONST[BITTREX][SELL], DATA_CONST[BITTREX][QUANTITY], sell_offer_number))
+        sell_rate = float(
+            get_data(response_bittrex, DATA_CONST[BITTREX][SELL], DATA_CONST[BITTREX][RATE], sell_offer_number))
+        buy_quantity = get_data(response_bitbay, DATA_CONST[BITBAY][BUY], DATA_CONST[BITBAY][QUANTITY],
+                                buy_offer_number)
+        buy_rate = get_data(response_bitbay, DATA_CONST[BITBAY][BUY], DATA_CONST[BITBAY][RATE], buy_offer_number)
+    else:
+        print("invalid arbitrage_code")
+        return None
+
+    if input_quantity > 0:
+        buy_quantity = input_quantity
+    elif input_quantity < 0:
+        sell_quantity = (-1) * input_quantity
+
+    transaction_quantity = min(buy_quantity, sell_quantity)
+    rest_quantity = buy_quantity - sell_quantity
+
+    payment = get_payment(buy_rate, transaction_quantity, FEES[fee_source][TAKER],
+                          with_fees)
+    profit = get_profit(sell_rate, transaction_quantity, FEES[fee_source][TAKER],
+                        FEES[fee_source][TRANSFER][currencies.split("-")[0]], with_fees)
+
+    return transaction_quantity, rest_quantity, payment, profit
+
+
+def get_payment(buy_rate, buy_quantity, buy_taker, with_fees):
+    if with_fees:
+        payment = buy_rate * buy_quantity * (1 + buy_taker)
+    else:
+        payment = buy_rate * buy_quantity
+    return payment
+
+
+def get_profit(sell_rate, sell_quantity, sell_taker, transfer_fee, with_fees):
+    if with_fees:
+        profit = sell_rate * (sell_quantity - transfer_fee) * (1 - sell_taker)
+    else:
+        profit = sell_rate * sell_quantity
+    return profit
 
 
 def get_arbitrage_for_markets(markets_list, with_fees):
@@ -223,6 +206,24 @@ def get_arbitrage_for_markets(markets_list, with_fees):
     return markets_dict_bittrex_bitbay, markets_dict_bitbay_bittrex
 
 
+def print_updating_markets(delay=5, with_fees=True):
+    markets = get_common_markets()
+    while True:
+        print_sorted_arbitrage_for_markets(markets, with_fees)
+        time.sleep(delay)
+
+
+def get_common_markets():
+    response_bittrex = get_json(BITTREX, MARKETS)
+    response_bitbay = get_json(BITBAY, MARKETS)
+    markets_list_bittrex = []
+    if response_bittrex is not None and response_bitbay is not None:
+        for markets in response_bittrex:
+            markets_list_bittrex.append(markets[DATA_CONST[BITTREX][MARKETS]])
+        markets_list_bitbay = list(response_bitbay[DATA_CONST[BITBAY][MARKETS]].keys())
+        return list(set(markets_list_bittrex).intersection(markets_list_bitbay))
+
+
 def print_sorted_arbitrage_for_markets(markets_list, with_fees):
     markets_dict_1, markets_dict_2 = get_arbitrage_for_markets(markets_list, with_fees)
     print("Arbitrage buy on bittrex, sell on bitbay")
@@ -241,8 +242,8 @@ def print_key_in_line(markets_dict):
 def main():
     print_arbitrage('TRX-EUR', ArbitrageCode.BITTREX_BITBAY, True)
     print_arbitrage('TRX-EUR', ArbitrageCode.BITBAY_BITTREX, True)
-    print(common_markets())
-    print_sorted_arbitrage_for_markets(common_markets(), True)
+    print(get_common_markets())
+    print_sorted_arbitrage_for_markets(get_common_markets(), True)
 
 
 if __name__ == '__main__':
