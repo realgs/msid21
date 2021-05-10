@@ -32,7 +32,6 @@ API_FEES = {'bitbay': {'taker': 0.0042,
 BITBAY = 1
 BITTREX = 0
 ORDERBOOK = 0
-FUNCTIONS = ['percent_diff_arbitrage']
 API_OPTIONS = {'bitbay': {'request': ['orderbook', 'market', 'ticker', 'all'],
                           'path': 'https://bitbay.net/API/Public/', 'format': 'json',
                           'markets_path': 'https://api.bitbay.net/rest/trading/ticker',
@@ -259,16 +258,6 @@ def get_markets_ranking(markets, buy_api_nbr, sell_api_nbr):
         return sorted_dict
 
 
-def task2(markets):
-    with Pool(processes=3) as pool:
-        results = []
-        for nbr in range(3):
-            results.append(pool.apply_async(count_arbitrage,
-                                            args=[markets[nbr][0], markets[nbr][1], BITBAY, BITTREX, True]))
-        for r in results:
-            print(r.get())
-
-
 def print_markets_ranking(markets_ranking):
     for pair in markets_ranking:
         print('Buy {0} Sell {1}\t {2}'.format(pair[0], pair[1], markets_ranking[pair]))
@@ -280,5 +269,5 @@ if __name__ == '__main__':
     print_markets_ranking(get_markets_ranking(market, BITBAY, BITTREX))
     print("\nBITTREX BITBAY\n")
     print_markets_ranking(get_markets_ranking(market, BITTREX, BITBAY))
-    print()
-    task2(market)
+    print("\nTask2\n")
+    print_markets_ranking(get_markets_ranking(market[:3], BITBAY, BITTREX))
