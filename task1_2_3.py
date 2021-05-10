@@ -59,7 +59,10 @@ def get_data(response, sell_or_buy, quantity_or_rate, offer_number=0):
 
 
 def get_percentage_difference(first, second):
-    return (1 - (first - second) / second) * 100
+    if second != 0.0:
+        return ((second - first) / first) * 100
+    else:
+        return 0.0
 
 
 def change_format(currencies):
@@ -70,28 +73,32 @@ def change_format(currencies):
 def get_sum(earning_list):
     quantity_sum = 0
     earn_sum = 0
+    payment_sum = 0
     for earn in earning_list:
         if earn["earn"] > 0:
             quantity_sum += earn["quantity"]
             earn_sum += earn["earn"]
-    return {"quantity": quantity_sum, "earn": earn_sum}
+            payment_sum += earn["payment"]
+    per_earn = get_percentage_difference(payment_sum, payment_sum + earn_sum)
+    return {"quantity": quantity_sum, "earn": round(earn_sum, 6), "percentage earning": round(per_earn, 6)}
 
 
-def print_arbitrage(currencies, arbitrage_code, with_fees=True):
+def print_arbitrage(currencies, arbitrage_code, with_fees=True, only_positive=False):
     if arbitrage_code.value == ArbitrageCode.BITTREX_BITBAY.value:
         print("Arbitrage " + currencies + ": buy on bittrex, sell on bitbay")
     elif arbitrage_code.value == ArbitrageCode.BITBAY_BITTREX.value:
         print("Arbitrage " + currencies + ": buy on bitbay, sell on bittrex")
-    print(get_arbitrage_list(currencies, arbitrage_code, with_fees))
+    print(get_arbitrage_list(currencies, arbitrage_code, with_fees, only_positive))
 
 
-def get_arbitrage_list(currencies, arbitrage_code, with_fees, response_bitbay=None, response_bittrex=None):
+def get_arbitrage_list(currencies, arbitrage_code, with_fees, only_positive,
+                       response_bitbay=None, response_bittrex=None):
     if response_bittrex is None and response_bitbay is None:
         response_bitbay = get_json(BITBAY, ORDERBOOK, change_format(currencies))
         response_bittrex = get_json(BITTREX, ORDERBOOK, currencies)
     if response_bittrex is not None and response_bitbay is not None:
         earning_list = get_arbitrage_rec(currencies, response_bitbay, response_bittrex,
-                                         arbitrage_code.value, with_fees, 0, 0, 0)
+                                         arbitrage_code.value, with_fees, 0, 0, 0, only_positive)
         if len(earning_list) > 1:
             earning_list = [get_sum(earning_list)] + earning_list
         return earning_list
@@ -101,29 +108,36 @@ def get_arbitrage_list(currencies, arbitrage_code, with_fees, response_bitbay=No
 
 
 def get_arbitrage_rec(currencies, response_bitbay, response_bittrex, arbitrage_code,
-                      with_fees, buy_offer_number, sell_offer_number, in_quantity):
+                      with_fees, buy_offer_number, sell_offer_number, in_quantity, only_positive):
     earning_list = []
     transaction_quantity, rest_quantity, payment, profit = \
         get_arbitrage(arbitrage_code, currencies, response_bitbay,
                       response_bittrex, buy_offer_number, sell_offer_number, in_quantity, with_fees)
 
     earning = profit - payment
-    earning_list.append({"quantity": transaction_quantity, "earn": earning,
-                         "buy_num": buy_offer_number, "sell_num": sell_offer_number})
+    per_earn = get_percentage_difference(payment, profit)
+    if only_positive:
+        if earning > 0:
+            earning_list.append({"quantity": transaction_quantity, "earn": earning,
+                                 "percentage earning": per_earn, "payment": payment,
+                                 "buy_num": buy_offer_number, "sell_num": sell_offer_number})
+    else:
+        earning_list.append({"quantity": transaction_quantity, "earn": earning,
+                             "percentage earning": per_earn, "payment": payment,
+                             "buy_num": buy_offer_number, "sell_num": sell_offer_number})
     if earning > 0:
-        time.sleep(0.5)
         if rest_quantity > 0:
             earning_list += get_arbitrage_rec(currencies, response_bitbay, response_bittrex, arbitrage_code,
                                               with_fees, buy_offer_number,
-                                              sell_offer_number + 1, rest_quantity)
+                                              sell_offer_number + 1, rest_quantity, only_positive)
         elif rest_quantity < 0:
             earning_list += get_arbitrage_rec(currencies, response_bitbay, response_bittrex, arbitrage_code,
                                               with_fees, buy_offer_number + 1,
-                                              sell_offer_number, rest_quantity)
+                                              sell_offer_number, rest_quantity, only_positive)
         else:
             earning_list += get_arbitrage_rec(currencies, response_bitbay, response_bittrex, arbitrage_code,
                                               with_fees, buy_offer_number + 1,
-                                              sell_offer_number + 1, 0)
+                                              sell_offer_number + 1, 0, only_positive)
     return earning_list
 
 
@@ -183,7 +197,7 @@ def get_profit(sell_rate, sell_quantity, sell_taker, transfer_fee, with_fees):
     return profit
 
 
-def get_arbitrage_for_markets(markets_list, with_fees):
+def get_arbitrage_for_markets(markets_list, with_fees, only_positive):
     markets_dict_bittrex_bitbay = {}
     markets_dict_bitbay_bittrex = {}
     arbitrages_bitbay_bittrex = {}
@@ -194,22 +208,26 @@ def get_arbitrage_for_markets(markets_list, with_fees):
             response_bittrex = get_json(BITTREX, ORDERBOOK, market)
             arbitrages_bitbay_bittrex[market] = pool.apply_async(
                 get_arbitrage_list, args=[market, ArbitrageCode.BITTREX_BITBAY, with_fees,
-                                          response_bitbay, response_bittrex])
+                                          only_positive, response_bitbay, response_bittrex])
             arbitrages_bittrex_bitbay[market] = pool.apply_async(
                 get_arbitrage_list, args=[market, ArbitrageCode.BITBAY_BITTREX, with_fees,
-                                          response_bitbay, response_bittrex])
+                                          only_positive, response_bitbay, response_bittrex])
 
         for market in markets_list:
-            markets_dict_bittrex_bitbay[market] = arbitrages_bitbay_bittrex[market].get()
-            markets_dict_bitbay_bittrex[market] = arbitrages_bittrex_bitbay[market].get()
+            score_1 = arbitrages_bitbay_bittrex[market].get()
+            if score_1:
+                markets_dict_bittrex_bitbay[market] = score_1
+            score_2 = arbitrages_bittrex_bitbay[market].get()
+            if score_2:
+                markets_dict_bitbay_bittrex[market] = score_2
 
     return markets_dict_bittrex_bitbay, markets_dict_bitbay_bittrex
 
 
-def print_updating_markets(delay=5, with_fees=True):
+def print_updating_markets(delay=5, with_fees=True, only_positive=False):
     markets = get_common_markets()
     while True:
-        print_sorted_arbitrage_for_markets(markets, with_fees)
+        print_sorted_arbitrage_for_markets(markets, with_fees, only_positive)
         time.sleep(delay)
 
 
@@ -224,14 +242,16 @@ def get_common_markets():
         return list(set(markets_list_bittrex).intersection(markets_list_bitbay))
 
 
-def print_sorted_arbitrage_for_markets(markets_list, with_fees):
-    markets_dict_1, markets_dict_2 = get_arbitrage_for_markets(markets_list, with_fees)
+def print_sorted_arbitrage_for_markets(markets_list, sorted_by, with_fees, only_positive):
+    markets_dict_1, markets_dict_2 = get_arbitrage_for_markets(markets_list, with_fees, only_positive)
     print("Arbitrage buy on bittrex, sell on bitbay")
-    print_key_in_line(
-        {k: v for k, v in sorted(markets_dict_1.items(), key=lambda item: item[1][0]['earn'], reverse=True)})
+    print_key_in_line(get_sorted_dict(markets_dict_1, sorted_by))
     print("Arbitrage buy on bitbay, sell on bittrex")
-    print_key_in_line(
-        {k: v for k, v in sorted(markets_dict_2.items(), key=lambda item: item[1][0]['earn'], reverse=True)})
+    print_key_in_line(get_sorted_dict(markets_dict_2, sorted_by))
+
+
+def get_sorted_dict(markets_dict, sorted_by):
+    return {k: v for k, v in sorted(markets_dict.items(), key=lambda item: item[1][0][sorted_by], reverse=True)}
 
 
 def print_key_in_line(markets_dict):
@@ -241,9 +261,10 @@ def print_key_in_line(markets_dict):
 
 def main():
     print_arbitrage('TRX-EUR', ArbitrageCode.BITTREX_BITBAY, True)
-    print_arbitrage('TRX-EUR', ArbitrageCode.BITBAY_BITTREX, True)
+    print_arbitrage('TRX-EUR', ArbitrageCode.BITBAY_BITTREX, True, True)
     print(get_common_markets())
-    print_sorted_arbitrage_for_markets(get_common_markets(), True)
+    # print_sorted_arbitrage_for_markets(get_common_markets(), 'earn', True)
+    print_sorted_arbitrage_for_markets(get_common_markets(), 'percentage earning', True, True)
 
 
 if __name__ == '__main__':
