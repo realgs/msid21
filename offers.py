@@ -3,7 +3,15 @@ import requests
 BASE_CURRENCY = 'USD'
 CRYPTOS = ['BTC', 'LTC', 'ETH']
 FEES = {'bittrex': {'taker': 0.25, 'transfer': {'BTC': 0.0005, 'LTC': 0.01, 'ETH': 0.006}},
-        'bitbay': {'taker': 0.4, 'transfer': {'BTC': 0.0001, 'LTC': 0.1, 'ETH': 0.01}}}
+        'bitbay': {'taker': 0.4, 'transfer': {'AAVE': 0.23, 'ALG': 258, 'AMLT': 965, 'BAT': 29, 'BCC': 0.001,
+                                              'BCP': 665, 'BOB': 4901, 'BSV': 0.003, 'BTC': 0.0005, 'BTG': 0.001,
+                                              'COMP': 0.025, 'DAI': 19, 'DASH': 0.001, 'DOT': 0.10, 'EOS': 0.10,
+                                              'ETH': 0.006, 'EXY': 52, 'GAME': 279, 'GGC': 6, 'GNT': 66, 'GRT': 11,
+                                              'LINK': 1.85, 'LML': 150, 'LSK': 0.30, 'LTC': 0.001, 'LUNA': 0.02,
+                                              'MANA': 27, 'MKR': 0.014, 'NEU': 109, 'NPXS': 2240, 'OMG': 3.50,
+                                              'PAY': 278, 'QARK': 1133, 'REP': 1.55, 'SRN': 2905, 'SUSHI': 2.50,
+                                              'TRX': 1, 'UNI': 0.70, 'USDC': 75.50, 'USDT': 37, 'XBX': 3285, 'XIN': 5,
+                                              'XLM': 0.005, 'XRP': 0.10, 'XTZ': 0.10, 'ZEC': 0.004, 'ZRX': 16.00}}}
 
 BASE_URLS = {'bittrex': 'https://api.bittrex.com/v3/', 'bitbay': 'https://bitbay.net/API/Public/'}
 GET_MARKETS_URLS = {'bittrex': 'https://api.bittrex.com/v3/markets/',
