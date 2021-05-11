@@ -4,8 +4,8 @@ import time
 DELAY = 5
 APIS = {"bitbay": {"orderbook": "https://bitbay.net/API/Public/{}/orderbook.json",
                    "markets": "https://api.bitbay.net/rest/trading/ticker",
-                   "fees": {
-                       "taker_fee": 0.0042,
+                   "fees":
+                       {"taker_fee": 0.0042,
                        "BTC_fee": 0.0005}},
         "bittrex": {"orderbook": "https://api.bittrex.com/api/v1.1/public/getorderbook?market={}-{}&type=both",
                     "markets": "https://api.bittrex.com/v3/markets",
@@ -77,20 +77,38 @@ def arbitrage(bitbay_offer, bittrex_offer):
     bids_bittrex = bittrex_offer['result']['buy']
     asks_bittrex = bittrex_offer['result']['sell']
 
-    index = 0
+    i = 0
+    j = 0
     amount_of_res_to_arb = 0
     profit = 0
-    while possible_arbitrage(bid_with_fees(bids_bittrex[index]['Rate'], APIS['bittrex']['fees']), ask_with_fees(asks_bitbay[index][0], APIS['bitbay']['fees'])):
-        amount_of_res_to_arb += min(asks_bitbay[index][1], bids_bittrex[index]['Quantity'])
-        profit += bid_with_fees(bids_bittrex[index]['Rate'], APIS['bittrex']['fees']) - ask_with_fees(asks_bitbay[index][0], APIS['bitbay']['fees'])
-        index += 1
-    while possible_arbitrage(bid_with_fees(bids_bitbay[index][0], APIS['bitbay']['fees']), ask_with_fees(asks_bittrex[index]['Rate'], APIS['bittrex']['fees'])):
-        amount_of_res_to_arb += min(asks_bittrex[index]['Quantity'], bids_bitbay[index][1])
-        profit += bid_with_fees(bids_bitbay[index][0], APIS['bitbay']['fees']) - ask_with_fees(asks_bittrex[index]['Rate'], APIS['bittrex']['fees'])
-        index += 1
+    while possible_arbitrage(bid_with_fees(bids_bittrex[i]['Rate'], APIS['bittrex']['fees']), ask_with_fees(asks_bitbay[j][0], APIS['bitbay']['fees'])):
+        amount_of_res_to_arb += min(asks_bitbay[i][1], bids_bittrex[i]['Quantity'])
+        profit += bid_with_fees(bids_bittrex[i]['Rate'], APIS['bittrex']['fees']) - ask_with_fees(asks_bitbay[j][0], APIS['bitbay']['fees'])
+        if asks_bitbay[i][1] == bids_bittrex[i]['Quantity']:
+            i += 1
+            j += 1
+        if asks_bitbay[i][1] < bids_bittrex[i]['Quantity']:
+            j += 1
+            bids_bittrex[i]['Quantity'] = bids_bittrex[i]['Quantity'] - asks_bitbay[i][1]
+        if asks_bitbay[i][1] > bids_bittrex[i]['Quantity']:
+            i += 1
+            asks_bitbay[i][1] = asks_bitbay[i][1] - bids_bittrex[i]['Quantity']
+
+    while possible_arbitrage(bid_with_fees(bids_bitbay[i][0], APIS['bitbay']['fees']), ask_with_fees(asks_bittrex[j]['Rate'], APIS['bittrex']['fees'])):
+        amount_of_res_to_arb += min(asks_bittrex[i]['Quantity'], bids_bitbay[i][1])
+        profit += bid_with_fees(bids_bitbay[i][0], APIS['bitbay']['fees']) - ask_with_fees(asks_bittrex[j]['Rate'], APIS['bittrex']['fees'])
+        if asks_bittrex[i]['Quantity'] == bids_bitbay[i][1]:
+            i += 1
+            j += 1
+        if asks_bittrex[i]['Quantity'] < bids_bitbay[i][1]:
+            j += 1
+            bids_bitbay[i][1] = bids_bitbay[i][1] - asks_bittrex[i]['Quantity']
+        if asks_bittrex[i]['Quantity'] > bids_bitbay[i][1]:
+            i += 1
+            bids_bitbay[i][1] = bids_bitbay[i][1] - asks_bittrex[i]['Quantity']
 
     if profit == 0:
-        profit = max(bid_with_fees(bids_bitbay[0][0], APIS['bitbay']['fees']) - ask_with_fees(asks_bittrex[0]['Rate'], APIS['bittrex']['fees']), bid_with_fees(bids_bittrex[index]['Rate'], APIS['bittrex']['fees']) - ask_with_fees(asks_bitbay[index][0], APIS['bitbay']['fees']))
+        profit = max(bid_with_fees(bids_bitbay[0][0], APIS['bitbay']['fees']) - ask_with_fees(asks_bittrex[0]['Rate'], APIS['bittrex']['fees']), bid_with_fees(bids_bittrex[i]['Rate'], APIS['bittrex']['fees']) - ask_with_fees(asks_bitbay[i][0], APIS['bitbay']['fees']))
     return amount_of_res_to_arb, profit
 
 
