@@ -34,7 +34,7 @@ async def getTransferFee(currency):
 
 
 async def getBestOrders(cryptos, amount):
-    apiResult = await getApiResponse(f"{API_BASE_URL}getorderbook?market={cryptos[0]}-{cryptos[1]}&type=both", SUCCESS_KEY, SUCCESS_VALUE)
+    apiResult = await getApiResponse(f"{API_BASE_URL}getorderbook?market={cryptos[1]}-{cryptos[0]}&type=both", SUCCESS_KEY, SUCCESS_VALUE)
 
     if apiResult and apiResult['result']:
         if apiResult['result']['buy'] and apiResult['result']['sell']:
