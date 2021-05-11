@@ -59,7 +59,7 @@ def get_offers(api_name, curr1, curr2):
 
 
 def possible_arbitrage(selling_price, buying_price):
-    return selling_price > buying_price # >
+    return selling_price > buying_price
 
 
 def bid_with_fees(bid, fees):
@@ -77,26 +77,26 @@ def arbitrage(bitbay_offer, bittrex_offer):
     bids_bittrex = bittrex_offer['result']['buy']
     asks_bittrex = bittrex_offer['result']['sell']
 
-    i = 0
+    index = 0
     amount_of_res_to_arb = 0
     profit = 0
-    while possible_arbitrage(bid_with_fees(bids_bittrex[i]['Rate'], APIS['bittrex']['fees']), ask_with_fees(asks_bitbay[i][0], APIS['bitbay']['fees'])):
-        #print("loooking for more")
-        amount_of_res_to_arb += min(asks_bitbay[i][1], bids_bittrex[i]['Quantity'])
-        profit = bid_with_fees(bids_bittrex[i]['Rate'], APIS['bittrex']['fees']) - ask_with_fees(asks_bitbay[i][0], APIS['bitbay']['fees'])
-        i += 1
-    while possible_arbitrage(bid_with_fees(bids_bitbay[i][0], APIS['bitbay']['fees']), ask_with_fees(asks_bittrex[i]['Rate'], APIS['bittrex']['fees'])):
-        #print("looking for more")
-        amount_of_res_to_arb += min(asks_bittrex[i]['Quantity'], bids_bitbay[i][1])
-        profit = bid_with_fees(bids_bitbay[i][0], APIS['bitbay']['fees']) - ask_with_fees(asks_bittrex[i]['Rate'], APIS['bittrex']['fees'])
-        i += 1
+    while possible_arbitrage(bid_with_fees(bids_bittrex[index]['Rate'], APIS['bittrex']['fees']), ask_with_fees(asks_bitbay[index][0], APIS['bitbay']['fees'])):
+        amount_of_res_to_arb += min(asks_bitbay[index][1], bids_bittrex[index]['Quantity'])
+        profit += bid_with_fees(bids_bittrex[index]['Rate'], APIS['bittrex']['fees']) - ask_with_fees(asks_bitbay[index][0], APIS['bitbay']['fees'])
+        index += 1
+    while possible_arbitrage(bid_with_fees(bids_bitbay[index][0], APIS['bitbay']['fees']), ask_with_fees(asks_bittrex[index]['Rate'], APIS['bittrex']['fees'])):
+        amount_of_res_to_arb += min(asks_bittrex[index]['Quantity'], bids_bitbay[index][1])
+        profit += bid_with_fees(bids_bitbay[index][0], APIS['bitbay']['fees']) - ask_with_fees(asks_bittrex[index]['Rate'], APIS['bittrex']['fees'])
+        index += 1
 
+    if profit == 0:
+        profit = max(bid_with_fees(bids_bitbay[0][0], APIS['bitbay']['fees']) - ask_with_fees(asks_bittrex[0]['Rate'], APIS['bittrex']['fees']), bid_with_fees(bids_bittrex[index]['Rate'], APIS['bittrex']['fees']) - ask_with_fees(asks_bitbay[index][0], APIS['bitbay']['fees']))
     return amount_of_res_to_arb, profit
 
 
 def print_spread(bitbay_offer, bittrex_offer, base_curr):
     arb = arbitrage(bitbay_offer, bittrex_offer)
-    if arb == (0, 0):
+    if arb[0] == 0:
         print("arbitrage not possible")
     else:
         print("quantity of resources that can be subjected to arbitrage: " + str(arb[0]))
@@ -105,14 +105,22 @@ def print_spread(bitbay_offer, bittrex_offer, base_curr):
 
 if __name__ == '__main__':
 
-    while(True):
+    while True:
         bitbay = get_markets("bitbay")
         bittrex = get_markets("bittrex")
         common_curr = get_common_currencies(bitbay, bittrex)
 
-        for i in common_curr:
-            currencies = i.split('-')
+        ranking = []
+
+        for curr in common_curr:
+            currencies = curr.split('-')
             offer1 = get_offers("bitbay", currencies[0], currencies[1])
             offer2 = get_offers("bittrex", currencies[0], currencies[1])
             print_spread(offer1, offer2, currencies[1])
+
+            ranking.append((arbitrage(offer1, offer2)[1], curr))
+
+        ranking = sorted(ranking, key=lambda tup: tup[0], reverse=True)
+        print(ranking)
+
         time.sleep(DELAY)
