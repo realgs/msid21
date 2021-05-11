@@ -78,6 +78,7 @@ TAKER_FEES = {
     'bittrex': 0.0025
 }
 
+
 def getAvailableCryptoCurrenciesFromApi(url):
     headers = {'content-type': "application/json"}
     response = requests.request("GET", url, headers=headers)
@@ -142,11 +143,10 @@ def getWithdrawalFees(market):
 def calculateArbitrageProfit(market1, market2, currencyPair):
     sortedBuyOffers = sorted(getOrdersBook(market1, currencyPair)['bids'], key=lambda x: x[0])
     sortedSellOffers = sorted(getOrdersBook(market2, currencyPair)['asks'], key=lambda x: x[0], reverse=True)
+    sortedSellOffersCopy = sortedSellOffers.copy()
     withdrawalFeesMarket1 = getWithdrawalFees(market1)
     splittedCurrencyPair = currencyPair.split('-')
     arbitrages = []
-    print(sortedSellOffers)
-    print(sortedBuyOffers)
     while len(sortedBuyOffers) > 0 and len(sortedSellOffers) > 0:
         transactionVolumen = min(sortedBuyOffers[0][1], sortedSellOffers[0][1])
         fee = transactionVolumen * TAKER_FEES[market2] + withdrawalFeesMarket1[market1][splittedCurrencyPair[0]]
@@ -160,13 +160,11 @@ def calculateArbitrageProfit(market1, market2, currencyPair):
                                    'sell offer': sortedSellOffers[0][0]})
                 sortedSellOffers.pop(0)
                 if len(sortedSellOffers) == 0:
-                    sortedSellOffers = sorted(getOrdersBook(market2, currencyPair)['asks'], key=lambda x: x[0],
-                                              reverse=True)
+                    sortedSellOffers = sortedSellOffersCopy
                     sortedBuyOffers.pop(0)
             elif profit < 0:
                 sortedBuyOffers.pop(0)
-                sortedSellOffers = sorted(getOrdersBook(market2, currencyPair)['asks'], key=lambda x: x[0],
-                                          reverse=True)
+                sortedSellOffers = sortedSellOffersCopy
 
         else:
             sortedSellOffers.pop(0)
@@ -189,6 +187,7 @@ def makeRankOfArbitrageOffers(arbitrageOffers):
             rankOffers.append(singleOffer)
     rankOffers = sorted(rankOffers, key=lambda x: x['profit'], reverse=True)
     return rankOffers
+
 
 if __name__ == '__main__':
     #   print(getAvailableCryptoCurrenciesFromApi(MARKETS_URL['bitbay']))
