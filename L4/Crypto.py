@@ -1,6 +1,6 @@
 import requests
 
-
+# Super class for all crypto classes
 class Crypto:
 
     @classmethod

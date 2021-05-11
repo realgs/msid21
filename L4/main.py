@@ -10,13 +10,15 @@ DEEP_FIND = 25
 ROUND = 3
 
 
+# Gets list of common pair from the two given markets
 def get_common_pairs():
     m1 = MARKETS[0].get_trading_pairs()
     m2 = MARKETS[1].get_trading_pairs()
     return list(m1.intersection(m2))
 
 
-def find_profitable_pairs(ticker1, ticker2):
+# Analyzes data from the two given tickers
+def analyze_pairs(ticker1, ticker2):
     pairs = []
     for market1 in ticker1:
         for pair in ticker1[market1]:
@@ -29,16 +31,19 @@ def find_profitable_pairs(ticker1, ticker2):
                 profit_buy_market1 = 0
                 profit_buy_market2 = 0
 
+                # Looks for possible arbitrage and profit
                 if bid1 > ask2:
                     profit_buy_market2 = deep_find(market1, market2, pair)
                 elif bid2 > ask1:
                     profit_buy_market1 = deep_find(market2, market1, pair)
 
+                # Creates return list
                 pairs.append((pair, market1, ask1, market2, bid2, (bid2 - ask1) / ask1 * 100, profit_buy_market1))
                 pairs.append((pair, market2, ask2, market1, bid1, (bid1 - ask2) / ask2 * 100, profit_buy_market2))
     return pairs
 
 
+# Read fees data from the fees json file
 def read_fees():
     global FEES
     with open(FEES_FILE) as json_file:
@@ -46,11 +51,14 @@ def read_fees():
     return True
 
 
+# Looks for possible arbitrage and goes into deeper offers
 def deep_find(sell_market, buy_market, pair):
+    # Gets data from market apis
     data1 = MARKETS[0].get_pair(pair)
     data2 = MARKETS[1].get_pair(pair)
     profit = 0
 
+    # Checks where to buy and where to sell
     if sell_market in data1.keys():
         sell_data = data1
         buy_data = data2
@@ -58,12 +66,14 @@ def deep_find(sell_market, buy_market, pair):
         sell_data = data2
         buy_data = data1
 
+    # The deep search loop
     for i in range(DEEP_FIND):
         bid = 0
         bid_amount = 0
         ask = 0
         ask_amount = 0
 
+        # Gets best bid and amount
         for market in sell_data:
             for j in sell_data[market]['bid']:
                 if sell_data[market]['bid'][j]['amount'] > 0:
@@ -71,6 +81,7 @@ def deep_find(sell_market, buy_market, pair):
                     bid_amount = sell_data[market]['bid'][j]['amount']
                     break
 
+        # Gets best ask and amount
         for market in buy_data:
             for j in buy_data[market]['ask']:
                 if buy_data[market]['ask'][j]['amount'] > 0:
@@ -78,22 +89,27 @@ def deep_find(sell_market, buy_market, pair):
                     ask_amount = buy_data[market]['ask'][j]['amount']
                     break
 
+        # Compares bid and ask amounts
         amount = ask_amount if ask_amount < bid_amount else bid_amount
 
+        # Subtracts the chosen amount from bids dictionary
         for market in sell_data:
             for j in sell_data[market]['bid']:
                 if sell_data[market]['bid'][j]['amount'] > 0:
                     sell_data[market]['bid'][j]['amount'] -= amount
                     break
 
+        # Subtracts the chosen amount from the asks dictionary
         for market in buy_data:
             for j in buy_data[market]['ask']:
                 if buy_data[market]['ask'][j]['amount'] > 0:
                     buy_data[market]['ask'][j]['amount'] -= amount
                     break
 
+        # Call to arbitrage function
         temp_profit = arbitrage(ask, bid, amount, FEES[buy_market]['taker'], FEES[sell_market]['taker'],
                                 FEES[buy_market]['transfer'][pair[:3]])
+        # Returns profit
         if temp_profit < 0:
             return profit
         else:
@@ -101,6 +117,7 @@ def deep_find(sell_market, buy_market, pair):
     return profit
 
 
+# Computes possible profit including fees
 def arbitrage(ask, bid, amount, fee_ask_taker, fee_bid_taker, fee_ask_transfer):
     buy = ask * amount
     sell = bid * amount
@@ -116,11 +133,13 @@ if __name__ == '__main__':
         print("Cant find fees file")
         sys.exit(1)
 
+    # Gets common pairs, tickers for them and gets analyzed data
     common_pairs = get_common_pairs()
     ticker1 = MARKETS[0].get_ticker_data(common_pairs)
     ticker2 = MARKETS[1].get_ticker_data(common_pairs)
-    pairs = find_profitable_pairs(ticker1, ticker2)
+    pairs = analyze_pairs(ticker1, ticker2)
 
+    # Prints analyzed and sorted data
     pairs.sort(key=lambda t: t[5], reverse=True)
     for p in pairs:
         print(

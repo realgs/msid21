@@ -5,6 +5,7 @@ class Bitbay(Crypto):
     URL_TICKER = "https://api.bitbay.net/rest/trading/ticker"
     URL_PAIR = "https://api.bitbay.net/rest/trading/orderbook/"
 
+    # Gets all trading pairs avalivable in this API
     @classmethod
     def get_trading_pairs(cls):
         data = Crypto.get_data(Bitbay.URL_TICKER)
@@ -18,6 +19,7 @@ class Bitbay(Crypto):
 
         return pairs
 
+    # Gets overview of all common trading pairs
     @classmethod
     def get_ticker_data(cls, common_pairs):
         data = Crypto.get_data(Bitbay.URL_TICKER)
@@ -30,9 +32,9 @@ class Bitbay(Crypto):
             formatted_pair = pair[:3] + "-" + pair[3:]
             ticker_data['bitbay'][pair] = {'bid': float(data['items'][formatted_pair]['highestBid']),
                                            'ask': float(data['items'][formatted_pair]['lowestAsk'])}
-
         return ticker_data
 
+    # Gets orderbook of the given trading pair
     @classmethod
     def get_pair(cls, pair):
         pair = pair[:3] + "-" + pair[3:]
@@ -54,5 +56,4 @@ class Bitbay(Crypto):
         for i in range(len(data['buy'])):
             pair_data['bitbay']['bid'][i] = {'price': float(data['buy'][i]['ra']),
                                              'amount': float(data['buy'][i]['ca'])}
-
         return pair_data
