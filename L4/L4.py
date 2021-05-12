@@ -4,8 +4,7 @@ import Bittrex
 import Bitbay
 
 TIME_TO_WAIT = 5
-BASE_CURRENCY = "USD"
-ARRAY = ["BTC", "LTC", "ETH"]
+
 BITBAY_FEES = {
     'AAVE'	:	0.54000000,
     'ALG'	:	426.00000000,
@@ -58,8 +57,6 @@ BITBAY_FEES = {
 
 BITTREX_FEES = {}
 
-FEES_BITBAY = [0.0005, 0.001, 0.01]
-FEES_BITTREX = [0.0005, 0.01, 0.006]
 BITREX_TAKER = 0.0025
 BITBAY_TAKER = 0.0043
 
@@ -82,7 +79,7 @@ def createBittrexFees():
 
 createBittrexFees()
 
-def findBest(r1, r2, nrOfCurrency, curr):
+def findBest(r1, r2, curr):
     transferFeeBittrex=BITTREX_FEES[curr]
     transferFeeBitbay = BITBAY_FEES[curr]
     amountToBeArbitrated = 0.0
@@ -138,7 +135,7 @@ while True:
             print("Difference in bids: ", abs(1 - compute(Bitbay.getField(responses1[i].json(), j, "bids")[0], Bittrex.getField(responses2[i].json(), j, "bids")[0])))
             print("Difference in asks: ", abs(1 - compute(Bitbay.getField(responses1[i].json(), j, "asks")[0],
                                           Bittrex.getField(responses2[i].json(), j, "asks")[0])))
-            findBest(responses1[i], responses2[i], i, str(MARKETS[i]).split("-")[0])
+            findBest(responses1[i], responses2[i], str(MARKETS[i]).split("-")[0])
             j += 1
         i += 1
         print("- - - - - - - - - - - -")

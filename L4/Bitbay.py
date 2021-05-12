@@ -3,8 +3,6 @@ import time
 
 TIME_TO_WAIT = 5
 API = "https://bitbay.net/API/Public/{}{}/orderbook.json"
-CURRENCY = "USD"
-ARRAY = ["BTC", "LTC", "ETH"]
 
 MARKETS = []
 
@@ -69,19 +67,3 @@ def getOrdersNumber(json):
         return l2
     else:
         return l1
-
-def update():
-    while True:
-        responses = connect()
-        i = 0
-        while i < 3:
-            print(ARRAY[i])
-            j = 0
-            while j < 3:
-                print("Difference: ", compute(getField(responses[i].json(), j, "bids")[0], getField(responses[i].json(), j, "asks")[0]))
-                j += 1
-            i += 1
-            time.sleep(1)
-        time.sleep(TIME_TO_WAIT)
-
-

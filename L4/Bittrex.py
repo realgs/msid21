@@ -4,8 +4,6 @@ import time
 #[RATE, AMOUNT]
 
 TIME_TO_WAIT = 5
-CURRENCY = "USD"
-ARRAY = ["BTC", "LTC", "ETH"]
 API = "https://api.bittrex.com/api/v1.1/public/getorderbook?market={}-{}&type=both"
 
 MARKETS = []
@@ -70,19 +68,3 @@ def getField(json, i, action):
         return (json["result"]["sell"][i]['Rate'], json["result"]["sell"][i]['Quantity'])
     else:
         return (json["result"]["buy"][i]['Rate'], json["result"]["buy"][i]['Quantity'])
-
-def update():
-    while True:
-        responses = connect()
-        i = 0
-        while i < 3:
-            print(ARRAY[i])
-            j = 0
-            while j < 3:
-                print("Difference: ", compute(getField(responses[i].json(), j, "bids")[0], getField(responses[i].json(), j, "asks")[0]))
-                j += 1
-            i += 1
-            time.sleep(1)
-        time.sleep(TIME_TO_WAIT)
-
-
