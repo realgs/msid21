@@ -34,10 +34,12 @@ def getData(link: str):
     else: return None
 
 def connect():
-    response1 = getData(API.format(str(MARKETS[0]).split("-")[0], str(MARKETS[0]).split("-")[1]))
-    response2 = getData(API.format(str(MARKETS[1]).split("-")[0], str(MARKETS[1]).split("-")[1]))
-    response3 = getData(API.format(str(MARKETS[2]).split("-")[0], str(MARKETS[2]).split("-")[1]))
-    return (response1, response2, response3)
+    responses = []
+    i = 0
+    while i < len(MARKETS):
+        responses.append(getData(API.format(str(MARKETS[i]).split("-")[0], str(MARKETS[i]).split("-")[1])))
+        i += 1
+    return tuple(responses)
 
 def show(response, val):
     if response is not None:

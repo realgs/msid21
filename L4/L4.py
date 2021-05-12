@@ -122,13 +122,16 @@ MARKETS = list(commonMarkets())
 def getMarkets():
     return MARKETS
 
+Bitbay.MARKETS = MARKETS
+Bittrex.MARKETS = MARKETS
+
+responses1 = Bitbay.connect()
+responses2 = Bittrex.connect()
+
 while True:
-    Bitbay.MARKETS = MARKETS
-    Bittrex.MARKETS = MARKETS
-    responses1 = Bitbay.connect()
-    responses2 = Bittrex.connect()
+
     i = 0
-    while i < 3:
+    while i < len(MARKETS):
         print(str(MARKETS[i]).split("-"))
         j = 0
         while j < 3:
