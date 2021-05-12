@@ -279,13 +279,14 @@ def lab_4():
 # Get current fees for bittrex
 def update_bittrex_fees():
     try:
-        data = get_data_from_url("https://api.bittrex.com/api/v1.1/public/getcurrencies")["result"]
+        url = "{0}{1}".format(MARKET_API["BITTREX"]["url"], MARKET_API["BITTREX"]["fees_url"])
+        data = get_data_from_url(url)
+        if data is None:
+            return False
         for cl in data:
-            # print(f"{cl['Currency']} {cl['TxFee']}")
-            MARKET_API["BITTREX"]["transfer"][cl["Currency"]] = cl["TxFee"]
+            MARKET_API["BITTREX"]["transfer"][cl["symbol"]] = float(cl["txFee"])
         return True
     except KeyError:
-        print("Failed to update bittrex fees")
         return False
 
 
@@ -294,15 +295,20 @@ def save_api_data(file_path=DEFAULT_API_PATH):
     try:
         with open(file_path, "w") as file:
             json.dump(MARKET_API, file, indent=4, sort_keys=True)
-    except IOError:
-        print("Failed to save updated bittrex fees")
+            return True
+    except (FileNotFoundError, IOError, OSError):
+        return False
 
 
 def main():
-    read_api_data_from_file()
-    fees_updated = update_bittrex_fees()
-    if fees_updated:
-        save_api_data()
+    if not read_api_data_from_file():
+        print("Critical error, failed to read {0}".format(DEFAULT_API_PATH))
+        return
+    if update_bittrex_fees():
+        if not save_api_data():
+            print("Failed to save updated bittrex fees")
+    else:
+        print("Failed to update bittrex fees")
     lab_4()
 
 
