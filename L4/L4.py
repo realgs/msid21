@@ -56,12 +56,21 @@ def findBest(r1, r2, nrOfCurrency):
 def commonMarkets():
     Bittrex.getAllMarkets()
     Bitbay.getAllMarkets()
-
     return Bitbay.markets.intersection(Bittrex.markets)
 
 MARKETS = list(commonMarkets())
 
+print("----")
+print(MARKETS)
+print(str(MARKETS[0]).split("-"))
+print("----")
+
+def getMarkets():
+    return MARKETS
+
 while True:
+    Bitbay.MARKETS = MARKETS
+    Bittrex.MARKETS = MARKETS
     responses1 = Bitbay.connect()
     responses2 = Bittrex.connect()
     i = 0

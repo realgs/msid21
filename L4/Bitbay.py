@@ -6,6 +6,8 @@ API = "https://bitbay.net/API/Public/{}{}/orderbook.json"
 CURRENCY = "USD"
 ARRAY = ["BTC", "LTC", "ETH"]
 
+MARKETS = []
+
 markets = set()
 
 def apiFormat(baseCurrency, currency):
@@ -34,9 +36,9 @@ def getData(link: str):
     else: return None
 
 def connect():
-    response1 = getData(API.format("BTC", CURRENCY))
-    response2 = getData(API.format("LTC", CURRENCY))
-    response3 = getData(API.format("ETH", CURRENCY))
+    response1 = getData(API.format(str(MARKETS[0]).split("-")[0], str(MARKETS[0]).split("-")[1]))
+    response2 = getData(API.format(str(MARKETS[1]).split("-")[0], str(MARKETS[1]).split("-")[1]))
+    response3 = getData(API.format(str(MARKETS[2]).split("-")[0], str(MARKETS[2]).split("-")[1]))
     return (response1, response2, response3)
 
 def show(response, val):

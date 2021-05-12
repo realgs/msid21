@@ -8,6 +8,8 @@ CURRENCY = "USD"
 ARRAY = ["BTC", "LTC", "ETH"]
 API = "https://api.bittrex.com/api/v1.1/public/getorderbook?market={}-{}&type=both"
 
+MARKETS = []
+
 markets = set()
 
 def apiFormat(baseCurrency, currency):
@@ -36,9 +38,9 @@ def getData(link: str):
     else: return None
 
 def connect():
-    response1 = getData(API.format(CURRENCY, "BTC"))
-    response2 = getData(API.format(CURRENCY, "LTC"))
-    response3 = getData(API.format(CURRENCY, "ETH"))
+    response1 = getData(API.format(str(MARKETS[0]).split("-")[1], str(MARKETS[0]).split("-")[0]))
+    response2 = getData(API.format(str(MARKETS[1]).split("-")[1], str(MARKETS[1]).split("-")[0]))
+    response3 = getData(API.format(str(MARKETS[2]).split("-")[1], str(MARKETS[2]).split("-")[0]))
     return (response1, response2, response3)
 
 def show(response, val):
