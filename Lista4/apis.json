@@ -7,7 +7,7 @@
       "orderbook_ending": "orderbook.json",
       "taker_fee": 0.0043
     },
-    "bittrex": {
+    "bitrex": {
       "name": "bitrex",
       "url_orderbook": "https://api.bittrex.com/api/v1.1/public/getorderbook?market=",
       "url_markets": "https://api.bittrex.com/api/v1.1/public/getmarkets",

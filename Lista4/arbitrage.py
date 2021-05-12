@@ -1,6 +1,6 @@
 import requests
 import time
-from main import load_api_data_from_json
+from common import load_api_data_from_json, get_api_response
 
 CRYPTOCURRIRNCIES = ["ETH", "BTC", "XRP"]
 NORMALIZED_OPERATIONS = ['bids', 'asks']
@@ -33,26 +33,17 @@ def parse_bitrex_orderbook(jsondata):
     return resultDictionary
 
 
-def get_api_response(url):
-    response = requests.get(url)
-    if response.status_code == 200:
-        return response.json()
-    else:
-        print("Request not succesful: " + response.reason)
-        return None
-
-
 def get_offers(currency, market, basecurrency, apiinfo):
-    if market == apiinfo["Api"]["bitbay"]["name"]:
-        offers = get_api_response(f'{apiinfo["Api"]["bitbay"]["url_orderbook"]}{currency}'
-                                  f'{basecurrency}{apiinfo["Api"]["bitbay"]["orderbook_ending"]}')
+    if market == apiinfo["API"]["bitbay"]["name"]:
+        offers = get_api_response(f'{apiinfo["API"]["bitbay"]["url_orderbook"]}{currency}'
+                                  f'{basecurrency}{apiinfo["API"]["bitbay"]["orderbook_ending"]}')
         if offers is not None:
             return offers
 
-    elif market == apiinfo["Api"]["bitrex"]["name"]:
-        offers = get_api_response(f'{apiinfo["Api"]["bitrex"]["url_orderbook"]}{basecurrency}'
-                                  f'{apiinfo["Api"]["bitrex"]["orderbook_separator"]}'
-                                  f'{currency}{apiinfo["Api"]["bitrex"]["orderbook_ending"]}')
+    elif market == apiinfo["API"]["bitrex"]["name"]:
+        offers = get_api_response(f'{apiinfo["API"]["bitrex"]["url_orderbook"]}{basecurrency}'
+                                  f'{apiinfo["API"]["bitrex"]["orderbook_separator"]}'
+                                  f'{currency}{apiinfo["API"]["bitrex"]["orderbook_ending"]}')
         if offers is not None:
             return parse_bitrex_orderbook(offers)
 
@@ -133,36 +124,36 @@ def zad2(base_currency):
         print("Cryptocurrency: " + crypto)
         i = 0
         while i < ARTIFICIAL_LOOP_LIMIT:
-            offer1 = get_offers(crypto, apiInfo["Api"]["bitbay"]["name"], base_currency, apiInfo)
-            offer2 = get_offers(crypto, apiInfo["Api"]["bitrex"]["name"], base_currency, apiInfo)
+            offer1 = get_offers(crypto, apiInfo["API"]["bitbay"]["name"], base_currency, apiInfo)
+            offer2 = get_offers(crypto, apiInfo["API"]["bitrex"]["name"], base_currency, apiInfo)
             if offer1 is not None and offer2 is not None:
                 if offer1.get(NORMALIZED_OPERATIONS[0], None) and offer1.get(NORMALIZED_OPERATIONS[1], None) \
                         and offer2.get(NORMALIZED_OPERATIONS[0], None) and offer2.get(NORMALIZED_OPERATIONS[1], None):
-                    print(f'{apiInfo["Api"]["bitbay"]["name"]} - selling offers: {offer1[NORMALIZED_OPERATIONS[1]]}\n'
-                          f'{apiInfo["Api"]["bitbay"]["name"]} - buying offers: {offer1[NORMALIZED_OPERATIONS[0]]}')
-                    print(f'{apiInfo["Api"]["bitrex"]["name"]} - selling offer: {offer2[NORMALIZED_OPERATIONS[1]]}\n'
-                          f'{apiInfo["Api"]["bitrex"]["name"]} - buying offers: {offer2[NORMALIZED_OPERATIONS[0]]}')
+                    print(f'{apiInfo["API"]["bitbay"]["name"]} - selling offers: {offer1[NORMALIZED_OPERATIONS[1]]}\n'
+                          f'{apiInfo["API"]["bitbay"]["name"]} - buying offers: {offer1[NORMALIZED_OPERATIONS[0]]}')
+                    print(f'{apiInfo["API"]["bitrex"]["name"]} - selling offer: {offer2[NORMALIZED_OPERATIONS[1]]}\n'
+                          f'{apiInfo["API"]["bitrex"]["name"]} - buying offers: {offer2[NORMALIZED_OPERATIONS[0]]}')
                     resultFrom1To2 = calculate_arbitrage(offer1[NORMALIZED_OPERATIONS[1]],
                                                          offer2[NORMALIZED_OPERATIONS[0]],
-                                                         apiInfo["Api"]["bitbay"], apiInfo["Api"]["bitrex"], crypto,
+                                                         apiInfo["API"]["bitbay"], apiInfo["API"]["bitrex"], crypto,
                                                          base_currency)
                     if resultFrom1To2['profit'] <= 0:
-                        print(f"There are no profitable transactions buying in {apiInfo['Api']['bitbay']['name']}"
-                              f" and selling in {apiInfo['Api']['bitrex']['name']}")
+                        print(f"There are no profitable transactions buying in {apiInfo['API']['bitbay']['name']}"
+                              f" and selling in {apiInfo['API']['bitrex']['name']}")
                     else:
-                        print(f"Buying from {apiInfo['Api']['bitbay']['name']}:\n "
+                        print(f"Buying from {apiInfo['API']['bitbay']['name']}:\n "
                               f"Volume: {resultFrom1To2['volume']} {crypto},"
                               f" profit: {resultFrom1To2['profit']} {base_currency},"
                               f" gain: {resultFrom1To2['profitability']}%")
                     resultFrom2To1 = calculate_arbitrage(offer2[NORMALIZED_OPERATIONS[1]],
                                                          offer1[NORMALIZED_OPERATIONS[0]],
-                                                         apiInfo["Api"]["bitrex"], apiInfo["Api"]["bitbay"], crypto,
+                                                         apiInfo["API"]["bitrex"], apiInfo["API"]["bitbay"], crypto,
                                                          base_currency)
                     if resultFrom2To1['profit'] <= 0:
-                        print(f"There are no profitable transactions buying in {apiInfo['Api']['bitbay']['name']}"
-                              f" and selling in {apiInfo['Api']['bitbay']['name']}")
+                        print(f"There are no profitable transactions buying in {apiInfo['API']['bitbay']['name']}"
+                              f" and selling in {apiInfo['API']['bitbay']['name']}")
                     else:
-                        print(f"Buying from {apiInfo['Api']['bitrex']['name']}:\n "
+                        print(f"Buying from {apiInfo['API']['bitrex']['name']}:\n "
                               f"Volume: {resultFrom2To1['volume']} {crypto},"
                               f" profit: {resultFrom2To1['profit']} {base_currency},"
                               f" gain: {resultFrom2To1['profitability']}%")
