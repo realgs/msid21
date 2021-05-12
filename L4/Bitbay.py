@@ -24,12 +24,6 @@ def jsonPrint(obj, val):
         print(obj["asks"][i])
         i += 1
 
-def getAllMarkets():
-    response = getData("https://api.bitbay.net/rest/trading/ticker")
-    results = response.json()["items"]
-    for k in results:
-        markets.add(k)
-
 def compute(buy: float, sell: float):
     return (1 - ((sell - buy)/buy))
 
@@ -56,8 +50,23 @@ def getField(json, i, action):
     else:
         return (json["bids"][i][0], json["bids"][i][1])
 
+def getAllMarkets():
+    response = getData("https://api.bitbay.net/rest/trading/ticker")
+    results = response.json()["items"]
+    for k in results:
+        markets.add(k)
+
 def getTicker():
-    pass
+    response = getData("https://api.bitbay.net/rest/trading/ticker")
+    return response.json()
+
+def getOrdersNumber(json):
+    l1 = len(json["bids"])
+    l2 = len(json["asks"])
+    if l1 > l2:
+        return l2
+    else:
+        return l1
 
 def update():
     while True:

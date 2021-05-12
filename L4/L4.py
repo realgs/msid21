@@ -4,7 +4,7 @@ import Bittrex
 import Bitbay
 
 TIME_TO_WAIT = 5
-CURRENCY = "USD"
+BASE_CURRENCY = "USD"
 ARRAY = ["BTC", "LTC", "ETH"]
 FEES_BITBAY = [0.0005, 0.001, 0.01]
 FEES_BITTREX = [0.0005, 0.01, 0.006]
@@ -30,7 +30,7 @@ def findBest(r1, r2, nrOfCurrency):
     computedDiff=diff
     while i < 3:
         j = 0
-        while j < 3:
+        while j < Bitbay.getOrdersNumber(r1.json()) and j < Bittrex.getOrdersNumber(r2.json()):
             buyOnBitbay = Bitbay.getField(r1.json(), i, "sells")[0] * Bitbay.getField(r1.json(), i, "sells")[1] - (Bitbay.getField(r1.json(), i, "sells")[0] * Bitbay.getField(r1.json(), i, "sells")[1] * BITBAY_TAKER) - (Bitbay.getField(r1.json(), i, "sells")[0] * Bitbay.getField(r1.json(), i, "sells")[1] * transferFeeBitbay)
             buyOnBittrex = Bittrex.getField(r2.json(), i, "sells")[0] * Bittrex.getField(r2.json(), i, "sells")[1] - (Bittrex.getField(r2.json(), i, "sells")[0] * Bittrex.getField(r2.json(), i, "sells")[1] * BITREX_TAKER) - (Bitbay.getField(r1.json(), i, "sells")[0] * Bitbay.getField(r1.json(), i, "sells")[1] * transferFeeBittrex)
             sellOnBitbay = Bitbay.getField(r1.json(), j, "bids")[0] * Bitbay.getField(r1.json(), j, "bids")[1] - (Bitbay.getField(r1.json(), j, "bids")[0] * Bitbay.getField(r1.json(), j, "bids")[1] * BITBAY_TAKER) - (Bitbay.getField(r1.json(), j, "bids")[0] * Bitbay.getField(r1.json(), j, "bids")[1] * transferFeeBitbay)
@@ -53,23 +53,20 @@ def findBest(r1, r2, nrOfCurrency):
         print("Can be arbitrated: ", amountToBeArbitrated)
         print("Profit: ", diff)
 
-print("Bittrex")
-Bittrex.getAllMarkets()
-print(Bittrex.markets)
-print("Bitbay")
-Bitbay.getAllMarkets()
-print(Bitbay.markets)
+def commonMarkets():
+    Bittrex.getAllMarkets()
+    Bitbay.getAllMarkets()
 
-print("Common markets:")
-print(Bitbay.markets.intersection(Bittrex.markets))
+    return Bitbay.markets.intersection(Bittrex.markets)
 
-x = input("stop")
+MARKETS = list(commonMarkets())
+
 while True:
     responses1 = Bitbay.connect()
     responses2 = Bittrex.connect()
     i = 0
     while i < 3:
-        print(ARRAY[i])
+        print(str(MARKETS[i]).split("-")[0])
         j = 0
         while j < 3:
             print("Difference in bids: ", abs(1 - compute(Bitbay.getField(responses1[i].json(), j, "bids")[0], Bittrex.getField(responses2[i].json(), j, "bids")[0])))
