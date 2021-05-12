@@ -8,6 +8,8 @@ CURRENCY = "USD"
 ARRAY = ["BTC", "LTC", "ETH"]
 API = "https://api.bittrex.com/api/v1.1/public/getorderbook?market={}-{}&type=both"
 
+markets = set()
+
 def apiFormat(baseCurrency, currency):
     return API.format(baseCurrency, currency)
 
@@ -27,6 +29,11 @@ def jsonPrint(obj, val):
         print(obj["result"]['sell'][i])
         i += 1
 
+def getAllMarkets():
+    response = getData("https://api.bittrex.com/api/v1.1/public/getmarkets")
+    results = response.json()["result"]
+    for r in results:
+        markets.add(r["MarketCurrency"] + "-" + r["BaseCurrency"])
 
 def getData(link: str):
     response = requests.get(link)
@@ -43,6 +50,9 @@ def connect():
 def show(response, val):
     if response is not None:
         jsonPrint(response.json(), val)
+
+def getTicker():
+    pass
 
 def getField(json, i, action):
     if action == "asks":

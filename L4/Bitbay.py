@@ -6,6 +6,8 @@ API = "https://bitbay.net/API/Public/{}{}/orderbook.json"
 CURRENCY = "USD"
 ARRAY = ["BTC", "LTC", "ETH"]
 
+markets = set()
+
 def apiFormat(baseCurrency, currency):
     return API.format(currency, baseCurrency)
 
@@ -21,6 +23,12 @@ def jsonPrint(obj, val):
     while i < 3:
         print(obj["asks"][i])
         i += 1
+
+def getAllMarkets():
+    response = getData("https://api.bitbay.net/rest/trading/ticker")
+    results = response.json()["items"]
+    for k in results:
+        markets.add(k)
 
 def compute(buy: float, sell: float):
     return (1 - ((sell - buy)/buy))
@@ -47,6 +55,9 @@ def getField(json, i, action):
         return (json["asks"][i][0], json["asks"][i][1])
     else:
         return (json["bids"][i][0], json["bids"][i][1])
+
+def getTicker():
+    pass
 
 def update():
     while True:
