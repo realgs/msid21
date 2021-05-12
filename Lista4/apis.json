@@ -2,16 +2,16 @@
   "API": {
     "bitbay": {
       "name": "bitbay",
-      "url_orderbook": "https://bitbay.net/API/Public",
+      "url_orderbook": "https://bitbay.net/API/Public/",
       "url_markets": "https://api.bitbay.net/rest/trading/ticker",
-      "orderbook_ending": "orderbook.json",
+      "orderbook_ending": "/orderbook.json",
       "taker_fee": 0.0043
     },
     "bitrex": {
       "name": "bitrex",
       "url_orderbook": "https://api.bittrex.com/api/v1.1/public/getorderbook?market=",
       "url_markets": "https://api.bittrex.com/api/v1.1/public/getmarkets",
-      "url_curriencies": "https://api.bittrex.com/api/v1.1/public/getcurrencies",
+      "url_currencies": "https://api.bittrex.com/api/v1.1/public/getcurrencies",
       "orderbook_ending": "&type=both",
       "orderbook_separator": "-",
       "taker_fee": 0.0075

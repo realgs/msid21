@@ -1,6 +1,5 @@
-import requests
 import time
-from common import load_api_data_from_json, get_api_response
+from common import *
 
 CRYPTOCURRIRNCIES = ["ETH", "BTC", "XRP"]
 NORMALIZED_OPERATIONS = ['bids', 'asks']
@@ -57,20 +56,20 @@ def calculate_percentage_difference(order1, order2):
 
 def include_taker_fee(cost, market, operation):
     if operation == NORMALIZED_OPERATIONS[1]:
-        return cost * (1 + market["taker"])
+        return cost * (1 + market["taker_fee"])
     elif operation == NORMALIZED_OPERATIONS[0]:
-        return cost * (1 - market["taker"])
+        return cost * (1 - market["taker_fee"])
 
 
 def calculate_order_value(price, amount):
     return price * amount
 
 
-def calculate_arbitrage(offerstobuyfrom, offerstosellto, buyingmarket, sellingmarket, currency, basecurrency):
+def calculate_arbitrage(offerstobuyfrom, offerstosellto, buyingmarket, sellingmarket, currency, basecurrency, fees):
     volume = 0.0
     spentMoney = 0.0
     gainedMoney = 0.0
-    transferFee = buyingmarket['transferFee'][currency]
+    transferFee = fees[buyingmarket['name']][currency]
     transferFeePaidNumber = 0
     operationNumber = 0
 
@@ -118,10 +117,11 @@ def calculate_arbitrage(offerstobuyfrom, offerstosellto, buyingmarket, sellingma
     return {'volume': volume, 'profitability': profitability, 'profit': round(gainedMoney - spentMoney, 2)}
 
 
-def zad2(base_currency):
-    apiInfo = load_api_data_from_json()
-    for crypto in CRYPTOCURRIRNCIES:
-        print("Cryptocurrency: " + crypto)
+def zad2(apiInfo, transferfees, currencypairs):
+    for currency in currencypairs:
+        crypto = currency[0]
+        base_currency = currency[1]
+        print(f"Cryptocurrency: {crypto}, base currency: {base_currency}")
         i = 0
         while i < ARTIFICIAL_LOOP_LIMIT:
             offer1 = get_offers(crypto, apiInfo["API"]["bitbay"]["name"], base_currency, apiInfo)
@@ -136,7 +136,7 @@ def zad2(base_currency):
                     resultFrom1To2 = calculate_arbitrage(offer1[NORMALIZED_OPERATIONS[1]],
                                                          offer2[NORMALIZED_OPERATIONS[0]],
                                                          apiInfo["API"]["bitbay"], apiInfo["API"]["bitrex"], crypto,
-                                                         base_currency)
+                                                         base_currency, transferfees)
                     if resultFrom1To2['profit'] <= 0:
                         print(f"There are no profitable transactions buying in {apiInfo['API']['bitbay']['name']}"
                               f" and selling in {apiInfo['API']['bitrex']['name']}")
@@ -148,7 +148,7 @@ def zad2(base_currency):
                     resultFrom2To1 = calculate_arbitrage(offer2[NORMALIZED_OPERATIONS[1]],
                                                          offer1[NORMALIZED_OPERATIONS[0]],
                                                          apiInfo["API"]["bitrex"], apiInfo["API"]["bitbay"], crypto,
-                                                         base_currency)
+                                                         base_currency, transferfees)
                     if resultFrom2To1['profit'] <= 0:
                         print(f"There are no profitable transactions buying in {apiInfo['API']['bitbay']['name']}"
                               f" and selling in {apiInfo['API']['bitbay']['name']}")
@@ -167,7 +167,10 @@ def zad2(base_currency):
 
 
 if __name__ == '__main__':
+    apiInfo = load_api_data_from_json()
     try:
-        zad2("USD")
+        pairs = find_common_currencies_pairs(apiInfo)
+        fees = get_transfer_fees(apiInfo, pairs)
+        zad2(apiInfo, fees, pairs)
     except requests.ConnectionError:
         print("Failed to connect to API")
