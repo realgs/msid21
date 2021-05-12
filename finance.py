@@ -16,7 +16,7 @@ class ProfitSeeker:
     async def _retrieveCommonAvailableMarkets(self):
         market1, market2 = await self.__firstApi.getAvailableMarkets(), await self.__secondApi.getAvailableMarkets()
         if not market1['success'] or not market2['success']:
-            return None
+            return []
 
         market1, market2 = market1['markets'], market2['markets']
         if len(market2) < len(market1):
