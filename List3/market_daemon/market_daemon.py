@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import json
 import os
+import random
 
 from time import sleep
+import pandas as pd
 from typing import Optional, Callable, Any
 
+import bcolors
 import requests
-from tqdm import tqdm
 
 OrderList = list[list[float]]
 
@@ -39,6 +41,18 @@ SAMPLE_CONFIG: dict = {
         "default_order_num": 5
     }
 }
+
+
+class BColors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
 
 
 def load_config(path="config.json"):
@@ -161,28 +175,6 @@ class MarketDaemon:
                   f"for {instrument}. Returning bare order value.")
             return price * quantity
 
-    """
-    def _make_request(self, instrument: str, base: str = BASE_CURRENCY,
-                      verbose: bool = True) -> Optional[requests.Response]:
-        try:
-            response = requests.request("GET", self._to_request_url(instrument, base))
-            if response.status_code in range(200, 300) and "code" not in dict(response.json()):
-                return response
-            else:
-                if verbose:
-                    print(f"Your request for '{instrument}{base}' at {self} didn't produce a valid response.")
-                return None
-        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
-            if verbose:
-                print(f"Your request for '{instrument}{base}' at {self} timed out, retrying in {DEFAULT_TIMOUT}s...")
-            sleep(DEFAULT_TIMOUT)
-            self._make_request(instrument, base)
-        except requests.exceptions.RequestException:
-            if verbose:
-                print(f"Your request for '{instrument}{base}' at {self} failed")
-            return None
-    """
-
     def _make_request(self, url: str, verbose: bool = True) -> Optional[requests.Response]:
         try:
             response = requests.request("GET", url)
@@ -239,7 +231,7 @@ class MarketDaemon:
         if instrument in self._transfer_fees:
             return self._transfer_fees[instrument]
         else:
-            print(f"\tW: returned transfer fee 0 for {instrument} @ market {self}")
+            print(bcolors.WARN + f"W: returned transfer fee = 0 for {instrument} @ market {self}" + bcolors.ENDC)
             return 0
 
     def get_joint_pairs(self, other: MarketDaemon):
@@ -412,7 +404,8 @@ def arbitrage_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: 
 
             if profit <= 0.0:
                 if verbose:
-                    print(f"No orders were found to be profitable for buy of {instrument} at {m1} and sell at {m2}")
+                    print(bcolors.FAIL + f"No orders were found to be profitable for buy of {instrument}"
+                                         f" at {m1} and sell at {m2}" + bcolors.ENDC)
                 yield 0.0
             else:
                 profitability = 100 * profit / total_buy if total_buy else 0.0
@@ -431,10 +424,27 @@ def arbitrage_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: 
             yield 0.0
             sleep(DEFAULT_TIMOUT)
 
+def check_3_random_pairs(src: MarketDaemon, dest: MarketDaemon):
+    """Retruns a dataframe with pairs columns denoting the 3 pairs, and profit column expressed in base currency
+    of each pair, profit is 0 if no arbitrage opportunity is present"""
+    intersecting_pairs: set[str] = src.get_joint_pairs(dest)
+    p1, p2, p3 = random.sample(list(intersecting_pairs), 3)
+
+    data = {"pair": [p1, p2, p3], "profit": []}
+
+    a1 = arbitrage_stream(src, dest, *p1.split("-"), verbose=False)
+    a2 = arbitrage_stream(src, dest, *p2.split("-"), verbose=False)
+    a3 = arbitrage_stream(src, dest, *p3.split("-"), verbose=False)
+
+    data["profit"].append(next(a1))
+    data["profit"].append(next(a2))
+    data["profit"].append(next(a3))
+
+    return pd.DataFrame(data)
 
 def create_config():
     if os.path.isfile(CONFIG_PATH):
-        print("Config is already present, no modifications were made.")
+        print(bcolors.WARN + "W Config is already present, no modifications were made." + bcolors.ENDC)
     else:
         try:
             with open(CONFIG_PATH, 'w') as f:
@@ -454,15 +464,15 @@ def _onload():
         DEFAULT_ORDER_NUM = preferences["default_order_num"]
         BASE_CURRENCY = preferences["base_currency"]
 
-        print("User preferences loaded successfully\n")
+        print(bcolors.OK + "User preferences loaded successfully\n" + bcolors.ENDC)
     except KeyError:
-        print("Some of the preferences couldn't been set, using default values")
+        print(bcolors.WARN + "W Some of the preferences couldn't been set, using default values" + bcolors.ENDC)
     except FileNotFoundError:
         decision = input("Config file not discovered. Would you like to create config? Y/n: ")
         if decision == "y" or decision == "Y" or decision == "\n":
             create_config()
         else:
-            print("Using default settings")
+            print("I Using default settings")
 
 
 _onload()
