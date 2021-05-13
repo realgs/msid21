@@ -107,6 +107,8 @@ def calculate_arbitrage(offerstobuyfrom, offerstosellto, buyingmarket, sellingma
         else:
             break
 
+    if gainedMoney < spentMoney:
+        gainedMoney = spentMoney = 0
     if spentMoney == 0 and gainedMoney == 0:
         profitability = 0
     else:
@@ -151,7 +153,7 @@ def zad3(apiInfo, transferfees, currencypairs):
                                                      base_currency, transferfees)
                 resultsFromBitrexToBitbay.append((crypto, base_currency, resultFrom2To1['profitability']))
                 if resultFrom2To1['profit'] <= 0:
-                    print(f"There are no profitable transactions buying in {apiInfo['API']['bitbay']['name']}"
+                    print(f"There are no profitable transactions buying in {apiInfo['API']['bitrex']['name']}"
                           f" and selling in {apiInfo['API']['bitbay']['name']}")
                 else:
                     print(f"Buying from {apiInfo['API']['bitrex']['name']}:\n "
@@ -182,11 +184,11 @@ if __name__ == '__main__':
         resultsFromBitbayToBitrex = sorted(resultsFromBitbayToBitrex, key=lambda x: x[2], reverse=True)
         resultsFromBitrexToBitbay = sorted(resultsFromBitrexToBitbay, key=lambda x: x[2], reverse=True)
         print("#####################################################################################")
-        print("Offers for buying in bittbay and selling in bitrex sorted by arbitrage percentage:")
+        print("Offers for buying in bittbay and selling in bitrex sorted by arbitrage percentage profit:")
         for entry in resultsFromBitbayToBitrex:
             print(entry)
         print("#####################################################################################")
-        print("Offers for buying in bitrex and selling in bitbay sorted by arbitrage percentage:")
+        print("Offers for buying in bitrex and selling in bitbay sorted by arbitrage percentage profit:")
         for entry in resultsFromBitrexToBitbay:
             print(entry)
     except requests.ConnectionError:
