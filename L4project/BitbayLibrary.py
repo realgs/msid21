@@ -26,6 +26,7 @@ def request_bids_and_asks(currencies: tuple[str, str]):
     else:
         raise Exception(f"Empty bids and asks list in BITBAY for ({currencies[0]},{currencies[1]})")
 
+
 def request_market_data():
     markets = ApiRequest.make_request(f'{BITBAY["market_info_URL"]}')
     markets_list = []
