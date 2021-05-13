@@ -1,9 +1,4 @@
-import random
-
-import pandas as pd
-
 import market_daemon as md
-from market_daemon import MarketDaemon
 from market_daemon.parsers import *
 
 CONFIG_PATH = "config.json"
@@ -26,5 +21,4 @@ if __name__ == "__main__":
 
     # Zad 3 (8 pkt)
     df = md.arbitrage_summary(bitbay, bittrex)
-    print()
-    print(df.dtypes)
+    print(df)

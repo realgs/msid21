@@ -465,7 +465,7 @@ def arbitrage_summary(src: MarketDaemon, dest: MarketDaemon):
         data["time"].append(datetime.now())
 
     df = pd.DataFrame(data)
-    df.sort_values(by="profit")
+    df = df.sort_values(by="profit", ascending=False)
     return df
 
 

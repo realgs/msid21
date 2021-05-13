@@ -8,7 +8,7 @@
       "instrument_sep": "-",
       "asks": "ask",
       "bids": "bid",
-      "taker_fee": 0.0035,
+      "taker_fee": 0.0,
       "transfer_fee": {}
     },
     "bitbay": {
@@ -18,7 +18,7 @@
       "instrument_sep": "-",
       "asks": "asks",
       "bids": "bids",
-      "taker_fee": 0.0043,
+      "taker_fee": 0.0,
       "transfer_fee": {
         "BTC": 0.0005,
         "ETH": 0.01,
@@ -33,7 +33,7 @@
       "instrument_sep": "-",
       "asks": "ask",
       "bids": "bid",
-      "taker_fee": 0.0035,
+      "taker_fee": 0.0,
       "transfer_fee": {}
     }
   },
