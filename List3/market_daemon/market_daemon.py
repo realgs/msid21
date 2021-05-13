@@ -72,7 +72,9 @@ class MarketDaemon:
         self._transfer_fees = None
 
         if "currencies_url" in self._settings:
-            self._transfer_fees = self._load_taker_fees(self._settings["currencies_url"])
+            self._transfer_fees = self._load_transfer_fees(self._settings["currencies_url"])
+        else:
+            self._transfer_fees = self._settings["transfer_fee"]
 
         self._orderbook_parser: Callable[[list], OrderList] = lambda x: x
         self._market_parser: Callable[[requests.Response], set[str]] = lambda x: set()
@@ -155,7 +157,7 @@ class MarketDaemon:
             total = price * quantity
             return total * (1 + self._settings["taker_fee"] * (1 if kind == "buy" else -1 if kind == "sell" else 0))
         except KeyError:
-            print(f"Settings for market {self} do not have information about taker_fee or transfer_fee "
+            print(f"Settings for market {self} do not have information about taker_fee "
                   f"for {instrument}. Returning bare order value.")
             return price * quantity
 
@@ -200,7 +202,7 @@ class MarketDaemon:
                 print(f"Your request @ '{url}' at {self} failed")
             return None
 
-    def _load_taker_fees(self, currencies_url: str):
+    def _load_transfer_fees(self, currencies_url: str):
         try:
             response = self._make_request(currencies_url)
             result = dict()
@@ -234,9 +236,10 @@ class MarketDaemon:
     def transfer_fee(self, instrument: str):
         """Returns the transfer fee for a given security,
         if information in settings has not been provided 0 is returned"""
-        if instrument in self._settings["transfer_fee"]:
-            return self._settings["transfer_fee"][instrument]
+        if instrument in self._transfer_fees:
+            return self._transfer_fees[instrument]
         else:
+            print(f"\tW: returned transfer fee 0 for {instrument} @ market {self}")
             return 0
 
     def get_joint_pairs(self, other: MarketDaemon):
