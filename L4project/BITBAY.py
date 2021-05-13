@@ -95,21 +95,14 @@ class Bitbay:
         return self.__withdrawal_fees
 
     def get_best_bid_offer_in_api_currency(self, currency: str):
-        market = ApiRequest.make_request(
-            f'{self.__URL_BUILD_CONTAINER["market_info_URL"]}/{currency}-{self.__upper_bound_currency}')
-        if market is not None and market["status"] == "Ok":
-            return float(market["ticker"]["highestBid"])
-        else:
-            print(market)
-            print(currency)
-            possible_currencies = ["USD", "PLN"]
-            for curr in possible_currencies:
-                market = ApiRequest.make_request(
-                    f'{self.__URL_BUILD_CONTAINER["market_info_URL"]}/{currency}-{curr}')
-                if market is not None and market["status"] == "Ok":
-                    return API_OPERATIONS.get_value_in_user_currency(curr, self.__upper_bound_currency,
-                                                                     float(market["ticker"]["highestBid"]))
-            raise Exception("There is no highest bid in this API, biggest fee will be used to calculate total money")
+        possible_currencies = [self.__upper_bound_currency, "USD", "PLN"]
+        for curr in possible_currencies:
+            market = ApiRequest.make_request(
+                f'{self.__URL_BUILD_CONTAINER["market_info_URL"]}/{currency}-{curr}')
+            if market is not None and market["status"] == "Ok":
+                return API_OPERATIONS.get_value_in_user_currency(curr, self.__upper_bound_currency,
+                                                                 float(market["ticker"]["highestBid"]))
+        raise Exception(f"There is no highest bid in BITBAY API for {currency} to calculate fee")
 
     def get_maker_taker_fee(self, user_money_spent_on_api: float):
         i = 0
@@ -159,3 +152,4 @@ class Bitbay:
                 symbols = re.split("-", market)
                 markets_list.append((symbols[0], symbols[1]))
         return markets_list
+

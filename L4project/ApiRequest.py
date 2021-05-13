@@ -1,5 +1,6 @@
 import requests
 
+
 def make_request(url: str):
     try:
         data_object = requests.get(url)
