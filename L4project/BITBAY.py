@@ -93,11 +93,11 @@ class Bitbay:
     def get_withdrawal_fees_list(self):
         return self.__withdrawal_fees
 
-    def get_best_bid_offer_in_api_currency(self, currencies: tuple[str, str]):
+    def get_best_bid_offer_in_api_currency(self, currency: str):
         market = ApiRequest.make_request(
-            f'{self.__URL_BUILD_CONTAINER["market_info_URL"]}/{currencies[0]}-{self.__upper_bound_currency}')
+            f'{self.__URL_BUILD_CONTAINER["market_info_URL"]}/{currency}-{self.__upper_bound_currency}')
         if market is not None and market["status"] == "Ok":
-            return market["ticker"]["highestBid"]
+            return float(market["ticker"]["highestBid"])
         else:
             raise Exception("There is no highest bid in this API, biggest fee will be used to calculate total money")
 
@@ -110,7 +110,7 @@ class Bitbay:
             else:
                 return {"taker_fee": self.get_maker_taker_fees_list()[i]["takerFee"],
                         "maker_fee": self.get_maker_taker_fees_list()[i]["makerFee"]}
-        if i == length - 1:
+        if i == length - 2:
             return {"taker_fee": self.get_maker_taker_fees_list()[length - 1]["takerFee"],
                     "maker_fee": self.get_maker_taker_fees_list()[length - 1]["makerFee"]}
 
