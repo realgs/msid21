@@ -21,8 +21,10 @@ if __name__ == "__main__":
     # Zad 1 (10 pkt)
     print(bittrex.get_joint_pairs(bitbay))
 
-    # Zad 2
+    # Zad 2 (2 pkt)
     print(md.check_3_random_pairs(bitbay, bittrex))
 
-    while True:
-        next(aw)
+    # Zad 3 (8 pkt)
+    df = md.arbitrage_summary(bitbay, bittrex)
+    print()
+    print(df.dtypes)

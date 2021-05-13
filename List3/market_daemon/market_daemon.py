@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import random
+from datetime import datetime
 
 from time import sleep
 import pandas as pd
@@ -10,6 +11,7 @@ from typing import Optional, Callable, Any
 
 import bcolors
 import requests
+from tqdm import tqdm
 
 OrderList = list[list[float]]
 
@@ -225,13 +227,14 @@ class MarketDaemon:
     def _to_request_url(self, instrument: str, base: str = BASE_CURRENCY) -> str:
         return f"{self.url}/{instrument}{self._settings['instrument_sep']}{base}/{self._settings['orderbook_endpoint']}"
 
-    def transfer_fee(self, instrument: str):
+    def transfer_fee(self, instrument: str, verbose=True):
         """Returns the transfer fee for a given security,
         if information in settings has not been provided 0 is returned"""
         if instrument in self._transfer_fees:
             return self._transfer_fees[instrument]
         else:
-            print(bcolors.WARN + f"W: returned transfer fee = 0 for {instrument} @ market {self}" + bcolors.ENDC)
+            if verbose:
+                print(bcolors.WARN + f"W: returned transfer fee = 0 for {instrument} @ market {self}" + bcolors.ENDC)
             return 0
 
     def get_joint_pairs(self, other: MarketDaemon):
@@ -357,7 +360,7 @@ def arbitrage_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: 
             transfer_paid_number = 0
             order_num = 0
 
-            transfer_to_pay = m1.transfer_fee(instrument)
+            transfer_to_pay = m1.transfer_fee(instrument, verbose=verbose)
 
             while to_buy and to_sell and to_buy[0][0] < to_sell[0][0]:
                 buy_qty = min(to_buy[0][1], to_sell[0][1])
@@ -424,8 +427,9 @@ def arbitrage_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: 
             yield 0.0
             sleep(DEFAULT_TIMOUT)
 
+
 def check_3_random_pairs(src: MarketDaemon, dest: MarketDaemon):
-    """Retruns a dataframe with pairs columns denoting the 3 pairs, and profit column expressed in base currency
+    """Returns a dataframe with pairs columns denoting the 3 pairs, and profit column expressed in base currency
     of each pair, profit is 0 if no arbitrage opportunity is present"""
     intersecting_pairs: set[str] = src.get_joint_pairs(dest)
     p1, p2, p3 = random.sample(list(intersecting_pairs), 3)
@@ -441,6 +445,29 @@ def check_3_random_pairs(src: MarketDaemon, dest: MarketDaemon):
     data["profit"].append(next(a3))
 
     return pd.DataFrame(data)
+
+
+def arbitrage_summary(src: MarketDaemon, dest: MarketDaemon):
+    """Returns a dataframe containing pairs available at both src and dest markets and profits of
+     arbitrage opportunities expressed in base currency"""
+    joint_pairs = src.get_joint_pairs(dest)
+    data = {"pair": [], "instrument": [], "base": [], "profit": [], "txFee": [], "time": []}
+
+    print("Processing joint pairs...")
+    for pair in tqdm(joint_pairs):
+        instrument, base = pair.split(src.settings["instrument_sep"])
+        ss = arbitrage_stream(src, dest, instrument, base, verbose=False)
+        data["pair"].append(pair)
+        data["instrument"].append(instrument)
+        data["base"].append(base)
+        data["profit"].append(next(ss))
+        data["txFee"].append(src.transfer_fee(instrument, verbose=False))
+        data["time"].append(datetime.now())
+
+    df = pd.DataFrame(data)
+    df.sort_values(by="profit")
+    return df
+
 
 def create_config():
     if os.path.isfile(CONFIG_PATH):
@@ -463,6 +490,8 @@ def _onload():
         DEFAULT_TIMOUT = preferences["default_timout"]
         DEFAULT_ORDER_NUM = preferences["default_order_num"]
         BASE_CURRENCY = preferences["base_currency"]
+
+        pd.set_option('display.max_colwidth', None)
 
         print(bcolors.OK + "User preferences loaded successfully\n" + bcolors.ENDC)
     except KeyError:
