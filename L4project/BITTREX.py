@@ -1,5 +1,6 @@
 import ApiRequest
 import re
+import API_OPERATIONS
 
 
 class Bittrex:
@@ -520,10 +521,17 @@ class Bittrex:
 
     def get_best_bid_offer_in_api_currency(self, currency):
         market = ApiRequest.make_request(
-            f'{self.__URL_BUILD_CONTAINER["market_info_URL"]}/{currency}-{self.__upper_bound_currency}/{self.__URL_BUILD_CONTAINER["rates_endpoint"]}')
+            f'{self.__URL_BUILD_CONTAINER["market_info_URL"]}{currency}-{self.__upper_bound_currency}/{self.__URL_BUILD_CONTAINER["rates_endpoint"]}')
         if market is not None:
             return float(market["bidRate"])
         else:
+            possible_currencies = ["EUR", "PLN"]
+            for curr in possible_currencies:
+                market = ApiRequest.make_request(
+                    f'{self.__URL_BUILD_CONTAINER["market_info_URL"]}{currency}-{curr}/{self.__URL_BUILD_CONTAINER["rates_endpoint"]}')
+                if market is not None:
+                    return API_OPERATIONS.get_value_in_user_currency(curr, self.__upper_bound_currency,
+                                                                     float(market["bidRate"]))
             raise Exception("There is no highest bid in this API, biggest fee will be used to calculate total money")
 
     def get_maker_taker_fee(self, user_money_spent_on_api: float):
