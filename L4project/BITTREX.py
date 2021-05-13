@@ -1,21 +1,28 @@
-BITTREX = {
-    "name": "BITTREX",
-    "URL": "https://api.bittrex.com/v3/markets/",
-    "market_info_URL": "https://api.bittrex.com/v3/markets/",
-    "withdrawal_fees_endpoint": "https://api.bittrex.com/v3/currencies",
-    "orderbook_endpoint": "orderbook",
-    "upper_bound_currency": "USD",
-    "Fees": {
-        "maker_taker_fees":
-            [{"upper_bound": 5000, "takerFee": 0.0075, "makerFee": 0.0075},
-             {"upper_bound": 10000, "takerFee": 0.0050, "makerFee": 0.0050},
-             {"upper_bound": 25000, "takerFee": 0.0035, "makerFee": 0.0035},
-             {"upper_bound": 50000, "takerFee": 0.0020, "makerFee": 0.0025},
-             {"upper_bound": 1000000, "takerFee": 0.0012, "makerFee": 0.0018},
-             {"upper_bound": 10000000, "takerFee": 0.0005, "makerFee": 0.0015},
-             {"upper_bound": 60000000, "takerFee": 0, "makerFee": 0.0008},
-             {"takerFee": 0, "makerFee": 0.0005}],
-        "withdrawal_fee": {
+import ApiRequest
+import re
+
+
+class Bittrex:
+    def __init__(self):
+        self.__name = "BITTREX"
+        self.__URL_BUILD_CONTAINER = {
+            "URL": "https://api.bittrex.com/v3/markets/",
+            "market_info_URL": "https://api.bittrex.com/v3/markets/",
+            "orderbook_endpoint": "orderbook",
+            "withdrawal_fees_endpoint": "https://api.bittrex.com/v3/currencies",
+            "rates_endpoint": "ticker"
+        }
+
+        self.__upper_bound_currency = "USD"
+        self.__maker_taker_fees = [{"upper_bound": 5000, "takerFee": 0.0075, "makerFee": 0.0075},
+                                   {"upper_bound": 10000, "takerFee": 0.0050, "makerFee": 0.0050},
+                                   {"upper_bound": 25000, "takerFee": 0.0035, "makerFee": 0.0035},
+                                   {"upper_bound": 50000, "takerFee": 0.0020, "makerFee": 0.0025},
+                                   {"upper_bound": 1000000, "takerFee": 0.0012, "makerFee": 0.0018},
+                                   {"upper_bound": 10000000, "takerFee": 0.0005, "makerFee": 0.0015},
+                                   {"upper_bound": 60000000, "takerFee": 0, "makerFee": 0.0008},
+                                   {"takerFee": 0, "makerFee": 0.0005}]
+        self.__withdrawal_fees = {
             "1INCH": 34.00000000,
             "1ST": 4.50000000,
             "4ART": 1566.00000000,
@@ -498,5 +505,62 @@ BITTREX = {
             "ZRX": 113.00000000,
             "ZUSD": 12.00000000
         }
-    }
-}
+
+    def get_name(self):
+        return self.__name
+
+    def get_upper_bound_currency(self):
+        return self.__upper_bound_currency
+
+    def get_maker_taker_fees_list(self):
+        return self.__maker_taker_fees
+
+    def get_withdrawal_fees_list(self):
+        return self.__withdrawal_fees
+
+    def get_highest_bid_in_fee_format(self, currencies: tuple[str, str]):
+        market = ApiRequest.make_request(
+            f'{self.__URL_BUILD_CONTAINER["market_info_URL"]}/{currencies[0]}-{self.__upper_bound_currency}/{self.__URL_BUILD_CONTAINER["rates_endpoint"]}')
+        if market is not None:
+            return market["bidRate"]
+        else:
+            raise Exception("There is no highest bid in this API, biggest fee will be used to calculate total money")
+
+    def get_maker_taker_fee(self, money_in_quote_currency: float, market: tuple[str, str]):
+        try:
+            highest_bid = self.get_highest_bid_in_fee_format(market)
+            total_money = money_in_quote_currency * highest_bid
+            i = 0
+            length = len(self.get_maker_taker_fees_list())
+            while i < length - 2:
+                if total_money > self.get_maker_taker_fees_list()[i]["upper_bound"]:
+                    i += 1
+                else:
+                    return (self.get_maker_taker_fees_list()[i]["takerFee"],
+                            self.get_maker_taker_fees_list()[i]["makerFee"])
+            if i == length - 1:
+                return (self.get_maker_taker_fees_list()[length - 1]["takerFee"],
+                        self.get_maker_taker_fees_list()[length - 1]["makerFee"])
+        except Exception:
+            return (self.get_maker_taker_fees_list()[0]["takerFee"],
+                    self.get_maker_taker_fees_list()[0]["makerFee"])
+
+    def get_withdrawal_fee(self, currency: str):
+        return self.__withdrawal_fees[currency]
+
+    def request_bids_and_asks(self, currencies: tuple[str, str]):
+        offers = ApiRequest.make_request(
+            f'{self.__URL_BUILD_CONTAINER["URL"]}{currencies[0]}-{currencies[1]}/{self.__URL_BUILD_CONTAINER["orderbook_endpoint"]}')
+        if offers is not None:
+            return offers
+        else:
+            raise Exception(f"Empty bids and asks list in BITTREX for ({currencies[0]},{currencies[1]})")
+
+    def request_market_data(self):
+        markets = ApiRequest.make_request(f'{self.__URL_BUILD_CONTAINER["market_info_URL"]}')
+        markets_list = []
+        if markets is not None:
+            for market in markets:
+                symbols = re.split("-", market["symbol"])
+                markets_list.append((symbols[0], symbols[1]))
+        return markets_list
