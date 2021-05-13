@@ -1,7 +1,7 @@
 BITTREX = {
     "name": "BITTREX",
-    "URL": "https://api.bittrex.com/v3/",
-    "market_info_URL": "https://api.bittrex.com/v3/markets",
+    "URL": "https://api.bittrex.com/v3/markets/",
+    "market_info_URL": "https://api.bittrex.com/v3/markets/",
     "withdrawal_fees_endpoint": "https://api.bittrex.com/v3/currencies",
     "orderbook_endpoint": "orderbook",
     "upper_bound_currency": "USD",
