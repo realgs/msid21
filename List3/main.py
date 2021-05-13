@@ -11,7 +11,7 @@ if __name__ == "__main__":
     bittrex.orderbook_parser = bittrex_parser
     bittrex.market_parser = bittrex_request_to_pairs
 
-    aw = md.arbitrage_stream(bitbay, bittrex, "BTC", "EUR")
+    # aw = md.arbitrage_stream(bitbay, bittrex, "EOS", "USDT")
 
     # Zad 1 (10 pkt)
     print(bittrex.get_joint_pairs(bitbay))
@@ -20,5 +20,5 @@ if __name__ == "__main__":
     print(md.check_3_random_pairs(bitbay, bittrex))
 
     # Zad 3 (8 pkt)
-    df = md.arbitrage_summary(bitbay, bittrex)
-    print(df)
+    df = md.arbitrage_summary(bittrex, bitbay)
+    print(df[["pair", "profit", "profitability"]].head(10))

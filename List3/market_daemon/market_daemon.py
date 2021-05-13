@@ -199,11 +199,11 @@ class MarketDaemon:
     def _load_transfer_fees(self, currencies_url: str):
         try:
             response = self._make_request(currencies_url)
-            result = dict()
+            result: dict[str, float] = dict()
 
             data = list(response.json())
             for e in data:
-                result[e["symbol"]] = e["txFee"]
+                result[e["symbol"]] = float(e["txFee"])
             return result
         except KeyError:
             return None
@@ -324,7 +324,6 @@ def compare_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: st
         sleep(DEFAULT_TIMOUT)
 
 
-# Zad 2 (5 pkt)
 def arbitrage_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: str = BASE_CURRENCY,
                      verbose: bool = True):
     """Creates a generator for monitoring arbitrage opportunity for buy at market m1 and sell at m2 of a given symbol
@@ -409,23 +408,17 @@ def arbitrage_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: 
                 if verbose:
                     print(bcolors.FAIL + f"No orders were found to be profitable for buy of {instrument}"
                                          f" at {m1} and sell at {m2}" + bcolors.ENDC)
-                yield 0.0
+                yield 0.0, 0.0
             else:
                 profitability = 100 * profit / total_buy if total_buy else 0.0
                 print(f"Total volume: {volume}, total value: {total_buy} {base}, profit: {profit} {base},"
                       f"profitability: {profitability:.4f}%\n")
 
-                yield profit
+                yield profit, profitability
 
             sleep(DEFAULT_TIMOUT)
         except TypeError:
-            if verbose:
-                print(f"Connection to market was established but arbitrage stream couldn't interpret response data for"
-                      f" {instrument}{base} at markets {m1}, {m2}")
-                print(f"Retrying in {DEFAULT_TIMOUT} sec")
-
-            yield 0.0
-            sleep(DEFAULT_TIMOUT)
+            print(bcolors.ERR + f"Critical error when parsing {instrument}{base} at {m1} -> {m2}" + bcolors.ENDC)
 
 
 def check_3_random_pairs(src: MarketDaemon, dest: MarketDaemon):
@@ -434,38 +427,39 @@ def check_3_random_pairs(src: MarketDaemon, dest: MarketDaemon):
     intersecting_pairs: set[str] = src.get_joint_pairs(dest)
     p1, p2, p3 = random.sample(list(intersecting_pairs), 3)
 
-    data = {"pair": [p1, p2, p3], "profit": []}
+    data = {"pair": [p1, p2, p3], "profit": [], "profitability": []}
 
-    a1 = arbitrage_stream(src, dest, *p1.split("-"), verbose=False)
-    a2 = arbitrage_stream(src, dest, *p2.split("-"), verbose=False)
-    a3 = arbitrage_stream(src, dest, *p3.split("-"), verbose=False)
+    for pair in [p1, p2, p3]:
+        ss = arbitrage_stream(src, dest, *pair.split("-"), verbose=False)
+        profit, profitability = next(ss)
+        data["profit"].append(profit)
+        data["profitability"].append(profitability)
 
-    data["profit"].append(next(a1))
-    data["profit"].append(next(a2))
-    data["profit"].append(next(a3))
-
-    return pd.DataFrame(data)
+    df = pd.DataFrame(data)
+    return df.sort_values(by="profitability", ascending=False)
 
 
 def arbitrage_summary(src: MarketDaemon, dest: MarketDaemon):
     """Returns a dataframe containing pairs available at both src and dest markets and profits of
      arbitrage opportunities expressed in base currency"""
     joint_pairs = src.get_joint_pairs(dest)
-    data = {"pair": [], "instrument": [], "base": [], "profit": [], "txFee": [], "time": []}
+    data = {"pair": [], "instrument": [], "base": [], "profit": [], "profitability": [], "txFee": [], "time": []}
 
     print("Processing joint pairs...")
     for pair in tqdm(joint_pairs):
         instrument, base = pair.split(src.settings["instrument_sep"])
-        ss = arbitrage_stream(src, dest, instrument, base, verbose=False)
+        ss = arbitrage_stream(src, dest, instrument, base, verbose=True)
         data["pair"].append(pair)
         data["instrument"].append(instrument)
         data["base"].append(base)
-        data["profit"].append(next(ss))
+        profit, profitability = next(ss)
+        data["profit"].append(profit)
+        data["profitability"].append(profitability)
         data["txFee"].append(src.transfer_fee(instrument, verbose=False))
         data["time"].append(datetime.now())
 
     df = pd.DataFrame(data)
-    df = df.sort_values(by="profit", ascending=False)
+    df = df.sort_values(by="profitability", ascending=False)
     return df
 
 
