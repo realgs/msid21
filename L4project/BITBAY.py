@@ -93,7 +93,7 @@ class Bitbay:
     def get_withdrawal_fees_list(self):
         return self.__withdrawal_fees
 
-    def get_highest_bid_in_fee_format(self, currencies: tuple[str, str]):
+    def get_best_bid_offer_in_api_currency(self, currencies: tuple[str, str]):
         market = ApiRequest.make_request(
             f'{self.__URL_BUILD_CONTAINER["market_info_URL"]}/{currencies[0]}-{self.__upper_bound_currency}')
         if market is not None and market["status"] == "Ok":
@@ -101,24 +101,18 @@ class Bitbay:
         else:
             raise Exception("There is no highest bid in this API, biggest fee will be used to calculate total money")
 
-    def get_maker_taker_fee(self, money_in_quote_currency: float, market: tuple[str, str]):
-        try:
-            highest_bid = self.get_highest_bid_in_fee_format(market)
-            total_money = money_in_quote_currency * highest_bid
-            i = 0
-            length = len(self.get_maker_taker_fees_list())
-            while i < length - 2:
-                if total_money > self.get_maker_taker_fees_list()[i]["upper_bound"]:
-                    i += 1
-                else:
-                    return (self.get_maker_taker_fees_list()[i]["takerFee"],
-                            self.get_maker_taker_fees_list()[i]["makerFee"])
-            if i == length - 1:
-                return (self.get_maker_taker_fees_list()[length - 1]["takerFee"],
-                        self.get_maker_taker_fees_list()[length - 1]["makerFee"])
-        except Exception:
-            return (self.get_maker_taker_fees_list()[0]["takerFee"],
-                    self.get_maker_taker_fees_list()[0]["makerFee"])
+    def get_maker_taker_fee(self, user_money_spent_on_api: float):
+        i = 0
+        length = len(self.get_maker_taker_fees_list())
+        while i < length - 2:
+            if user_money_spent_on_api > self.get_maker_taker_fees_list()[i]["upper_bound"]:
+                i += 1
+            else:
+                return {"taker_fee": self.get_maker_taker_fees_list()[i]["takerFee"],
+                        "maker_fee": self.get_maker_taker_fees_list()[i]["makerFee"]}
+        if i == length - 1:
+            return {"taker_fee": self.get_maker_taker_fees_list()[length - 1]["takerFee"],
+                    "maker_fee": self.get_maker_taker_fees_list()[length - 1]["makerFee"]}
 
     def get_withdrawal_fee(self, currency: str):
         return self.__withdrawal_fees[currency]
