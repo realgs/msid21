@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import os
 
@@ -5,6 +7,7 @@ from time import sleep
 from typing import Optional, Callable, Any
 
 import requests
+from tqdm import tqdm
 
 OrderList = list[list[float]]
 
@@ -66,8 +69,13 @@ class MarketDaemon:
         self.url = url
 
         self._settings = settings
+        self._transfer_fees = None
+
+        if "currencies_url" in self._settings:
+            self._transfer_fees = self._load_taker_fees(self._settings["currencies_url"])
 
         self._orderbook_parser: Callable[[list], OrderList] = lambda x: x
+        self._market_parser: Callable[[requests.Response], set[str]] = lambda x: set()
 
     @staticmethod
     def build_from_config(api_identifier: str, config_path: str = "config.json"):
@@ -107,7 +115,7 @@ class MarketDaemon:
             The first tuple represents asks or buy offers and the second one - bids or sell offers. None is
             returned if query fails.
         """
-        response: requests.Response = self._make_request(instrument, base, verbose=verbose)
+        response: requests.Response = self._make_request(self._to_request_url(instrument, base), verbose=verbose)
         if response:
             content = dict(response.json())
             try:
@@ -151,6 +159,7 @@ class MarketDaemon:
                   f"for {instrument}. Returning bare order value.")
             return price * quantity
 
+    """
     def _make_request(self, instrument: str, base: str = BASE_CURRENCY,
                       verbose: bool = True) -> Optional[requests.Response]:
         try:
@@ -170,15 +179,84 @@ class MarketDaemon:
             if verbose:
                 print(f"Your request for '{instrument}{base}' at {self} failed")
             return None
+    """
+
+    def _make_request(self, url: str, verbose: bool = True) -> Optional[requests.Response]:
+        try:
+            response = requests.request("GET", url)
+            if response.status_code in range(200, 300):
+                return response
+            else:
+                if verbose:
+                    print(f"Your request @ '{url}' at {self} didn't produce a valid response.")
+                return None
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
+            if verbose:
+                print(f"Your request @ '{url}' at {self} timed out, retrying in {DEFAULT_TIMOUT}s...")
+            sleep(DEFAULT_TIMOUT)
+            self._make_request(url)
+        except requests.exceptions.RequestException:
+            if verbose:
+                print(f"Your request @ '{url}' at {self} failed")
+            return None
+
+    def _load_taker_fees(self, currencies_url: str):
+        try:
+            response = self._make_request(currencies_url)
+            result = dict()
+
+            data = list(response.json())
+            for e in data:
+                result[e["symbol"]] = e["txFee"]
+            return result
+        except KeyError:
+            return None
+
+    def _get_available_pairs(self, request_to_pairs: Callable[[requests.Response], set[str]]) -> set[str]:
+        """Returns list of pairs as strings as per request_to_pairs parser provided by the user
+        If no parser is set, empty set is returned"""
+        response = self._make_request(self.settings["markets_url"])
+        if response:
+            return request_to_pairs(response)
+        else:
+            return set()
 
     def _normalize_response_contents(self, buys, sells) -> tuple[OrderList, OrderList]:
         """Normalizes the contents of bids and asks to [price, quantity] format using orderbook_parser"""
         return self._orderbook_parser(buys), self._orderbook_parser(sells)
 
+    def _to_request_url_pair(self, pair_str: str):
+        return f"{self.url}/{pair_str}/{self._settings['orderbook_endpoint']}"
+
     def _to_request_url(self, instrument: str, base: str = BASE_CURRENCY) -> str:
         return f"{self.url}/{instrument}{self._settings['instrument_sep']}{base}/{self._settings['orderbook_endpoint']}"
 
-    def set_parser(self, parser: Callable[[Any], OrderList]) -> None:
+    def transfer_fee(self, instrument: str):
+        """Returns the transfer fee for a given security,
+        if information in settings has not been provided 0 is returned"""
+        if instrument in self._settings["transfer_fee"]:
+            return self._settings["transfer_fee"][instrument]
+        else:
+            return 0
+
+    def get_joint_pairs(self, other: MarketDaemon):
+        """Returns the common set of pairs at two market daemons"""
+        self_pairs = self._get_available_pairs(self.market_parser)
+        other_pairs = other._get_available_pairs(other.market_parser)
+
+        return self_pairs.intersection(other_pairs)
+
+    @property
+    def settings(self):
+        # Getter only property
+        return self._settings
+
+    @property
+    def orderbook_parser(self):
+        return self._orderbook_parser
+
+    @orderbook_parser.setter
+    def orderbook_parser(self, parser: Callable[[Any], OrderList]):
         """Sets a parser for converting orderbook prices into standard form [[price, quantity]..]
         Sample parsers are provided in market_daemon.parsers
         Args:
@@ -190,21 +268,13 @@ class MarketDaemon:
         """
         self._orderbook_parser = parser
 
-    def get_parser(self) -> Callable[[Any], OrderList]:
-        return self._orderbook_parser
-
-    def transfer_fee(self, instrument: str):
-        """Returns the transfer fee for a given security,
-        if information in settings has not been provided 0 is returned"""
-        if instrument in self._settings["transfer_fee"]:
-            return self._settings["transfer_fee"][instrument]
-        else:
-            return 0
-
     @property
-    def settings(self):
-        # Getter only property
-        return self._settings
+    def market_parser(self):
+        return self._market_parser
+
+    @market_parser.setter
+    def market_parser(self, parser: Callable[[requests.Response], set[str]]):
+        self._market_parser = parser
 
     def _print_orders(self, orders: dict[float, float], instrument: str, base: str, kind: str = "buy"):
         if orders:

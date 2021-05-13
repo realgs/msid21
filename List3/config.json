@@ -16,6 +16,7 @@
     "bitbay": {
       "url": "https://bitbay.net/API/Public",
       "orderbook_endpoint": "orderbook.json",
+      "markets_url": "https://api.bitbay.net/rest/trading/ticker",
       "instrument_sep": "-",
       "asks": "asks",
       "bids": "bids",
@@ -28,7 +29,9 @@
     },
     "bittrex": {
       "url": "https://api.bittrex.com/v3/markets",
+      "markets_url": "https://api.bittrex.com/v3/markets",
       "orderbook_endpoint": "orderbook",
+      "currencies_url": "https://api.bittrex.com/v3/currencies",
       "instrument_sep": "-",
       "asks": "ask",
       "bids": "bid",
