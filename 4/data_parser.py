@@ -3,6 +3,7 @@ import re
 bittrex = "https://api.bittrex.com/api/v1.1/public"
 poloniex = "https://poloniex.com/public"
 
+
 class DataParser:
     @staticmethod
     def common_markets():
@@ -42,3 +43,23 @@ class DataParser:
             trading_markets[splitted[0]].append(splitted[1])
 
         return trading_markets
+
+    @staticmethod
+    def bittrex_offers(base, target, type):
+        response = connect("{}/getorderbook?market={}-{}&type={}".format(bittrex, base, target, type))
+        offers = []
+
+        for offer in response['result']:
+            offers.append([float(offer['Rate']), float(offer['Quantity'])])
+
+        return offers
+
+    @staticmethod
+    def poloniex_offers(base, target, type):
+        response = connect("{}?command=returnOrderBook&currencyPair={}_{}".format(poloniex, base, target))
+        offers = []
+
+        for offer in response[type]:
+            offers.append([float(offer[0]), float(offer[1])])
+
+        return offers
