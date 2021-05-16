@@ -72,9 +72,10 @@ def printOptionInfo(name_1, name_2, arbitrage_quantity, profit, currency_1, curr
         print(f'The profit is {profit} {currency_2}')
     else:
         print('Arbitrage is not profitable')
+        print(f'The profit is {profit} {currency_2}')
 
 
-def printArbitrageInfo(buy_sell_info, currency_1, currency_2):
+def printArbitrageInfo(buy_sell_info, currency_1, currency_2, print_on_screen):
     rate_info = getRateInfo(buy_sell_info)
     quantity_info = getQuantityInfo(buy_sell_info)
 
@@ -126,11 +127,10 @@ def printArbitrageInfo(buy_sell_info, currency_1, currency_2):
     if arbitrage_profit_2 == 0:
         arbitrage_profit_2 = calculateProfit(arbitrage_quantity_bittrex_bitbay, rate_info[0][0], bitbay.BITBAY_FEES) - \
             calculateCost(arbitrage_quantity_bittrex_bitbay, rate_info[3][0], bittrex.BITTREX_FEES, currency_1)
+    if print_on_screen:
+        printOptionInfo(names[0], names[1], arbitrage_quantity_bitbay_bittrex, arbitrage_profit_1, currency_1, currency_2)
+        printOptionInfo(names[1], names[0], arbitrage_quantity_bittrex_bitbay, arbitrage_profit_2, currency_1, currency_2)
 
-    printOptionInfo(names[0], names[1], arbitrage_quantity_bitbay_bittrex, arbitrage_profit_1, currency_1, currency_2)
-    printOptionInfo(names[1], names[0], arbitrage_quantity_bittrex_bitbay, arbitrage_profit_2, currency_1, currency_2)
-
-
-
-
-
+    info_bittbay_bittrex = names[0], names[1], arbitrage_quantity_bitbay_bittrex, arbitrage_profit_1, currency_1, currency_2
+    info_bittrex_bitbay = names[1], names[0], arbitrage_quantity_bittrex_bitbay, arbitrage_profit_2, currency_1, currency_2
+    return info_bittbay_bittrex, info_bittrex_bitbay

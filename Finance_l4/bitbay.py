@@ -5,7 +5,6 @@ import requests
 
 NAME = "BitBay"
 BITBAY_URL = "https://api.bitbay.net/rest/trading/"
-#BITBAY_URL = 'https://api.bitbay.net/rest/trading/orderbook-limited/'
 HEADERS = {'content-type': 'application/json'}
 LIMIT = 50
 BITBAY_FEES = {
@@ -20,6 +19,7 @@ BITBAY_FEES = {
     }
 }
 
+
 def createMarketsList():
     markets_data = getMarketsData()
     markets = []
@@ -30,7 +30,6 @@ def createMarketsList():
 
 
 def getMarketsData():
-    #markets_list = []
     url = f'{BITBAY_URL}ticker'
     response = requests.request("GET", url, headers=HEADERS)
     if response.status_code == requests.codes.ok:
@@ -56,10 +55,13 @@ def getOrderbookData(currency_1, currency_2):
 
 
 def getBestSellBuy(currency_1, currency_2):
+    limit = 50
     best_sell_buy_list = []
     orders = getOrderbookData(currency_1, currency_2)
     if orders:
-        for i in range(0, LIMIT):
+        if len(orders['sell']) < limit or len(orders['buy']) < limit:
+            limit = min(len(orders['sell']), len(orders['buy']))
+        for i in range(0, limit):
             sell = orders['sell'][i]
             buy = orders['buy'][len(orders['buy']) - 1 - i]
             sell_buy = sell, buy
@@ -84,9 +86,3 @@ def printBestSellBuy(best_sell_buy_list, currency_1, currency_2):
             number += 1
         else:
             print("There was no data to print")
-
-
-if __name__ == "__main__":
-    print(getBestSellBuy("BTC", "USD"), "BTC", "USD")
-    #markets_list = createMarketsList()
-    #print(markets_list)

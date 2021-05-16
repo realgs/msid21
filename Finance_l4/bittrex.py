@@ -27,7 +27,6 @@ def createMarketsList():
 
 
 def getMarketsData():
-    #markets_list = []
     url = BITTREX_URL_MARKETS
     response = requests.request("GET", url, headers=HEADERS)
     if response.status_code == requests.codes.ok:
@@ -48,10 +47,13 @@ def getOrderbookData(currency_1, currency_2):
 
 
 def getBestSellBuy(currency_1, currency_2):
+    limit = 50
     best_sell_buy_list = []
     orders = getOrderbookData(currency_1, currency_2)
     if orders:
-        for i in range(0, LIMIT):
+        if len(orders['result']['sell']) < limit or len(orders['result']['buy']) < limit:
+            limit = min(len(orders['result']['sell']), len(orders['result']['buy']))
+        for i in range(0, limit):
             sell = orders['result']['sell'][i]
             buy = orders['result']['buy'][i]
             sell_buy = sell, buy
@@ -76,12 +78,3 @@ def printBestSellBuy(best_sell_buy_list, currency_1, currency_2):
             number += 1
         else:
             print("There was no data to print")
-
-
-if __name__ == "__main__":
-    #print(getOrderbookData("USD", "BTC"))
-    #print(getBestSellBuy("USD", "BTC"))
-    #markets_list = createMarketsList()
-    #print(markets_list)
-    #printBestSellBuy(getBestSellBuy("USD", "BTC"), "USD", "BTC")
-    print(createMarketsList())
