@@ -172,14 +172,6 @@ def calculateArbitrage(currency, api1, api2):
                 return baseIncome, calculateDifference(cost, profit + leftoverCost), currency
 
 
-def getCurrencies():
-    offerList = requests.get('https://api.cryptomkt.com/v1/market')
-    if offerList.status_code == 200:
-        return offerList.json()
-    else:
-        raise Exception('Status code: {}'.format(offerList.status_code))
-
-
 def rankArbitrage(api1, api2, currencies):
     currenciesList = []
     for currency in currencies:
