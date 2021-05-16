@@ -27,9 +27,8 @@ API = {
     }
 }
 
-# general data
+# chosen markets for ex. 2
 MARKETS = ['BTC-AMP', 'USDT-ETC', 'ETH-ETC']
-DELAY = 5
 
 
 def getMarkets(apiName):
@@ -186,9 +185,12 @@ def rankArbitrage(api1, api2, currencies):
 
 
 if __name__ == '__main__':
+    # ex. 1
     commonMarkets = getCommonMarkets()
     print(commonMarkets)
+    # ex. 2
     rankArbitrage('POLONIEX', 'BITTREX', MARKETS)
     rankArbitrage('BITTREX', 'POLONIEX', MARKETS)
+    # ex. 3
     rankArbitrage('BITTREX', 'POLONIEX', commonMarkets)
     rankArbitrage('POLONIEX', 'BITTREX', commonMarkets)
