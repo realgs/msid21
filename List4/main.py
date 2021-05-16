@@ -1,5 +1,4 @@
 import requests
-import time
 
 # api data
 API = {
@@ -29,61 +28,39 @@ API = {
 }
 
 # general data
-CURRENCIES = ['BTC-DOGE', 'USDT-ETH', 'BTC-CVT']  # <- zad 2
-# BASE_CURRENCY = 'USD'
+MARKETS = ['BTC-AMP', 'USDT-ETC', 'ETH-ETC']
 DELAY = 5
 
 
-def getBtrx():
-    offerList = requests.get('https://api.bittrex.com/api/v1.1/public/getmarkets')
+def getMarkets(apiName):
+    offerList = requests.get(API[apiName]["URL"].format(API[apiName]['MARKETS']))
     if offerList.status_code == 200:
         return offerList.json()
     else:
         raise Exception('Status code: {}'.format(offerList.status_code))
 
 
-def getPol():
-    offerList = requests.get('https://poloniex.com/public?command=returnTicker')
-    if offerList.status_code == 200:
-        return offerList.json()
-    else:
-        raise Exception('Status code: {}'.format(offerList.status_code))
-
-
-def getList():
-    polonix = getPol()
-    bittrex = getBtrx()
-    polList = polonix.keys()
-    bitList = bittrex['result']
-    bitCurrencyList, polCurrencyList = [], []
-    for pair in bitList:
-        bitCurrencyList.append(pair['MarketName'])
-    for pair in polList:
+def getMarketsLists():
+    poloniexMarkets = getMarkets('POLONIEX')
+    bittrexMarkets = getMarkets('BITTREX')
+    bittrexCurrencyList, poloniexCurrencyList = [], []
+    for pair in bittrexMarkets['result']:
+        bittrexCurrencyList.append(pair['MarketName'])
+    for pair in poloniexMarkets.keys():
         pair = pair.replace('_', '-')
-        polCurrencyList.append(pair)
-    print(polCurrencyList)
-    print(bitCurrencyList)
-    return polCurrencyList, bitCurrencyList
+        poloniexCurrencyList.append(pair)
+    return poloniexCurrencyList, bittrexCurrencyList
 
 
-def getCommonCurrencies():
-    polList, bitList = getList()
+def getCommonMarkets():
+    polList, bitList = getMarketsLists()
     res = list(set(polList) & set(bitList))
     res.sort()
-    print(res)
     return res
 
 
-def getTxListBittrex():
-    offerList = requests.get('https://api.bittrex.com/api/v1.1/public/getcurrencies')
-    if offerList.status_code == 200:
-        return offerList.json()
-    else:
-        raise Exception('Status code: {}'.format(offerList.status_code))
-
-
-def getTxListPoloniex():
-    offerList = requests.get('https://poloniex.com/public?command=returnCurrencies')
+def getTxList(apiName):
+    offerList = requests.get(API[apiName]["URL"].format(API[apiName]['TXFEES']))
     if offerList.status_code == 200:
         return offerList.json()
     else:
@@ -91,13 +68,13 @@ def getTxListPoloniex():
 
 
 def getTxFeePoloniex(currency):
-    feesList = getTxListPoloniex()
+    feesList = getTxList('POLONIEX')
     return feesList[currency.split('-')[0]]['txFee']
 
 
 def getTxFeeBittrex(currency):
     fee = 0
-    feesList = getTxListBittrex()
+    feesList = getTxList('BITTREX')
     for curr in feesList['result']:
         if curr['Currency'] == currency:
             fee = curr['TxFee']
@@ -113,7 +90,6 @@ def getTxFee(apiName, currency):
         return None
 
 
-# zad 2 i 3
 def getOffers(currency, apiName):
     offerList = requests.get(API[apiName]["URL"].format(API[apiName]['ORDERBOOK'].format(currency)))
     if offerList.status_code == 200:
@@ -122,16 +98,16 @@ def getOffers(currency, apiName):
         raise Exception('Status code: {}'.format(offerList.status_code))
 
 
-def downloadData(currency, api):
-    if api == 'BITTREX':
-        offersData = getOffers(currency, api)
-        bids = offersData['result'][API[api]['BIDS']]
-        asks = offersData['result'][API[api]['ASKS']]
+def downloadData(currency, apiName):
+    if apiName == 'BITTREX':
+        offersData = getOffers(currency, apiName)
+        bids = offersData['result'][API[apiName]['BIDS']]
+        asks = offersData['result'][API[apiName]['ASKS']]
     else:
         currency = currency.replace('-', '_')
-        offersData = getOffers(currency, api)
-        bids = offersData[API[api]['BIDS']]
-        asks = offersData[API[api]['ASKS']]
+        offersData = getOffers(currency, apiName)
+        bids = offersData[API[apiName]['BIDS']]
+        asks = offersData[API[apiName]['ASKS']]
     return [bids, asks]
 
 
@@ -140,100 +116,60 @@ def calculateDifference(first, second):
     return difference
 
 
-def getBestBid(currency, apiName):
-    [bids, asks] = downloadData(currency, apiName)
-    return [bids, asks][0][0][API[apiName]['RATE']]
-
-
-def getBestAsk(currency, apiName):
-    [bids, asks] = downloadData(currency, apiName)
-    return [bids, asks][1][0][API[apiName]['RATE']]
-
-
-def calculateDifferenceBetweenApis(currency, api1, api2):
-    bid_api1 = getBestBid(currency, api1)
-    ask_api2 = getBestAsk(currency, api2)
-    print(f'Best offers: \t\t\tbid: {api1} {bid_api1}\t\t\t\t\task: {api2} {ask_api2}')
-    return calculateDifference(float(ask_api2), float(bid_api1))
-
-
-# zad 1c
-def printDifferenceApis(api1, api2):
-    print("Apis:")
-    for currency in CURRENCIES:
-        difference = calculateDifferenceBetweenApis(currency, api1, api2)
-        print(f'Currency: {currency}\t\tDifference: {difference}%')
-
-
-# zad 2
-def calculateCost(quantity, rate, apiName, currency):
-    return float(rate) * (float(quantity) * (1 + float(API[apiName]['TAKER'])) + float(getTxFee(apiName, currency)))
+def calculateCost(quantity, rate, apiName, txFee):
+    return float(rate) * (float(quantity) * (1 + float(API[apiName]['TAKER'])) + float(txFee))
 
 
 def calculateProfit(quantity, rate, apiName):
     return float(rate) * float(quantity) * (1 - float(API[apiName]['TAKER']))
 
 
-def printArbitrageImpossible(currency, api1, api2):
-    print(f"Arbitrage for {currency} impossible!")
-    print(f'Buying from {api2} and selling to {api1}')
-
-
 def calculateArbitrage(currency, api1, api2):
     [bids_api1, _] = downloadData(currency, api1)
     [_, asks_api2] = downloadData(currency, api2)
 
-    i, j, askQuantity, bidQuantity, cost, profit = 0, 0, 0, 0, 0, 0
-    for ask in asks_api2:
-        if float(ask[API[api2]['RATE']]) < float(bids_api1[0][API[api1]['RATE']]):
-            askQuantity += float(ask[API[api2]['QUANTITY']])
-            i += 1
-    for bid in bids_api1:
-        if float(bid[API[api1]['RATE']]) > float(asks_api2[i - 1][API[api2]['RATE']]):
-            bidQuantity += float(bid[API[api1]['QUANTITY']])
-            j += 1
-    finalAsks = asks_api2[:i]
-    finalBids = bids_api1[:j]
-    print(finalAsks)
-    print(finalBids)
-    print(f'as: {askQuantity}, bi: {bidQuantity}')
-    while askQuantity < bidQuantity:
-        finalBids.sort(key=lambda x: x[API[api1]['QUANTITY']])
-        bidQuantity -= finalBids[0][API[api1]['QUANTITY']]
-        finalBids = finalBids[1:]
-
-    finalAsks.sort(key=lambda x: x[API[api2]['QUANTITY']])
-    while askQuantity > bidQuantity:
-        askQuantity -= finalAsks[0][API[api2]['QUANTITY']]
-        finalAsks = finalAsks[1:]
-    print(f'as: {askQuantity}, bi: {bidQuantity}')
-
-
-    leftoverQuantity = askQuantity - bidQuantity
-    if not finalAsks or not finalBids:
-        printArbitrageImpossible(currency, api1, api2)
+    i, j, askVolume, bidVolume, cost, profit, temp = 0, 0, 0, 0, 0, 0, 0
+    if not asks_api2 or not bids_api1:
+        return 0, currency
     else:
-        print(asks_api2)
-        print(finalAsks)
-        print(bids_api1)
-        print(finalBids)
-        print(f'left: {leftoverQuantity}, ask: {askQuantity}, bid: {bidQuantity}')
-        for ask in finalAsks:
-            cost += calculateCost(ask[API[api2]['QUANTITY']], ask[API[api2]['RATE']], api2, currency)
+        for ask in asks_api2:
+            if float(ask[API[api2]['RATE']]) < float(bids_api1[0][API[api1]['RATE']]):
+                askVolume += float(ask[API[api2]['QUANTITY']])
+                i += 1
+        for bid in bids_api1:
+            if float(bid[API[api1]['RATE']]) > float(asks_api2[i - 1][API[api2]['RATE']]):
+                bidVolume += float(bid[API[api1]['QUANTITY']])
+                j += 1
+        finalAsks = asks_api2[:i]
+        finalBids = bids_api1[:j]
 
-        for bid in finalBids:
-            profit += calculateProfit(bid[API[api1]['QUANTITY']], bid[API[api1]['RATE']], api1)
+        volumeDifference = float(abs(askVolume - bidVolume))
+        finalAsks.sort(key=lambda x: abs(float(x[API[api2]['QUANTITY']]) - volumeDifference))
+        while len(finalAsks) > 0 and askVolume - float(finalAsks[0][API[api2]['QUANTITY']]) > bidVolume:
+            askVolume -= float(finalAsks[0][API[api2]['QUANTITY']])
+            finalAsks = finalAsks[1:]
 
-        baseIncome = profit - cost
-        if baseIncome < 0:
-            print(baseIncome)
-            printArbitrageImpossible(currency, api1, api2)
+        finalBids.sort(key=lambda x: abs(x[API[api1]['QUANTITY']] - volumeDifference))
+        while askVolume < bidVolume:
+            bidVolume -= finalBids[0][API[api1]['QUANTITY']]
+            finalBids = finalBids[1:]
+
+        leftoverVolume = askVolume - bidVolume
+        if not finalAsks or not finalBids:
+            return 0, currency
         else:
-            print("Arbitrage was possible!")
-            print(f'Buying from {api2} and selling to {api1}')
-            print(f'Total profit for {currency}:\t{baseIncome}USD')
-            print(f'Profit in percentage: {calculateDifference(cost, profit)}')
-            print(f'Quantity of the currency: BOUGHT: {askQuantity}, SOLD: {bidQuantity}, LEFT: {leftoverQuantity}')
+            txFeeAsk = getTxFee(api2, currency)
+            for ask in finalAsks:
+                cost += calculateCost(ask[API[api2]['QUANTITY']], ask[API[api2]['RATE']], api2, txFeeAsk)
+            for bid in finalBids:
+                profit += calculateProfit(bid[API[api1]['QUANTITY']], bid[API[api1]['RATE']], api1)
+
+            leftoverCost = leftoverVolume * float(finalBids[0][API[api1]['RATE']])
+            baseIncome = profit + leftoverCost - cost
+            if baseIncome < 0:
+                return 0, currency
+            else:
+                return baseIncome, calculateDifference(cost, profit + leftoverCost), currency
 
 
 def getCurrencies():
@@ -244,39 +180,23 @@ def getCurrencies():
         raise Exception('Status code: {}'.format(offerList.status_code))
 
 
-def printData(api):
-    offersData = getCurrencies()
-    for offer in offersData:
-        print(offer)
-    else:
-        print(f'Cannot load market data from {api["name"]}!')
-        return None
-
-
-def calculateChosenCurrencies(api1, api2):
-    for currency in CURRENCIES:
-        calculateArbitrage(currency, api1, api2)
-
-
-def calculateCommonCurrencies(api1, api2):
-    commonCurrecies = getCommonCurrencies()
-    for currency in commonCurrecies:
-        calculateArbitrage(currency, api1, api2)
-
-
-def main():
-    #getCommonCurrencies()
-
-    #print(downloadData('BTC-AAVE', 'BITTREX'))
-    #print(downloadData('BTC-AAVE', 'POLONIEX'))
-    # printDifferenceApis('BITTREX', 'POLONIEX')
-    # calculateArbitrage('BTC-AAVE', 'BITTREX', 'POLONIEX')
-
-
-    #calculateChosenCurrencies('POLONIEX', 'BITTREX')
-    #calculateChosenCurrencies('BITTREX', 'POLONIEX')
-    calculateCommonCurrencies('BITTREX', 'POLONIEX')
+def rankArbitrage(api1, api2, currencies):
+    currenciesList = []
+    for currency in currencies:
+        currenciesList.append(calculateArbitrage(currency, api1, api2))
+    currenciesList.sort(key=lambda x: x[0], reverse=True)
+    print(f'Arbitrage ranking from {api2} to {api1}:')
+    for result in currenciesList:
+        if len(result) == 2:
+            print(f"{result[1]} - arbitrage impossible!")
+        else:
+            print(f"{result[2]} - arbitrage possible! Profit: {result[0]} - {result[1]}%")
 
 
 if __name__ == '__main__':
-    main()
+    commonMarkets = getCommonMarkets()
+    print(commonMarkets)
+    rankArbitrage('POLONIEX', 'BITTREX', MARKETS)
+    rankArbitrage('BITTREX', 'POLONIEX', MARKETS)
+    rankArbitrage('BITTREX', 'POLONIEX', commonMarkets)
+    rankArbitrage('POLONIEX', 'BITTREX', commonMarkets)
