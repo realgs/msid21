@@ -1,0 +1,19 @@
+{
+	"base currency": "USD",	
+	"resources": {
+		"currencies": {
+			"PLN": {"amount": 50000, "average price": 3.73},
+			"EUR": {"amount": 10000, "average price": 0.82}
+		},
+		"cryptocurrencies":{
+			"BTC": {"amount": 1.0001, "average price": 0.00002},
+			"LTC": {"amount": 100, "average price": 0.003}
+		},
+		"polish stocks":{
+			"ALE": {"amount": 1, "average price": 138218}
+		},
+		"foreign stocks": {
+			"AAPL": {"amount": 10, "average price": 1000000}
+		}
+	}
+}
