@@ -25,6 +25,7 @@ bittrex_transfer_fees = {'AAVE': 0.4, 'BAT': 35, 'BSV': 0.001, 'BTC': 0.0005, 'C
                          'LUNA': 2.2, 'MANA': 29, 'MKR': 0.0095, 'NPXS': 10967, 'OMG': 6, 'PAY': 351, 'SRN': 1567,
                          'TRX': 0.003, 'UNI': 1, 'USD': 0, 'USDC': 42, 'USDT': 42, 'XLM': 0.05, 'XRP': 1, 'XTZ': 0.25,
                          'ZRX': 25}
+SAMPLE_CURRENCIES = ["BAT-USD", "BTC-USD", "GAME-BTC"]
 DEPTH = 5
 DELAY = 5
 
@@ -74,6 +75,34 @@ def get_common_markets(first_api, second_api):
     return common_markets
 
 
+def arbitrage(currency, ask, bid, ask_taker_fee, bid_taker_fee, ask_transfer_fee):
+    depth = 0
+    i = 0
+    arbitrages = []
+
+    while depth < DEPTH:
+        transaction_volume = min(ask['ask_amount'][i], bid['bid_amount'][i])
+
+        buy = ask['ask_price'][i] * transaction_volume
+        sell = bid['bid_price'][i] * transaction_volume
+        buy_fee = buy * ask_taker_fee + ask_transfer_fee * ask['ask_price'][i]
+        sell_fee = sell * bid_taker_fee
+        total_fee = buy_fee + sell_fee
+        profit = sell - buy - total_fee
+
+        arbitrages.append(profit)
+
+        i += 1
+        depth += 1
+
+    max = arbitrages[0]
+    for elem in arbitrages:
+        if elem > max:
+            max = elem
+
+    return max
+
+
 def search_offers_bittrex(currency, depth=DEPTH):
     offers = {'bid_price': [], 'bid_amount': [], 'ask_price': [], 'ask_amount': []}
     bittrex_response = connect_with_api(BITTREX_ORDERBOOK + currency + BITTREX_ORDER)
@@ -106,38 +135,7 @@ def search_offers_bitbay(currency, depth=DEPTH):
     return offers
 
 
-def arbitrage(currency, ask, bid, ask_taker_fee, bid_taker_fee, ask_transfer_fee):
-    depth = 0
-    i = 0
-    j = 0
-    arbitrages = []
-
-    while depth < DEPTH:
-        transaction_volume = min(ask['ask_amount'][i], bid['bid_amount'][j])
-
-        buy = ask['ask_price'][i] * transaction_volume
-        sell = bid['bid_price'][j] * transaction_volume
-        buy_fee = buy * ask_taker_fee + ask_transfer_fee * ask['ask_price'][i]
-        sell_fee = sell * bid_taker_fee
-        total_fee = buy_fee + sell_fee
-        profit = sell - buy - total_fee
-
-        arbitrages.append(profit)
-
-        i += 1
-        j += 1
-        depth += 1
-
-    max = arbitrages[0]
-    for elem in arbitrages:
-        if elem > max:
-            max = elem
-
-    return max
-
-
 def sample_currencies():
-    SAMPLE_CURRENCIES = ["BAT-USD", "BTC-USD", "GAME-BTC"]
 
     for i in SAMPLE_CURRENCIES:
         bitbay_offers = search_offers_bitbay(i)
@@ -148,12 +146,12 @@ def sample_currencies():
         bitbay_to_bittrex = arbitrage(currency[0], bitbay_offers, bittrex_offers,
                                       BITBAY_TAKER_FEE, BITTREX_TAKER_FEE, bitbay_transfer_fees[currency[0]])
         if bitbay_to_bittrex > bittrex_to_bitbay:
-            direction = 'bitbayToBittrex'
+            way = 'from bitbay to bittrex'
             profit = bitbay_to_bittrex
         else:
-            direction = 'bittrexToBitbay'
+            way = 'from bittrex to bitbay'
             profit = bittrex_to_bitbay
-        result = [profit, i, direction]
+        result = profit, i, way
         print(result)
 
 
@@ -169,12 +167,12 @@ def all_currencies(common_currencies):
         bitbay_to_bittrex = arbitrage(currency[0], bitbay_offers, bittrex_offers,
                                       BITBAY_TAKER_FEE, BITTREX_TAKER_FEE, bitbay_transfer_fees[currency[0]])
         if bitbay_to_bittrex > bittrex_to_bitbay:
-            direction = 'bitbayToBittrex'
+            way = 'from bitbay to bittrex'
             profit = bitbay_to_bittrex
         else:
-            direction = 'bittrexToBitbay'
+            way = 'from bittrex to bitbay'
             profit = bittrex_to_bitbay
-        result = profit, i, direction
+        result = profit, i, way
         ranking.append(result)
 
     ranking = sorted(ranking, key=lambda tup: tup[0], reverse=True)
@@ -191,7 +189,7 @@ if __name__ == '__main__':
     common_currencies = get_common_markets(response_bitbay, response_bittrex)
     print(common_currencies)
 
-    # sample_currencies()
+    sample_currencies()
 
     while True:
         print("ranking: ")
