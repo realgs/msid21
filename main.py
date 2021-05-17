@@ -1,27 +1,119 @@
 import json
+import requests
+import math
+from collections import deque
 from tabulate import tabulate
+from api.apis import APIS
+
+
+def convertToPLN(currency):
+    tables = ['A', 'B', 'C']
+    for table in tables:
+        url = f"http://api.nbp.pl/api/exchangerates/rates/{table}/{currency}/"
+        response = requests.get(url)
+        if response.status_code == 200:
+            return response.json()['rates'][0]['mid']
+
+    raise ValueError(f'Wrong currency: {currency}')
+
+
+def calculateDifference(buy, sell, withdrawalFee, transactionFee):
+    quantity = min(buy['quantity'], sell['quantity']) * \
+        (1 - transactionFee) - withdrawalFee
+
+    return {
+        'rate': (sell['rate'] - buy['rate']),
+        'quantity': quantity
+    }
+
+
+# Returns profit in PLN
+def calculateProfit(api, symbol, currency, price, quantity, transactionFee=0):
+    conversionMultiplier = 1
+    if currency != 'PLN':
+        conversionMultiplier = convertToPLN(currency)
+    market = f"{symbol.upper()}-{currency.upper()}"
+
+    orderbook = api.orderbook(market)
+    if orderbook == None:
+        ticker = api.ticker(market)
+        if ticker == None:
+            return 0
+
+        tickerPrice = ticker['price']
+        return (tickerPrice - price) * quantity * conversionMultiplier
+    else:
+        queue = deque(orderbook['bid'])
+        profit = 0
+        withdrawalFee = api.withdrawalFee(symbol)
+        while quantity > 0 and len(queue) > 0:
+            order = queue.pop()
+            difference = calculateDifference(
+                {'rate': price, 'quantity': quantity},
+                order,
+                withdrawalFee,
+                transactionFee
+            )
+
+            profit += difference['rate'] * difference['quantity']
+            quantity -= min(quantity, order['quantity'])
+
+        return profit * conversionMultiplier
+
+
+def getBestProfit(apiType, symbol, currency, price, quantity, apiName=None, ):
+    profits = []
+    transactionFee = 0
+    if apiName != None:
+        transactionFee = APIS[apiType][apiName].transactionFee
+
+    for api in APIS[apiType]:
+        if api != apiName:
+            profits.append(calculateProfit(
+                APIS[apiType][api], symbol, currency, price, quantity, transactionFee))
+        else:
+            profits.append(-math.inf)
+
+    maxIndex = profits.index(max(profits))
+    return {'name': list(APIS[apiType].keys())[maxIndex], 'profit': profits[maxIndex]}
+
 
 def loadInvestments():
-    file = open('/home/karol/Documents/Projects/Studia/MSID/laboratoria/investments.json')
+    file = open(
+        '/home/karol/Documents/Projects/Studia/MSID/laboratoria/investmentsCrypto.json')
     return json.load(file)
+
 
 def printInvestments(investments):
     toPrint = []
-    headers = ["Symbol", "Cena", "Ilość", "Giełda", "Zysk", "Zysk netto", "Zysk 10%", "Zysk 10% netto"]
+    headers = ["Symbol", "Cena", "Ilość", "Giełda",
+               "Zysk", "Zysk netto", "Zysk 10%", "Zysk 10% netto"]
     for investment in investments:
+
+        bestProfit = getBestProfit('Crypto', investment['symbol'], investment['currency'],
+                               float(investment['pricePerShare']), float(investment['quantity']), investment['api'])
+
+        bestProfit10 = getBestProfit('Crypto', investment['symbol'], investment['currency'],
+                               float(investment['pricePerShare']), float(investment['quantity']) * 0.1, investment['api'])
+
         toPrint.append([
             investment['symbol'],
             investment['pricePerShare'],
             investment['quantity'],
-            None,
-            0,0,0,0
+            bestProfit['name'],
+            f"{bestProfit['profit']:.2f}zł", 
+            f"{(bestProfit['profit']*0.81):.2f}zł", 
+            f"{bestProfit10['profit']:.2f}zł", 
+            f"{(bestProfit10['profit']*0.81):.2f}zł"
         ])
 
-    print(tabulate(toPrint,headers=headers))
-    
+    print(tabulate(toPrint, headers=headers))
+
 
 def main():
+    # print(list(APIS['Crypto'].keys()))
     printInvestments(loadInvestments())
+
 
 if __name__ == "__main__":
     main()
