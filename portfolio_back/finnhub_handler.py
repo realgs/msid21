@@ -1,12 +1,15 @@
+import ast
 import json
 
 import finnhub
 import websocket
 
+import credentials
+
 FINNHUB_WEBSOCKET_URL = "wss://ws.finnhub.io?token="
 
 
-class FinnhubApiHandler:
+class FinnhubHandler:
 
     def __init__(self, api_key):
         self.api_key = api_key
@@ -29,11 +32,5 @@ class FinnhubApiHandler:
         return [{'pair': currency['displaySymbol'], 'symbol': currency['symbol']} for currency in
                 self.finnhub_client.crypto_symbols(market)]
 
-    def get_last_orders(self, symbol, market=''):
-        market += ':' if market != '' else market
-        ws = websocket.create_connection(FINNHUB_WEBSOCKET_URL + self.api_key)
-        query = {'type': 'subscribe', 'symbol': market + symbol}
-        ws.send(json.dumps(query))
-        result = ws.recv()
-        ws.close()
-        return result
+    def get_quote(self, asset_name):
+        return self.finnhub_client.quote(asset_name)
