@@ -18,14 +18,16 @@
     "type": "Crypto",
     "pricePerShare": 19860,
     "quantity": 0.1,
-    "currency": "USD"
+    "currency": "USD",
+    "api": "BitBay"
   },
   {
     "symbol": "ETH",
     "type": "Crypto",
     "pricePerShare": 1215,
     "quantity": 3,
-    "currency": "USD"
+    "currency": "USD",
+    "api": "Bittrex"
   },
   {
     "symbol": "CDP",

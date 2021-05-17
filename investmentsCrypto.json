@@ -1,0 +1,26 @@
+[
+  {
+    "symbol": "BTC",
+    "type": "Crypto",
+    "pricePerShare": 19860,
+    "quantity": 0.1,
+    "currency": "USD",
+    "api": "BitBay"
+  },
+  {
+    "symbol": "ETH",
+    "type": "Crypto",
+    "pricePerShare": 600,
+    "quantity": 1.5,
+    "currency": "USD",
+    "api": "Bittrex"
+  },
+  {
+    "symbol": "ADA",
+    "type": "Crypto",
+    "pricePerShare": 1,
+    "quantity": 1000,
+    "currency": "USD",
+    "api": "BitBay"
+  }
+]
