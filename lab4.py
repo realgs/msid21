@@ -4,7 +4,7 @@ from multiprocessing import Pool
 
 AMOUNT = 1
 RATE = 0
-DEFAULT_TIMEOUT = 3
+DEFAULT_TIMEOUT = 15
 TYPES = ['buy', 'sell']
 APIs = ['bittrex', 'bitbay']
 BITTREX_BUY = 'bid'
