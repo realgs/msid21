@@ -1,7 +1,7 @@
 import requests
 
 
-BASE_LIMIT = 50
+BASE_LIMIT = 30
 
 
 class ApiUtility:

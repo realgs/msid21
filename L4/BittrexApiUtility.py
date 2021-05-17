@@ -27,10 +27,3 @@ class BittrexApiUtility(ApiUtility):
         bids = list(map(lambda x: [float(x['rate']), float(x['quantity'])], response['bid'][:self._offers_limit]))
         asks = list(map(lambda x: [float(x['rate']), float(x['quantity'])], response['ask'][:self._offers_limit]))
         return {'bids': bids, 'asks': asks}
-
-
-if __name__ == "__main__":
-    # TODO - delete - tests
-    b = BittrexApiUtility()
-    print(b.get_markets())
-    print(b.get_orderbook('BSV-EUR'))

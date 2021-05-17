@@ -88,7 +88,7 @@ def get_arbitrage_value(market, stock1, stock2, common_markets_list):
         return result
 
 
-def exercises():
+def all_exercises():
     bitbay = BitBayApiUtility()
     bittrex = BittrexApiUtility()
 
@@ -126,4 +126,4 @@ def exercises():
 
 
 if __name__ == "__main__":
-    exercises()
+    all_exercises()

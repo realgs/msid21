@@ -72,10 +72,3 @@ class BitBayApiUtility(ApiUtility):
         bids = list(map(lambda x: [float(x['ra']), float(x['ca'])], response['buy'][:self._offers_limit]))
         asks = list(map(lambda x: [float(x['ra']), float(x['ca'])], response['sell'][:self._offers_limit]))
         return {'bids': bids, 'asks': asks}
-
-
-if __name__ == "__main__":
-    # TODO - delete - tests
-    b = BitBayApiUtility()
-    print(b.get_markets())
-    print(b.get_orderbook('BTC-USD'))
