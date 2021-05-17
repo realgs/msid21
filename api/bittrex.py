@@ -16,7 +16,7 @@ class Bittrex(Api):
 
     def withdrawalFee(self, symbol):
         if symbol in self._fees:
-            return self._fees[symbol]
+            return float(self._fees[symbol])
 
         raise ValueError(f"Incorrect symbol: {symbol}")
 

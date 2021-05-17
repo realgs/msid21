@@ -12,7 +12,7 @@ APIS = {
 
     },
     'Crypto': {
-        'BITTREX': Bittrex(),
-        'BITBAY': BitBay()
+        'Bittrex': Bittrex(),
+        'BitBay': BitBay()
     }
 }

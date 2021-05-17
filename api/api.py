@@ -1,6 +1,6 @@
 import requests
 
-BASE_LIMIT = 10
+BASE_LIMIT = 100
 
 class Api:
     def __init__(self, name, url, limit = BASE_LIMIT):
