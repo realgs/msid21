@@ -7,12 +7,14 @@ def loadInvestments():
 
 def printInvestments(investments):
     toPrint = []
-    headers = ["Symbol", "Cena", "Ilość"]
+    headers = ["Symbol", "Cena", "Ilość", "Giełda", "Zysk", "Zysk netto", "Zysk 10%", "Zysk 10% netto"]
     for investment in investments:
         toPrint.append([
             investment['symbol'],
             investment['pricePerShare'],
-            investment['quantity']
+            investment['quantity'],
+            None,
+            0,0,0,0
         ])
 
     print(tabulate(toPrint,headers=headers))
