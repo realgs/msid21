@@ -39,11 +39,6 @@ def getMarketsData():
         return None
 
 
-def printJSON(obj):
-    msg = json.dumps(obj, indent=4)
-    print(msg)
-
-
 def getOrderbookData(currency_1, currency_2):
     url = f'{BITBAY_URL}orderbook-limited/{currency_1}-{currency_2}/{LIMIT}'
     response = requests.request("GET", url, headers=HEADERS)

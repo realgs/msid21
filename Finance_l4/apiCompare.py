@@ -75,24 +75,30 @@ def printOptionInfo(name_1, name_2, arbitrage_quantity, profit, currency_1, curr
         print(f'The profit is {profit} {currency_2}')
 
 
-def printArbitrageInfo(buy_sell_info, currency_1, currency_2, print_on_screen):
+def printArbitrageInfo(info):
+    printOptionInfo(info[0][0], info[0][1], info[0][2], info[0][3], info[0][4], info[0][5])
+    printOptionInfo(info[1][0], info[1][1], info[1][2], info[1][3], info[1][4], info[1][5])
+
+
+def getArbitrageInfo(buy_sell_info, currency_1, currency_2):
     rate_info = getRateInfo(buy_sell_info)
     quantity_info = getQuantityInfo(buy_sell_info)
 
     arbitrage_quantity_bitbay_bittrex = min(quantity_info[1][0], quantity_info[2][0])
-    arbitrage_quantity_bittrex_bitbay = min(quantity_info[3][0], quantity_info[0][3])
+    arbitrage_quantity_bittrex_bitbay = min(quantity_info[3][0], quantity_info[0][0])
 
     sell_position = 0
     buy_position = 0
 
-    arbitrage_profit_1 = 0
-    arbitrage_profit_2 = 0
+    arbitrage_profit_bitbay_bittrex = 0
+    arbitrage_profit_bittrex_bitbay = 0
 
+    # buy on bitbay, sell on bittrex
     while calculateProfit(arbitrage_quantity_bitbay_bittrex, rate_info[2][sell_position], bittrex.BITTREX_FEES) > \
             calculateCost(arbitrage_quantity_bitbay_bittrex, rate_info[1][buy_position], bitbay.BITBAY_FEES, currency_1):
         if sell_position != 0:
             arbitrage_quantity_bitbay_bittrex += min(quantity_info[1][sell_position], quantity_info[2][sell_position])
-        arbitrage_profit_1 += calculateProfit(arbitrage_quantity_bitbay_bittrex, rate_info[2][sell_position], bittrex.BITTREX_FEES) -\
+        arbitrage_profit_bitbay_bittrex += calculateProfit(arbitrage_quantity_bitbay_bittrex, rate_info[2][sell_position], bittrex.BITTREX_FEES) -\
             calculateCost(arbitrage_quantity_bitbay_bittrex, rate_info[1][buy_position], bitbay.BITBAY_FEES, currency_1)
         if quantity_info[1][sell_position] == quantity_info[2][sell_position]:
             sell_position += 1
@@ -104,11 +110,12 @@ def printArbitrageInfo(buy_sell_info, currency_1, currency_2, print_on_screen):
             sell_position += 1
             quantity_info[1][sell_position] -= quantity_info[2][sell_position]
 
+    # buy on bittrex, sell on bitbay
     while calculateProfit(arbitrage_quantity_bittrex_bitbay, rate_info[0][sell_position], bitbay.BITBAY_FEES) > \
             calculateCost(arbitrage_quantity_bittrex_bitbay, rate_info[3][buy_position], bittrex.BITTREX_FEES, currency_1):
         if sell_position != 0:
             arbitrage_quantity_bitbay_bittrex += min(quantity_info[3][sell_position], quantity_info[0][sell_position])
-        arbitrage_profit_2 += calculateProfit(arbitrage_quantity_bitbay_bittrex, rate_info[0][sell_position], bittrex.BITTREX_FEES) -\
+        arbitrage_profit_bittrex_bitbay += calculateProfit(arbitrage_quantity_bitbay_bittrex, rate_info[0][sell_position], bittrex.BITTREX_FEES) -\
             calculateCost(arbitrage_quantity_bitbay_bittrex, rate_info[3][buy_position], bitbay.BITBAY_FEES, currency_1)
         if quantity_info[3][sell_position] == quantity_info[0][sell_position]:
             sell_position += 1
@@ -120,17 +127,14 @@ def printArbitrageInfo(buy_sell_info, currency_1, currency_2, print_on_screen):
             sell_position += 1
             quantity_info[3][sell_position] -= quantity_info[0][sell_position]
 
-    if arbitrage_profit_1 == 0:
-        arbitrage_profit_1 = calculateProfit(arbitrage_quantity_bitbay_bittrex, rate_info[2][0], bittrex.BITTREX_FEES) - \
+    if arbitrage_profit_bitbay_bittrex == 0:
+        arbitrage_profit_bitbay_bittrex = calculateProfit(arbitrage_quantity_bitbay_bittrex, rate_info[2][0], bittrex.BITTREX_FEES) - \
             calculateCost(arbitrage_quantity_bitbay_bittrex, rate_info[1][0], bitbay.BITBAY_FEES, currency_1)
 
-    if arbitrage_profit_2 == 0:
-        arbitrage_profit_2 = calculateProfit(arbitrage_quantity_bittrex_bitbay, rate_info[0][0], bitbay.BITBAY_FEES) - \
+    if arbitrage_profit_bittrex_bitbay == 0:
+        arbitrage_profit_bittrex_bitbay = calculateProfit(arbitrage_quantity_bittrex_bitbay, rate_info[0][0], bitbay.BITBAY_FEES) - \
             calculateCost(arbitrage_quantity_bittrex_bitbay, rate_info[3][0], bittrex.BITTREX_FEES, currency_1)
-    if print_on_screen:
-        printOptionInfo(names[0], names[1], arbitrage_quantity_bitbay_bittrex, arbitrage_profit_1, currency_1, currency_2)
-        printOptionInfo(names[1], names[0], arbitrage_quantity_bittrex_bitbay, arbitrage_profit_2, currency_1, currency_2)
 
-    info_bittbay_bittrex = names[0], names[1], arbitrage_quantity_bitbay_bittrex, arbitrage_profit_1, currency_1, currency_2
-    info_bittrex_bitbay = names[1], names[0], arbitrage_quantity_bittrex_bitbay, arbitrage_profit_2, currency_1, currency_2
+    info_bittbay_bittrex = names[0], names[1], arbitrage_quantity_bitbay_bittrex, arbitrage_profit_bitbay_bittrex, currency_1, currency_2
+    info_bittrex_bitbay = names[1], names[0], arbitrage_quantity_bittrex_bitbay, arbitrage_profit_bittrex_bitbay, currency_1, currency_2
     return info_bittbay_bittrex, info_bittrex_bitbay
