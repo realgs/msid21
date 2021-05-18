@@ -11,9 +11,12 @@ from typing import Optional, Callable, Any
 
 import bcolors
 import requests
+from pip._internal.utils.deprecation import deprecated
 from tqdm import tqdm
 
-OrderList = list[list[float]]
+from market_daemon import optimizers
+
+OrderList = list[tuple[float, float]]
 
 CONFIG_PATH: str = "config.json"
 
@@ -121,13 +124,14 @@ class MarketDaemon:
         return MarketDaemon(api_identifier, config["url"], config)
 
     def get_orders(self, instrument: str, base: str = BASE_CURRENCY, size: int = DEFAULT_ORDER_NUM,
-                   verbose: bool = True):
+                   verbose: bool = True, raw: bool = False):
         """Gets the orders for a given instrument and base currency, selects 'size' number of orders
         Args:
             instrument: Symbol of an instrument to look up in the orderbook
             base: Base currency
             size: Number of orders to return (-1 gives the full list of orders)
             verbose: prints the results if set to True
+            raw: returns list of tuples [(price, qty)... ] instead
         Returns:
             Optional of Tuple of dicts containing float pairs representing prices and quantities of orders respectively.
             The first tuple represents asks or buy offers and the second one - bids or sell offers. None is
@@ -148,11 +152,14 @@ class MarketDaemon:
                 if not buys or not sells:
                     return None
                 else:
-                    result = {order[0]: order[1] for order in buys}, {order[0]: order[1] for order in sells}
-                    if verbose:
-                        self._print_orders(result[1], instrument, base, kind="sell")
-                        self._print_orders(result[0], instrument, base, kind="buy")
-                    return result
+                    if raw:
+                        return buys, sells
+                    else:
+                        result = {order[0]: order[1] for order in buys}, {order[0]: order[1] for order in sells}
+                        if verbose:
+                            self._print_orders(result[1], instrument, base, kind="sell")
+                            self._print_orders(result[0], instrument, base, kind="buy")
+                        return result
             except KeyError:
                 if verbose:
                     print("Your request produced a response but no bids or asks were found")
@@ -324,10 +331,9 @@ def compare_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: st
         sleep(DEFAULT_TIMOUT)
 
 
-def arbitrage_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: str = BASE_CURRENCY,
-                     verbose: bool = True):
-    """Creates a generator for monitoring arbitrage opportunity for buy at market m1 and sell at m2 of a given symbol
-    Fees are taken into account if relevant entries are present in config
+def _arbitrage_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: str = BASE_CURRENCY,
+                      verbose: bool = True):
+    """
     Args:
         m1: Buy market for given instrument
         m2: Sell market for given instrument
@@ -343,6 +349,12 @@ def arbitrage_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: 
         try:
             b1, s1 = m1.get_orders(instrument, base, size=-1, verbose=False)
             b2, s2 = m2.get_orders(instrument, base, size=-1, verbose=False)
+
+            to_buy, _ = m1.get_orders(instrument, base, size=-1, verbose=False, raw=True)
+            _, to_sell = m2.get_orders(instrument, base, size=-1, verbose=False, raw=True)
+
+            optimizers.linprog_arbitrage(to_buy, to_sell, (m1.settings["taker_fee"], m2.settings["taker_fee"]),
+                                         m1.transfer_fee(instrument))
 
             if verbose:
                 print(f"Analyzing query for {instrument}{base}:")
@@ -411,14 +423,113 @@ def arbitrage_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: 
                 yield 0.0, 0.0
             else:
                 profitability = 100 * profit / total_buy if total_buy else 0.0
-                print(f"Total volume: {volume}, total value: {total_buy} {base}, profit: {profit} {base},"
-                      f"profitability: {profitability:.4f}%\n")
+                print(bcolors.OK + f"Total volume: {volume}, total value: {total_buy} {base}, profit: {profit} {base},"
+                                   f"profitability: {profitability:.4f}%\n" + bcolors.ENDC)
 
                 yield profit, profitability
 
             sleep(DEFAULT_TIMOUT)
         except TypeError:
             print(bcolors.ERR + f"Critical error when parsing {instrument}{base} at {m1} -> {m2}" + bcolors.ENDC)
+
+
+def iterative_arbitrage(to_buy, to_sell, instrument, base, m1, m2, verbose=True):
+    profit = 0.0
+    volume = 0.0
+    total_buy = 0.0
+
+    transfer_paid_number = 0
+    order_num = 0
+
+    transfer_to_pay = m1.transfer_fee(instrument, verbose=verbose)
+
+    while to_buy and to_sell and to_buy[0][0] < to_sell[0][0]:
+        buy_qty = min(to_buy[0][1], to_sell[0][1])
+        sell_qty = buy_qty
+
+        order_num += 1
+
+        if transfer_to_pay > 0.0:
+            if transfer_to_pay < sell_qty:
+                sell_qty -= transfer_to_pay
+                transfer_to_pay = 0.0
+                transfer_paid_number = order_num
+            else:
+                transfer_to_pay -= sell_qty
+                sell_qty = 0.0
+
+        buy_value = m1.order_value(to_buy[0][0], buy_qty, instrument)
+        sell_value = m2.order_value(to_sell[0][0], sell_qty, instrument, kind="sell")
+
+        consider_negative_profit: bool = transfer_to_pay > 0.0 or (transfer_to_pay == 0.0 and
+                                                                   transfer_paid_number == order_num)
+
+        if buy_value < sell_value or consider_negative_profit:
+            if consider_negative_profit and verbose:
+                print("\tConsidering negative profit...")
+
+            volume += buy_qty
+            total_buy += buy_value
+            profit += sell_value - buy_value
+
+            if verbose:
+                print(f"\tBuy {buy_qty} {instrument} at market {m1} for {to_buy[0][0]} {instrument}{base}")
+                print(f"\tSell {sell_qty} {instrument} at market {m2} for {to_sell[0][0]} {instrument}{base}")
+                print(f"\tTotal profit on order: {sell_value} {base} - {buy_value} {base} ="
+                      f" {sell_value - buy_value} {base}\n")
+            if to_buy[0][1] < to_sell[0][1]:
+                del to_buy[0]
+                to_sell[0][1] -= sell_qty
+            else:
+                del to_sell[0]
+                to_buy[0][1] -= buy_qty
+        else:
+            break
+
+    profitability = 100 * profit / total_buy if total_buy else 0.0
+
+    return profit, profitability
+
+
+def arbitrage_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: str = BASE_CURRENCY,
+                     solver=optimizers.LinprogArbitrage(), verbose: bool = True):
+    """
+    Creates a generator for monitoring arbitrage opportunity for buy at market m1 and sell at m2 of a given symbol
+    Fees are taken into account if relevant entries are present in config
+
+    Args:
+        m1: Buy market for given instrument
+        m2: Sell market for given instrument
+        instrument: Instrument intended to buy at m1 and sell at m2
+        base: Base currency
+        solver: an instance of optimizers.ArbitrageOptimizer or None for iterative method
+        verbose: prints the results if set to True
+
+
+    Yields:
+        Tuple: profit, profitability of arbitrage between m1 and m2
+
+    """
+    to_buy, _ = m1.get_orders(instrument, base, size=-1, verbose=False, raw=True)
+    _, to_sell = m2.get_orders(instrument, base, size=-1, verbose=False, raw=True)
+
+    if isinstance(solver, optimizers.ArbitrageOptimizer):
+        profit, profitability, _ = solver(to_buy, to_sell,
+                                          (m1.settings["taker_fee"], m2.settings["taker_fee"]),
+                                          m1.transfer_fee(instrument))
+    else:
+        profit, profitability = iterative_arbitrage(to_buy, to_sell, instrument, base, m1, m2, verbose)
+
+    if profit <= 0.0:
+        if verbose:
+            print(bcolors.FAIL + f"No orders were found to be profitable for buy of {instrument}"
+                                 f" at {m1} and sell at {m2}" + bcolors.ENDC)
+        yield 0.0, 0.0
+    else:
+        print(bcolors.OK + f"{m1} -> {m2}: profit = {profit} {base},"
+                           f" profitability = {profitability:.4f}%\n" + bcolors.ENDC)
+
+        yield profit, profitability
 
 
 def check_3_random_pairs(src: MarketDaemon, dest: MarketDaemon):

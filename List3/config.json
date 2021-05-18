@@ -18,7 +18,7 @@
       "instrument_sep": "-",
       "asks": "asks",
       "bids": "bids",
-      "taker_fee": 0.0043,
+      "taker_fee": 0.0,
       "transfer_fee": {
         "AAVE": 0.54,
         "ALG": 426,
@@ -77,9 +77,11 @@
       "instrument_sep": "-",
       "asks": "ask",
       "bids": "bid",
-      "taker_fee": 0.0075,
+      "taker_fee": 0.0,
       "transfer_fee": {}
-    }
+    },
+    "@bitbay_taker": 0.0035,
+    "@bittrex_taker": 0.0075
   },
   "preferences": {
     "base_currency": "USD",
