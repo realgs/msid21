@@ -4,7 +4,6 @@ import json
 import lab4
 
 API_SHORT_NAME = {'bitbay': "BB", 'bittrex': 'BITT'}
-
 API = {'cryptocurrencies': {
             'bitbay': {'request': ['orderbook', 'market', 'ticker', 'all'],
                        'path': 'https://bitbay.net/API/Public/', 'format': 'json',
@@ -26,6 +25,7 @@ API = {'cryptocurrencies': {
 EOD_HIST = 'eodhistoricaldata'
 NBP = 'nbp'
 PROFIT_TAX = 0.19
+WALLET_ERRORS = ['OK', 'category', 'amount', 'avr price', 'currency']
 
 
 def get_api_path(api, request_type, stock_NASDAQ_code=None):
@@ -57,6 +57,7 @@ def get_multiple_stocks_path(stock_api, stock_NASDAQ):
 
 class Investment:
     def __init__(self, wallet_file_name):
+        self.__file_name = wallet_file_name
         self.__wallet = self.read_wallet(wallet_file_name)
         self.__cryptocurrencies = self.__wallet['resources']['cryptocurrencies']
         self.__currencies = self.__wallet['resources']['currencies']
@@ -64,6 +65,9 @@ class Investment:
         self.__foreign_stocks = self.__wallet['resources']['foreign stocks']
         self.__rates = Investment.get_exchange_table()
 
+    @property
+    def base_currency(self):
+        return self.__wallet['base currency']
     @staticmethod
     def read_wallet(file_name):
         with open(file_name, 'r') as file:
@@ -279,7 +283,48 @@ class Investment:
         df = pandas.DataFrame(data=table, columns=columns)
         return df
 
+    def add_to_wallet_file(self, category, name, amount, avr_price, currency_buy):
+        """
+            error codes:
+            0 - no errors
+            1 - category error
+            2 - amount error
+            3 - avr_price error
+            4 - currency_buy error
+        """
+        if type(amount) != float and type(amount) != int:
+            return 2
+        elif type(avr_price) != float and type(avr_price) != int:
+            return 3
+        wallet_dict = self.__wallet
+        categories = list(self.__wallet['resources'].keys())
+        resources = self.__wallet['resources']
+        stocks = ['polish stocks', 'foreign stocks']
+        ratio = 1
+        if currency_buy != self.__wallet['base currency'] and category not in stocks:
+            ratio = self.get_exchange_rate(currency_buy, self.__wallet['base currency'])
+        if category in categories:
+            if name in resources[category]:
+                wallet_dict['resources'][category][name]['amount'] += amount
+                rate = resources[name]['average price']
+                amount_in = resources[category]['amount']
+                wallet_dict['resources'][category][name]['average price'] = (avr_price * ratio * amount + rate * amount_in)/ (amount + amount_in)
+                if name in stocks and currency_buy != resources[category][name]['currency']:
+                    return 4
+            else:
+                wallet_dict['resources'][category][name] = {'amount': amount, 'average price': avr_price * ratio}
+                if category in stocks:
+                    print(name)
+                    wallet_dict['resources'][category][name] = {**wallet_dict['resources'][category][name],
+                                                               **{'currency': currency_buy}}
+        else:
+            return 1
+        with open(self.__file_name, 'w') as file:
+            json.dump(wallet_dict, file)
+        return 0
+
 
 if __name__ == '__main__':
     inv = Investment('wallet.json')
-    print(inv.data_frame_sell_resources().to_string())
+    print(inv.add_to_wallet_file('foreign stocks', 'AAPL.EU', 10, 100, 'EUR'))
+    # print(inv.data_frame_sell_resources().to_string())
