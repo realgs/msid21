@@ -10,7 +10,7 @@ class BittrexApi(Api):
     def __init__(self):
         super().__init__("Bittrex")
 
-    def setFees(self):
+    def _setFees(self):
         self._fees["taker"] = BittrexApi.BITTREX_TAKER
         try:
             response = requests.get("https://api.bittrex.com/v3/currencies")
@@ -30,7 +30,7 @@ class BittrexApi(Api):
         except Exception as err:
             print(f'Other error occurred: {err}')
 
-    def setMarkets(self):
+    def _setMarkets(self):
         try:
             response = requests.get("https://api.bittrex.com/v3/markets")
 

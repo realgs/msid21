@@ -6,13 +6,15 @@ class Api(ABC):
         self._name = name
         self._fees = {}
         self._markets = set()
+        self._setMarkets()
+        self._setFees()
 
     @abstractmethod
-    def setFees(self):
+    def _setFees(self):
         pass
 
     @abstractmethod
-    def setMarkets(self):
+    def _setMarkets(self):
         pass
 
     @property

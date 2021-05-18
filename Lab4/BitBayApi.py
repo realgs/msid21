@@ -13,7 +13,7 @@ class BitBayApi(Api):
     def __init__(self):
         super().__init__("BitBay")
 
-    def setFees(self):
+    def _setFees(self):
         self._fees["taker"] = BitBayApi.BITBAY_TAKER
 
         with open("bitbay_transfer_fees.json", "r") as fees_file:
@@ -21,7 +21,7 @@ class BitBayApi(Api):
 
         self._fees["transfer"] = transfer_fees
 
-    def setMarkets(self):
+    def _setMarkets(self):
         try:
             response = requests.get("https://api.bitbay.net/rest/trading/ticker")
 
