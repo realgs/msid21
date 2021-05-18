@@ -5,7 +5,7 @@ import scipy.optimize
 OrderList = list[tuple[float, float]]
 
 
-def orders_to_vectors(orders: OrderList):
+def _orders_to_vectors(orders: OrderList):
     q = np.zeros(shape=(len(orders),))
     p = np.zeros(shape=(len(orders),))
     for i, (price, quantity) in enumerate(orders):
@@ -28,9 +28,9 @@ class LinprogArbitrage(ArbitrageOptimizer):
 
     def __call__(self, buys: OrderList, sells: OrderList, taker_fees: tuple[float, float],
                  transfer_fee: float, precision: int = 6, verbose: bool = True):
-        p1, q1 = orders_to_vectors(buys)
+        p1, q1 = _orders_to_vectors(buys)
 
-        p2, q2 = orders_to_vectors(sells)
+        p2, q2 = _orders_to_vectors(sells)
         q2 *= -1  # Sell target quantities are made negative
 
         c1 = p1 * q1  # Cost to buy each offer from buy opportunities (expenses)
@@ -70,6 +70,8 @@ class LinprogArbitrage(ArbitrageOptimizer):
         sell_dec = np.around(sell_dec, precision)
 
         profit = -c1.transpose() @ buy_dec - c2.transpose() @ sell_dec
+        profit = 0.0 if profit < 10 ** (-precision) else profit
+
         profitability = 100 * profit / (c1.transpose() @ buy_dec)
 
         if verbose:
@@ -79,9 +81,3 @@ class LinprogArbitrage(ArbitrageOptimizer):
                 print(bcolors.FAIL + f"LINPROG: loss = {profit}, profitability = {profitability}" + bcolors.ENDC)
 
         return profit, profitability, (buy_dec, sell_dec)
-
-
-"""
-def linprog_arbitrage(buys: OrderList, sells: OrderList, taker_fees: tuple[float, float],
-                      transfer_fee: float, precision: int = 6, verbose: bool = True):
-                      """

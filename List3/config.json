@@ -8,7 +8,18 @@
       "instrument_sep": "-",
       "asks": "ask",
       "bids": "bid",
-      "taker_fee": 0.0,
+      "taker_fee": 0.0075,
+      "transfer_fee": {}
+    },
+    "bittrex": {
+      "url": "https://api.bittrex.com/v3/markets",
+      "markets_url": "https://api.bittrex.com/v3/markets",
+      "orderbook_endpoint": "orderbook",
+      "currencies_url": "https://api.bittrex.com/v3/currencies",
+      "instrument_sep": "-",
+      "asks": "ask",
+      "bids": "bid",
+      "taker_fee": 0.0075,
       "transfer_fee": {}
     },
     "bitbay": {
@@ -18,7 +29,7 @@
       "instrument_sep": "-",
       "asks": "asks",
       "bids": "bids",
-      "taker_fee": 0.0,
+      "taker_fee": 0.0035,
       "transfer_fee": {
         "AAVE": 0.54,
         "ALG": 426,
@@ -68,20 +79,7 @@
         "ZEC": 0.004,
         "ZRX": 56
       }
-    },
-    "bittrex": {
-      "url": "https://api.bittrex.com/v3/markets",
-      "markets_url": "https://api.bittrex.com/v3/markets",
-      "orderbook_endpoint": "orderbook",
-      "currencies_url": "https://api.bittrex.com/v3/currencies",
-      "instrument_sep": "-",
-      "asks": "ask",
-      "bids": "bid",
-      "taker_fee": 0.0,
-      "transfer_fee": {}
-    },
-    "@bitbay_taker": 0.0035,
-    "@bittrex_taker": 0.0075
+    }
   },
   "preferences": {
     "base_currency": "USD",

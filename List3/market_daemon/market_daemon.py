@@ -11,7 +11,6 @@ from typing import Optional, Callable, Any
 
 import bcolors
 import requests
-from pip._internal.utils.deprecation import deprecated
 from tqdm import tqdm
 
 from market_daemon import optimizers
@@ -46,18 +45,6 @@ SAMPLE_CONFIG: dict = {
         "default_order_num": 5
     }
 }
-
-
-class BColors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKCYAN = '\033[96m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
 
 
 def load_config(path="config.json"):
@@ -295,7 +282,6 @@ def price_diff(lhs: dict[float, float], rhs: dict[float, float]):
     return diff * 100
 
 
-# Zad 1 a-c (5 pkt)
 def compare_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: str = BASE_CURRENCY,
                    kind: str = "buy", verbose: bool = True):
     """Creates a generator comparing buy, sell or transfer prices for a given instrument at two markets m1, m2.
@@ -329,108 +315,6 @@ def compare_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: st
             print(f"{m1} vs {m2} is {diff:.4f}% for {kind} of pair {instrument}{base}\n")
         yield diff
         sleep(DEFAULT_TIMOUT)
-
-
-def _arbitrage_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: str = BASE_CURRENCY,
-                      verbose: bool = True):
-    """
-    Args:
-        m1: Buy market for given instrument
-        m2: Sell market for given instrument
-        instrument: Instrument intended to buy at m1 and sell at m2
-        base: Base currency
-        verbose: prints the results if set to True
-    Returns:
-        Profit if arbitrage opportunity exists, expressed in base currency, 0.0 otherwise
-    Raises:
-        StopIteration: when the stream couldn't be established after max_retries as stated in the config file
-    """
-    while True:
-        try:
-            b1, s1 = m1.get_orders(instrument, base, size=-1, verbose=False)
-            b2, s2 = m2.get_orders(instrument, base, size=-1, verbose=False)
-
-            to_buy, _ = m1.get_orders(instrument, base, size=-1, verbose=False, raw=True)
-            _, to_sell = m2.get_orders(instrument, base, size=-1, verbose=False, raw=True)
-
-            optimizers.linprog_arbitrage(to_buy, to_sell, (m1.settings["taker_fee"], m2.settings["taker_fee"]),
-                                         m1.transfer_fee(instrument))
-
-            if verbose:
-                print(f"Analyzing query for {instrument}{base}:")
-                print(b1)
-                print(s2)
-
-            to_buy = [[price, qty] for price, qty in b1.items()]
-            to_sell = [[price, qty] for price, qty in s2.items()]
-
-            profit = 0.0
-            volume = 0.0
-            total_buy = 0.0
-
-            transfer_paid_number = 0
-            order_num = 0
-
-            transfer_to_pay = m1.transfer_fee(instrument, verbose=verbose)
-
-            while to_buy and to_sell and to_buy[0][0] < to_sell[0][0]:
-                buy_qty = min(to_buy[0][1], to_sell[0][1])
-                sell_qty = buy_qty
-
-                order_num += 1
-
-                if transfer_to_pay > 0.0:
-                    if transfer_to_pay < sell_qty:
-                        sell_qty -= transfer_to_pay
-                        transfer_to_pay = 0.0
-                        transfer_paid_number = order_num
-                    else:
-                        transfer_to_pay -= sell_qty
-                        sell_qty = 0.0
-
-                buy_value = m1.order_value(to_buy[0][0], buy_qty, instrument)
-                sell_value = m2.order_value(to_sell[0][0], sell_qty, instrument, kind="sell")
-
-                consider_negative_profit: bool = transfer_to_pay > 0.0 or (transfer_to_pay == 0.0 and
-                                                                           transfer_paid_number == order_num)
-
-                if buy_value < sell_value or consider_negative_profit:
-                    if consider_negative_profit and verbose:
-                        print("\tConsidering negative profit...")
-
-                    volume += buy_qty
-                    total_buy += buy_value
-                    profit += sell_value - buy_value
-
-                    if verbose:
-                        print(f"\tBuy {buy_qty} {instrument} at market {m1} for {to_buy[0][0]} {instrument}{base}")
-                        print(f"\tSell {sell_qty} {instrument} at market {m2} for {to_sell[0][0]} {instrument}{base}")
-                        print(f"\tTotal profit on order: {sell_value} {base} - {buy_value} {base} ="
-                              f" {sell_value - buy_value} {base}\n")
-                    if to_buy[0][1] < to_sell[0][1]:
-                        del to_buy[0]
-                        to_sell[0][1] -= sell_qty
-                    else:
-                        del to_sell[0]
-                        to_buy[0][1] -= buy_qty
-                else:
-                    break
-
-            if profit <= 0.0:
-                if verbose:
-                    print(bcolors.FAIL + f"No orders were found to be profitable for buy of {instrument}"
-                                         f" at {m1} and sell at {m2}" + bcolors.ENDC)
-                yield 0.0, 0.0
-            else:
-                profitability = 100 * profit / total_buy if total_buy else 0.0
-                print(bcolors.OK + f"Total volume: {volume}, total value: {total_buy} {base}, profit: {profit} {base},"
-                                   f"profitability: {profitability:.4f}%\n" + bcolors.ENDC)
-
-                yield profit, profitability
-
-            sleep(DEFAULT_TIMOUT)
-        except TypeError:
-            print(bcolors.ERR + f"Critical error when parsing {instrument}{base} at {m1} -> {m2}" + bcolors.ENDC)
 
 
 def iterative_arbitrage(to_buy, to_sell, instrument, base, m1, m2, verbose=True):
@@ -509,39 +393,47 @@ def arbitrage_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: 
     Yields:
         Tuple: profit, profitability of arbitrage between m1 and m2
 
+    Raises:
+        StopIteration: when the stream couldn't be established after max_retries as stated in the config file
     """
-    to_buy, _ = m1.get_orders(instrument, base, size=-1, verbose=False, raw=True)
-    _, to_sell = m2.get_orders(instrument, base, size=-1, verbose=False, raw=True)
+    while True:
+        to_buy, _ = m1.get_orders(instrument, base, size=-1, verbose=False, raw=True)
+        _, to_sell = m2.get_orders(instrument, base, size=-1, verbose=False, raw=True)
 
-    if isinstance(solver, optimizers.ArbitrageOptimizer):
-        profit, profitability, _ = solver(to_buy, to_sell,
-                                          (m1.settings["taker_fee"], m2.settings["taker_fee"]),
-                                          m1.transfer_fee(instrument))
-    else:
-        profit, profitability = iterative_arbitrage(to_buy, to_sell, instrument, base, m1, m2, verbose)
+        if isinstance(solver, optimizers.ArbitrageOptimizer):
+            profit, profitability, _ = solver(to_buy, to_sell,
+                                              (m1.settings["taker_fee"], m2.settings["taker_fee"]),
+                                              m1.transfer_fee(instrument), verbose=False)
+        else:
+            profit, profitability = iterative_arbitrage(to_buy, to_sell, instrument, base, m1, m2, verbose)
 
-    if profit <= 0.0:
-        if verbose:
-            print(bcolors.FAIL + f"No orders were found to be profitable for buy of {instrument}"
-                                 f" at {m1} and sell at {m2}" + bcolors.ENDC)
-        yield 0.0, 0.0
-    else:
-        print(bcolors.OK + f"{m1} -> {m2}: profit = {profit} {base},"
-                           f" profitability = {profitability:.4f}%\n" + bcolors.ENDC)
+        if profit <= 0.0:
+            if verbose:
+                print(bcolors.FAIL + f"No orders were found to be profitable for buy of {instrument}"
+                                     f" at {m1} and sell at {m2}" + bcolors.ENDC)
+            yield 0.0, 0.0
+        else:
+            if verbose:
+                print(bcolors.OK + f"{m1} -> {m2}: profit = {profit} {base},"
+                                   f" profitability = {profitability:.4f}%\n" + bcolors.ENDC)
 
-        yield profit, profitability
+            yield profit, profitability
+
+        sleep(DEFAULT_TIMOUT)
 
 
 def check_3_random_pairs(src: MarketDaemon, dest: MarketDaemon):
     """Returns a dataframe with pairs columns denoting the 3 pairs, and profit column expressed in base currency
     of each pair, profit is 0 if no arbitrage opportunity is present"""
     intersecting_pairs: set[str] = src.get_joint_pairs(dest)
-    p1, p2, p3 = random.sample(list(intersecting_pairs), 3)
+    pairs = random.sample(list(intersecting_pairs), 3)
 
-    data = {"pair": [p1, p2, p3], "profit": [], "profitability": []}
+    data = {"pair": pairs, "profit": [], "profitability": []}
 
-    for pair in [p1, p2, p3]:
-        ss = arbitrage_stream(src, dest, *pair.split("-"), verbose=False)
+    print("Checking pairs...")
+
+    for pair in tqdm(pairs):
+        ss = arbitrage_stream(src, dest, *pair.split("-"), verbose=False, solver=optimizers.LinprogArbitrage())
         profit, profitability = next(ss)
         data["profit"].append(profit)
         data["profitability"].append(profitability)
@@ -550,7 +442,7 @@ def check_3_random_pairs(src: MarketDaemon, dest: MarketDaemon):
     return df.sort_values(by="profitability", ascending=False)
 
 
-def arbitrage_summary(src: MarketDaemon, dest: MarketDaemon):
+def arbitrage_summary(src: MarketDaemon, dest: MarketDaemon, solver=optimizers.LinprogArbitrage()):
     """Returns a dataframe containing pairs available at both src and dest markets and profits of
      arbitrage opportunities expressed in base currency"""
     joint_pairs = src.get_joint_pairs(dest)
@@ -559,7 +451,7 @@ def arbitrage_summary(src: MarketDaemon, dest: MarketDaemon):
     print("Processing joint pairs...")
     for pair in tqdm(joint_pairs):
         instrument, base = pair.split(src.settings["instrument_sep"])
-        ss = arbitrage_stream(src, dest, instrument, base, verbose=True)
+        ss = arbitrage_stream(src, dest, instrument, base, verbose=True, solver=solver)
         data["pair"].append(pair)
         data["instrument"].append(instrument)
         data["base"].append(base)
