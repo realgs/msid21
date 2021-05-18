@@ -138,7 +138,7 @@ def zad3(apiInfo, transferfees, currencypairs):
                                                      offer2[NORMALIZED_OPERATIONS[0]],
                                                      apiInfo["API"]["bitbay"], apiInfo["API"]["bitrex"], crypto,
                                                      base_currency, transferfees)
-                resultsFromBitbayToBitrex.append((crypto, base_currency, resultFrom1To2['profitability']))
+                resultsFromBitbayToBitrex.append((crypto, base_currency, resultFrom1To2))
                 if resultFrom1To2['profit'] <= 0:
                     print(f"There are no profitable transactions buying in {apiInfo['API']['bitbay']['name']}"
                           f" and selling in {apiInfo['API']['bitrex']['name']}")
@@ -151,7 +151,7 @@ def zad3(apiInfo, transferfees, currencypairs):
                                                      offer1[NORMALIZED_OPERATIONS[0]],
                                                      apiInfo["API"]["bitrex"], apiInfo["API"]["bitbay"], crypto,
                                                      base_currency, transferfees)
-                resultsFromBitrexToBitbay.append((crypto, base_currency, resultFrom2To1['profitability']))
+                resultsFromBitrexToBitbay.append((crypto, base_currency, resultFrom2To1))
                 if resultFrom2To1['profit'] <= 0:
                     print(f"There are no profitable transactions buying in {apiInfo['API']['bitrex']['name']}"
                           f" and selling in {apiInfo['API']['bitbay']['name']}")
@@ -181,15 +181,18 @@ if __name__ == '__main__':
 
         fees = get_transfer_fees(info, pairs)
         resultsFromBitbayToBitrex, resultsFromBitrexToBitbay = zad3(info, fees, pairs)
-        resultsFromBitbayToBitrex = sorted(resultsFromBitbayToBitrex, key=lambda x: x[2], reverse=True)
-        resultsFromBitrexToBitbay = sorted(resultsFromBitrexToBitbay, key=lambda x: x[2], reverse=True)
+        resultsFromBitbayToBitrex = sorted(resultsFromBitbayToBitrex, key=lambda x: x[2]['profitability'], reverse=True)
+        resultsFromBitrexToBitbay = sorted(resultsFromBitrexToBitbay, key=lambda x: x[2]['profitability'], reverse=True)
         print("#####################################################################################")
         print("Offers for buying in bittbay and selling in bitrex sorted by arbitrage percentage profit:")
         for entry in resultsFromBitbayToBitrex:
-            print(entry)
+            print(f"Currency: {entry[0]}, base currency: {entry[1]},"
+                  f" percentage profit: {entry[2]['profitability']}, gain: {entry[2]['profit']} {entry[1]}")
         print("#####################################################################################")
         print("Offers for buying in bitrex and selling in bitbay sorted by arbitrage percentage profit:")
         for entry in resultsFromBitrexToBitbay:
-            print(entry)
+            print(
+                f"Currency: {entry[0]}, base currency: {entry[1]},"
+                f" percentage profit: {entry[2]['profitability']}, gain: {entry[2]['profit']} {entry[1]}")
     except requests.ConnectionError:
         print("Failed to connect to API")
