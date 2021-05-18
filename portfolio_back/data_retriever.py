@@ -1,7 +1,8 @@
 import credentials
-import quandl
+from portfolio_back.arbitrages import get_arbitrage
+from portfolio_back.offers import get_bidlist
 
-from portfolio_back.api_handler import get_polish_stock_quote
+from portfolio_back.utils import get_polish_stock_quote
 from portfolio_back.finnhub_handler import FinnhubHandler
 
 
@@ -29,6 +30,24 @@ class DataRetriever:
                            in self.forex_currencies[market]
                            if currency_to_sell['name'] in currency['pair'] and base_currency in currency['pair']]
 
+        return self.find_best_finnhub_price_for_currency(currency_to_sell, related_symbols)
+
+    def find_best_offer_for_cryptocurrency(self, currency_to_sell, base_currency, percentage=1, num_offers=50):
+        related_symbols = [currency['symbol'] for market in self.crypto_markets for currency
+                           in self.crypto_currencies[market]
+                           if currency['pair'] == f"{currency_to_sell['name']}/{base_currency}"]
+
+        finnhub_result = self.find_best_finnhub_price_for_currency(currency_to_sell, related_symbols)
+        orderbooks_result = self.check_orderbooks(currency_to_sell, base_currency, 50, 1)
+        orderbooks_result_percentage = self.check_orderbooks(currency_to_sell, base_currency, num_offers, percentage)
+
+        return finnhub_result if finnhub_result[0] > orderbooks_result[0] else orderbooks_result, \
+               orderbooks_result_percentage
+
+    def get_arbitrage_for_cryptocurrency(self, currency):
+        return get_arbitrage(currency['name'])
+
+    def find_best_finnhub_price_for_currency(self, currency_to_sell, related_symbols):
         possible_currency_transactions = []
         for symbol in related_symbols:
             transaction = currency_to_sell.copy()
@@ -40,9 +59,15 @@ class DataRetriever:
         best_offers = list(filter(None, best_offers))
         return sorted(best_offers, key=lambda o: o[0], reverse=True)[0]
 
-    # def find_best_offer_for_cryptocurrency(self, currency_to_sell, base_currency, percentage=1):
-    #     related_symbols = [currency['symbol'] for market in self.crypto_markets for currency
-    #                        in self.crypto_currencies[market]
-    #                        if currency['pair'] == f"{currency_to_sell['name']}/{base_currency}"]
-    #
-    #     return self.find_best_offer_for_currency(currency_to_sell, related_symbols, percentage)
+    def check_orderbooks(self, currency_to_sell, base_currency, num_offers, percentage):
+        bid_dict = get_bidlist(currency_to_sell['name'] + '-' + base_currency, num_offers)
+        volume = currency_to_sell['volume'] * percentage
+        best_offer = -1
+        best_site = ''
+        for site in bid_dict.keys():
+            for bid in bid_dict[site]:
+                if bid.quantity >= volume and bid.price > best_offer:
+                    best_offer = bid.price
+                    best_site = site
+
+        return best_offer, best_site

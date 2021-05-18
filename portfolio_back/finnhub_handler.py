@@ -1,19 +1,15 @@
-import ast
-import json
-
 import finnhub
-import websocket
-
-import credentials
-
-FINNHUB_WEBSOCKET_URL = "wss://ws.finnhub.io?token="
+import requests
 
 
 class FinnhubHandler:
 
     def __init__(self, api_key):
         self.api_key = api_key
-        self.finnhub_client = finnhub.Client(api_key=self.api_key)
+        try:
+            self.finnhub_client = finnhub.Client(api_key=self.api_key)
+        except requests.exceptions.SSLError:
+            print("ERROR. Connection with Finnhub not established")
 
     def get_forex_markets(self):
         return self.finnhub_client.forex_exchanges()
@@ -33,4 +29,9 @@ class FinnhubHandler:
                 self.finnhub_client.crypto_symbols(market)]
 
     def get_quote(self, asset_name):
-        return self.finnhub_client.quote(asset_name)
+        try:
+            return self.finnhub_client.quote(asset_name)
+        except requests.exceptions.ReadTimeout:
+            print("TIMEOUT ERROR. Try again later")
+
+        return None
