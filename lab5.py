@@ -68,6 +68,7 @@ class Investment:
     @property
     def base_currency(self):
         return self.__wallet['base currency']
+
     @staticmethod
     def read_wallet(file_name):
         with open(file_name, 'r') as file:
@@ -250,36 +251,51 @@ class Investment:
             for crypto in self.__cryptocurrencies:
                 if crypto not in profitable_arb:
                     profitable_arb[crypto] = 'non profitable offers'
+            print(profitable_arb)
         return profitable_arb
 
     @staticmethod
-    def get_list(all_value, ten_percent, api, arbitrage=None):
+    def get_list(all_value, ten_percent, api, arbitrages=None):
         result = []
+        sum_of = [0, 0, 0, 0]
         for item in all_value:
             if api is None:
                 api = all_value[item]['api']
-                arbitrage = arbitrage[item]
+            if arbitrages is not None:
+                arbitrage = arbitrages[item]
             else:
                 arbitrage = ''
+            sum_of[0] += all_value[item]['gain']
+            sum_of[1] += all_value[item]['netto']
+            sum_of[2] += ten_percent[item]['gain']
+            sum_of[3] += ten_percent[item]['netto']
             result.append([item, all_value[item]['amount'],
                            all_value[item]['rate'], all_value[item]['gain'],
                            all_value[item]['netto'], api,
                            ten_percent[item]['gain'], ten_percent[item]['netto'],
                            api, arbitrage])
-        return result
+        return [result, sum_of]
 
     def data_frame_sell_resources(self):
         columns = ['name', 'amount', 'rate', 'value', 'value netto', 'api',
                    'value 10%', 'value netto 10%', 'api 10%', 'arbitrage']
         crypto_resp = self.get_all_api_responses()
-        crypto = Investment.get_list(self.get_most_profitable_sells(crypto_resp),
-                                     self.get_most_profitable_sells(crypto_resp, 10), None, self.profitable_arbitrage())
-        # stock_resp = self.get_stocks_responses()
-        # stocks = Investment.get_list(self.sell_stocks(stock_resp),
-        #                              self.sell_stocks(stock_resp, 10), EOD_HIST)
-        currencies = Investment.get_list(self.sell_currencies(), self.sell_currencies(10), NBP)
-        table = crypto + currencies
-        # + stocks
+        crypto_all = Investment.get_list(self.get_most_profitable_sells(crypto_resp),
+                                         self.get_most_profitable_sells(crypto_resp, 10),
+                                         None, self.profitable_arbitrage())
+        crypto = crypto_all[0]
+        sum_of = crypto_all[1]
+        stock_resp = self.get_stocks_responses()
+        stocks_all = Investment.get_list(self.sell_stocks(stock_resp),
+                                         self.sell_stocks(stock_resp, 10), EOD_HIST)
+        stocks = stocks_all[0]
+        currencies_all = Investment.get_list(self.sell_currencies(), self.sell_currencies(10), NBP)
+        currencies = currencies_all[0]
+        for nbr in range(len(sum_of)):
+            sum_of[nbr] += currencies_all[1][nbr] + stocks_all[1][nbr]
+        table = crypto + currencies + stocks
+        table.append(['SUM', '', '', sum_of[0], sum_of[1], '', sum_of[2], sum_of[3], '', ''])
+        print(table)
         df = pandas.DataFrame(data=table, columns=columns)
         return df
 
@@ -308,7 +324,8 @@ class Investment:
                 wallet_dict['resources'][category][name]['amount'] += amount
                 rate = resources[name]['average price']
                 amount_in = resources[category]['amount']
-                wallet_dict['resources'][category][name]['average price'] = (avr_price * ratio * amount + rate * amount_in)/ (amount + amount_in)
+                wallet_dict['resources'][category][name]['average price'] = \
+                    (avr_price * ratio * amount + rate * amount_in) / (amount + amount_in)
                 if name in stocks and currency_buy != resources[category][name]['currency']:
                     return 4
             else:
@@ -316,7 +333,7 @@ class Investment:
                 if category in stocks:
                     print(name)
                     wallet_dict['resources'][category][name] = {**wallet_dict['resources'][category][name],
-                                                               **{'currency': currency_buy}}
+                                                                **{'currency': currency_buy}}
         else:
             return 1
         with open(self.__file_name, 'w') as file:
@@ -326,5 +343,4 @@ class Investment:
 
 if __name__ == '__main__':
     inv = Investment('wallet.json')
-    print(inv.add_to_wallet_file('foreign stocks', 'AAPL.EU', 10, 100, 'EUR'))
-    # print(inv.data_frame_sell_resources().to_string())
+    print(inv.data_frame_sell_resources().to_string())
