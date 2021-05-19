@@ -397,27 +397,31 @@ def arbitrage_stream(m1: MarketDaemon, m2: MarketDaemon, instrument: str, base: 
         StopIteration: when the stream couldn't be established after max_retries as stated in the config file
     """
     while True:
-        to_buy, _ = m1.get_orders(instrument, base, size=-1, verbose=False, raw=True)
-        _, to_sell = m2.get_orders(instrument, base, size=-1, verbose=False, raw=True)
+        try:
+            to_buy, _ = m1.get_orders(instrument, base, size=-1, verbose=False, raw=True)
+            _, to_sell = m2.get_orders(instrument, base, size=-1, verbose=False, raw=True)
 
-        if isinstance(solver, optimizers.ArbitrageOptimizer):
-            profit, profitability, _ = solver(to_buy, to_sell,
-                                              (m1.settings["taker_fee"], m2.settings["taker_fee"]),
-                                              m1.transfer_fee(instrument), verbose=False)
-        else:
-            profit, profitability = iterative_arbitrage(to_buy, to_sell, instrument, base, m1, m2, verbose)
+            if isinstance(solver, optimizers.ArbitrageOptimizer):
+                profit, profitability, _ = solver(to_buy, to_sell,
+                                                  (m1.settings["taker_fee"], m2.settings["taker_fee"]),
+                                                  m1.transfer_fee(instrument), verbose=False)
+            else:
+                profit, profitability = iterative_arbitrage(to_buy, to_sell, instrument, base, m1, m2, verbose)
 
-        if profit <= 0.0:
-            if verbose:
-                print(bcolors.FAIL + f"No orders were found to be profitable for buy of {instrument}"
-                                     f" at {m1} and sell at {m2}" + bcolors.ENDC)
+            if profit <= 0.0:
+                if verbose:
+                    print(bcolors.FAIL + f"No orders were found to be profitable for buy of {instrument}"
+                                         f" at {m1} and sell at {m2}" + bcolors.ENDC)
+                yield 0.0, 0.0
+            else:
+                if verbose:
+                    print(bcolors.OK + f"{m1} -> {m2}: profit = {profit} {base},"
+                                       f" profitability = {profitability:.4f}%\n" + bcolors.ENDC)
+
+                yield profit, profitability
+        except TypeError:
+            print(f"Cannot fetch {instrument}{base}")
             yield 0.0, 0.0
-        else:
-            if verbose:
-                print(bcolors.OK + f"{m1} -> {m2}: profit = {profit} {base},"
-                                   f" profitability = {profitability:.4f}%\n" + bcolors.ENDC)
-
-            yield profit, profitability
 
         sleep(DEFAULT_TIMOUT)
 
@@ -451,7 +455,7 @@ def arbitrage_summary(src: MarketDaemon, dest: MarketDaemon, solver=optimizers.L
     print("Processing joint pairs...")
     for pair in tqdm(joint_pairs):
         instrument, base = pair.split(src.settings["instrument_sep"])
-        ss = arbitrage_stream(src, dest, instrument, base, verbose=True, solver=solver)
+        ss = arbitrage_stream(src, dest, instrument, base, verbose=False, solver=solver)
         data["pair"].append(pair)
         data["instrument"].append(instrument)
         data["base"].append(base)

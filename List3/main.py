@@ -16,10 +16,10 @@ if __name__ == "__main__":
     # print(next(ss))
 
     # Zad 1 (10 pkt)
-    # print(bittrex.get_joint_pairs(bitbay))
+    print(bittrex.get_joint_pairs(bitbay))
 
     # Zad 2 (2 pkt)
-    # print(md.check_3_random_pairs(bitbay, bittrex))
+    print(md.check_3_random_pairs(bitbay, bittrex))
 
     # Zad 3 (8 pkt)
     df = md.arbitrage_summary(bittrex, bitbay, solver=optimizers.LinprogArbitrage())
