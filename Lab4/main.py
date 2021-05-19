@@ -3,21 +3,6 @@ from BittrexApi import BittrexApi
 from texttable import Texttable
 
 
-def find_common_markets(api1, api2):
-    markets1 = api1.markets
-    markets2 = api2.markets
-
-    return markets1 & markets2
-
-
-def print_markets(markets):
-    markets = sorted(markets)
-
-    for market in markets:
-        print("{0}-{1}".format(market[0], market[1]))
-    print()
-
-
 def main():
     bitbay = BitBayApi()
     bittrex = BittrexApi()
@@ -37,6 +22,21 @@ def main():
     print("# TASK 3.")
     arbitrages = calculate_arbitrages(bittrex, bitbay, common_markets)
     print_arbitrage_rating(arbitrages)
+
+
+def find_common_markets(api1, api2):
+    markets1 = api1.markets
+    markets2 = api2.markets
+
+    return markets1 & markets2
+
+
+def print_markets(markets):
+    markets = sorted(markets)
+
+    for market in markets:
+        print("{0}-{1}".format(market[0], market[1]))
+    print()
 
 
 def calculate_arbitrages(api1, api2, markets):
