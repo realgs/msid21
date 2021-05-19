@@ -7,14 +7,7 @@ from api.apis import APIS
 
 
 def convertToPLN(currency):
-    tables = ['A', 'B', 'C']
-    for table in tables:
-        url = f"http://api.nbp.pl/api/exchangerates/rates/{table}/{currency}/"
-        response = requests.get(url)
-        if response.status_code == 200:
-            return response.json()['rates'][0]['mid']
-
-    raise ValueError(f'Wrong currency: {currency}')
+    return APIS['Currency']['NBP'].ticker(currency)['price']
 
 
 def calculateDifference(buy, sell, withdrawalFee, transactionFee):
@@ -61,7 +54,7 @@ def calculateProfit(api, symbol, currency, price, quantity, transactionFee=0):
         return profit * conversionMultiplier
 
 
-def getBestProfit(apiType, symbol, currency, price, quantity, apiName=None, ):
+def getBestProfit(apiType, symbol, currency, price, quantity, apiName=None):
     profits = []
     transactionFee = 0
     if apiName != None:
@@ -80,7 +73,7 @@ def getBestProfit(apiType, symbol, currency, price, quantity, apiName=None, ):
 
 def loadInvestments():
     file = open(
-        '/home/karol/Documents/Projects/Studia/MSID/laboratoria/investmentsCrypto.json')
+        '/home/karol/Documents/Projects/Studia/MSID/laboratoria/investmentsTests.json')
     return json.load(file)
 
 
@@ -90,11 +83,15 @@ def printInvestments(investments):
                "Zysk", "Zysk netto", "Zysk 10%", "Zysk 10% netto"]
     for investment in investments:
 
-        bestProfit = getBestProfit('Crypto', investment['symbol'], investment['currency'],
-                               float(investment['pricePerShare']), float(investment['quantity']), investment['api'])
+        api = None
+        if 'api' in investment:
+            api = investment['api']
 
-        bestProfit10 = getBestProfit('Crypto', investment['symbol'], investment['currency'],
-                               float(investment['pricePerShare']), float(investment['quantity']) * 0.1, investment['api'])
+        bestProfit = getBestProfit(investment['type'], investment['symbol'], investment['currency'],
+                               float(investment['pricePerShare']), float(investment['quantity']), api)
+
+        bestProfit10 = getBestProfit(investment['type'], investment['symbol'], investment['currency'],
+                               float(investment['pricePerShare']), float(investment['quantity']) * 0.1, api)
 
         toPrint.append([
             investment['symbol'],

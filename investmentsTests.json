@@ -22,5 +22,19 @@
     "quantity": 1000,
     "currency": "USD",
     "api": "BitBay"
+  },
+  {
+    "symbol": "EUR",
+    "type": "Currency",
+    "pricePerShare": 4,
+    "quantity": 1500,
+    "currency": "PLN"
+  },
+  {
+    "symbol": "USD",
+    "type": "Currency",
+    "pricePerShare": 3.5,
+    "quantity": 1000,
+    "currency": "PLN"
   }
 ]
