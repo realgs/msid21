@@ -102,13 +102,12 @@ def calc_arbitrage_for_all():
     return result
 
 
-if __name__ == '__main__':
+def print_sorted_by_arbitrage():
     res = calc_arbitrage_for_all()
     res.sort(key=lambda x: x["earningsUSD"], reverse=True)
     for i in res:
         print("buy:", i["buy"].name, "sell:", i["sell"].name, "pair:", i["sell"].get_pairs()[i["pair"]], "profit:", str(i["earnings"]), "USD:", str(i["earningsUSD"]))
 
-    #bitbay = Bitbay.create_market()
-    #binance = Binance.create_market()
 
-    #print(calc_arbitrage(bitbay, binance, frozenset(["BTC", "DAI"])))
+if __name__ == '__main__':
+    print_sorted_by_arbitrage()
