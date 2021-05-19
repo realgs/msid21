@@ -9,8 +9,8 @@ class Api(ABC):
         self._url = url
         self._fees = {}
         self._markets = set()
-        self._setMarkets()
         self._setFees()
+        self._setMarkets()
 
     @abstractmethod
     def _setFees(self):
@@ -18,6 +18,10 @@ class Api(ABC):
 
     @abstractmethod
     def _setMarkets(self):
+        pass
+
+    @abstractmethod
+    def getOrderbook(self, market):
         pass
 
     @property

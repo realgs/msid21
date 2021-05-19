@@ -20,13 +20,34 @@ class BittrexApi(Api):
         for item in items:
             symbol = item["symbol"]
             transfer_fee = item["txFee"]
-            self._fees["transfer"][symbol] = transfer_fee
+            self._fees["transfer"][symbol] = float(transfer_fee)
 
     def _setMarkets(self):
         response = Api.request(self._url + "markets")
         items = response.json()
 
         for item in items:
+            status = item["status"]
+            if status == "OFFLINE":
+                continue
             c1 = item["baseCurrencySymbol"]
             c2 = item["quoteCurrencySymbol"]
             self._markets.add((c1, c2))
+
+    def getOrderbook(self, market):
+        result = {"asks": [], "bids": []}
+
+        response = Api.request(self._url + "markets/{0}-{1}/orderbook".format(market[0], market[1]))
+        items = response.json()
+
+        asks = items["ask"]
+
+        for ask in asks:
+            result["asks"].append((float(ask["quantity"]), float(ask["rate"])))
+
+        bids = items["bid"]
+
+        for bid in bids:
+            result["bids"].append((float(bid["quantity"]), float(bid["rate"])))
+
+        return result
