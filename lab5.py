@@ -81,9 +81,13 @@ class Investment:
         if response is not None:
             rates = response.json()
             return rates[0]['rates']
+        else:
+            return None
 
     def get_exchange_rate(self, currency_from, currency_to):
         rate_to_pln, rate_from_pln = 1, 1
+        if self.__rates is None:
+            return 1
         for rate in self.__rates:
             if rate['code'] == currency_from:
                 rate_to_pln = rate['mid']
@@ -114,6 +118,8 @@ class Investment:
                 resp = lab4.get_response(get_api_path(EOD_HIST, 'real-time', stock))
                 if resp is not None:
                     responses[stock] = resp.json()
+                else:
+                    return None
         return responses
 
     def sell_stocks(self, api_responses, percent=100):
@@ -156,7 +162,9 @@ class Investment:
             if pair[1] == self.__wallet['base currency']:
                 for currency in self.__cryptocurrencies.keys():
                     if pair[0] == currency:
-                        responses.append(lab4.ApiResponse(pair[0], pair[1], api))
+                        api_resp = lab4.ApiResponse(pair[0], pair[1], api)
+                        if api_resp.get_resp_json is not None:
+                            responses.append(api_resp)
         return responses
 
     def sell_cryptocurrency(self, currency_sell, amount, api_response):
@@ -280,20 +288,31 @@ class Investment:
         columns = ['name', 'amount', 'rate', 'value', 'value netto', 'api',
                    'value 10%', 'value netto 10%', 'api 10%', 'arbitrage']
         crypto_resp = self.get_all_api_responses()
-        crypto_all = Investment.get_list(self.get_most_profitable_sells(crypto_resp),
-                                         self.get_most_profitable_sells(crypto_resp, 10),
-                                         None, self.profitable_arbitrage())
-        crypto = crypto_all[0]
-        sum_of = crypto_all[1]
+        sum_of = [0, 0, 0, 0]
+        crypto, currencies, stocks = None, None, None
+        to_table = []
+        if len(crypto_resp) > 0:
+            crypto_all = Investment.get_list(self.get_most_profitable_sells(crypto_resp),
+                                             self.get_most_profitable_sells(crypto_resp, 10),
+                                             None, self.profitable_arbitrage())
+            to_table.append(crypto_all[0])
+            sum_of = crypto_all[1]
         stock_resp = self.get_stocks_responses()
-        stocks_all = Investment.get_list(self.sell_stocks(stock_resp),
-                                         self.sell_stocks(stock_resp, 10), EOD_HIST)
-        stocks = stocks_all[0]
-        currencies_all = Investment.get_list(self.sell_currencies(), self.sell_currencies(10), NBP)
-        currencies = currencies_all[0]
+        if stock_resp is not None:
+            stocks_all = Investment.get_list(self.sell_stocks(stock_resp),
+                                             self.sell_stocks(stock_resp, 10), EOD_HIST)
+            to_table.append(stocks_all[0])
+        if self.__rates is not None:
+            currencies_all = Investment.get_list(self.sell_currencies(), self.sell_currencies(10), NBP)
+            to_table.append(currencies_all[0])
         for nbr in range(len(sum_of)):
-            sum_of[nbr] += currencies_all[1][nbr] + stocks_all[1][nbr]
-        table = crypto + currencies + stocks
+            if currencies is not None:
+                sum_of[nbr] += currencies_all[1][nbr]
+            if stocks is not None:
+                sum_of[nbr] += stocks_all[1][nbr]
+        table = []
+        for item in to_table:
+            table += item
         table.append(['SUM', '', '', sum_of[0], sum_of[1], '', sum_of[2], sum_of[3], '', ''])
         print(table)
         df = pandas.DataFrame(data=table, columns=columns)

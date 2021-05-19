@@ -8,6 +8,7 @@ import lab5
 
 
 CATEGORIES = ['currencies', 'cryptocurrencies', 'polish stocks', 'foreign stocks']
+DEFAULT_WALLET = 'default_wallet.json'
 
 
 class DataFrameModel(QAbstractTableModel):
@@ -38,12 +39,10 @@ class InvestmentWindow(QMainWindow):
         self.setGeometry(100, 100, 1600, 900)
         self.setWindowTitle('Investment Assistant')
         self.label = QtWidgets.QLabel(self)
-        self.file_name = None
+        self.file_name = DEFAULT_WALLET
         self.openFileNameDialog()
-        self.invest = None
-        if self.file_name is not None:
-            self.invest = lab5.Investment(self.file_name)
-            self.model = DataFrameModel(self.invest.data_frame_sell_resources())
+        self.invest = lab5.Investment(self.file_name)
+        self.model = DataFrameModel(self.invest.data_frame_sell_resources())
         self.view = QTableView(self)
         self.save_button = QtWidgets.QPushButton(self)
 
@@ -66,7 +65,7 @@ class InvestmentWindow(QMainWindow):
 
     def initUI(self):
         self.setStyleSheet("background-color: ivory;")
-        if self.file_name is None:
+        if self.file_name == DEFAULT_WALLET:
             self.label.setText("Wrong wallet file")
         else:
             self.label.setText("")
