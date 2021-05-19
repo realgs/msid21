@@ -1,0 +1,1 @@
+{"base currency": "USD", "assets": {"cryptocurrencies": [{"buy price": 45000.1, "name": "BTC", "volume": 1}, {"buy price": 2900.0, "name": "ETH", "volume": 0.1}], "currencies": [{"buy price": 1.2, "name": "EUR", "volume": 1000}], "polish shares": [{"buy price": 76.4, "name": "PKN.WAR", "volume": 1}], "foreign shares": [{"buy price": 145.35, "name": "IBM", "volume": 25.46}]}}

@@ -6,6 +6,7 @@ from portfolio_back.data_retriever import DataRetriever
 
 TAX_RATIO = .19
 DEPTH = 25
+DEFAULT_BASE_CURRENCY = 'USD'
 
 
 class Asset:
@@ -22,14 +23,31 @@ class Asset:
 
 class Wallet:
 
-    def __init__(self, wallet_path):
-        temp_wallet = Wallet.read_wallet(wallet_path)
-        self.base_currency = temp_wallet['base currency']
-        self.currencies = temp_wallet['assets']['currencies']
-        self.cryptocurrencies = temp_wallet['assets']['cryptocurrencies']
-        self.foreign_shares = temp_wallet['assets']['foreign_shares']
-        self.polish_shares = temp_wallet['assets']['polish_shares']
+    def __init__(self, wallet_dict):
+        self.base_currency = wallet_dict['base currency']
+        self.currencies = wallet_dict['assets']['currencies']
+        self.cryptocurrencies = wallet_dict['assets']['cryptocurrencies']
+        self.foreign_shares = wallet_dict['assets']['foreign shares']
+        self.polish_shares = wallet_dict['assets']['polish shares']
         self.data_retriever = DataRetriever()
+
+    @classmethod
+    def wallet_from_json(cls, wallet_path):
+        wallet_dict = Wallet.read_wallet(wallet_path)
+        return cls(wallet_dict)
+
+    @classmethod
+    def empty_wallet(cls):
+        wallet_dict = {
+            'base currency': DEFAULT_BASE_CURRENCY,
+            'assets': {
+                'currencies': [],
+                'cryptocurrencies': [],
+                'foreign shares': [],
+                'polish shares': []
+            }
+        }
+        return cls(wallet_dict)
 
     @staticmethod
     def read_wallet(wallet_path):
@@ -88,7 +106,27 @@ class Wallet:
                             Wallet.calculate_net(item['volume'] * percentage, item['buy price'],
                                                  current_price), stock_name, arbitrage]
 
+    def add_asset(self, asset):
+        if asset['type'] == 'polish stock':
+            asset.pop('type', None)
+            asset['buy price'] = asset.pop('price')
+            self.polish_shares.append(asset)
+        elif asset['type'] == 'foreign stock':
+            asset.pop('type', None)
+            asset['buy price'] = asset.pop('price')
+            self.foreign_shares.append(asset)
+        elif asset['type'] == 'currency':
+            asset.pop('type', None)
+            asset['buy price'] = asset.pop('price')
+            self.currencies.append(asset)
+        elif asset['type'] == 'cryptocurrency':
+            asset.pop('type', None)
+            asset['buy price'] = asset.pop('price')
+            self.cryptocurrencies.append(asset)
+
 
 if __name__ == '__main__':
-    wallet = Wallet(r'D:\Studia\IV semestr\MSiD\Lab\Lista5\wallet.json')
+    wallet = Wallet.wallet_from_json(r"D:\Studia\IV semestr\MSiD\Lab\Lista5\wallet.json")
+    # wallet = Wallet.empty_wallet()
+    # wallet.add_asset({'type': 'cryptocurrency', 'name': 'ETH', 'price': 50, 'volume': 100})
     print(wallet.get_complete_assets_dataframe())

@@ -1,6 +1,6 @@
 import requests
 
-from offers import print_list, get_common_pairs_for_sites, BASE_URLS, get_data
+from .offers import print_list, get_common_pairs_for_sites, BASE_URLS, get_data
 
 FEES_URL_INFIXES = {'bittrex': 'currencies'}
 FEES = {'bittrex': {'taker': 0.25, 'transfer': {'BTC': 0.0005, 'LTC': 0.01, 'ETH': 0.006}},
@@ -109,13 +109,15 @@ def get_arbitrages(site_list, pairs, offers):
             bid_offers[site] = list(filter(lambda offer: offer.transaction_type == 'bid', temp_offer_list))
             ask_offers[site] = list(filter(lambda offer: offer.transaction_type == 'ask', temp_offer_list))
 
-        best_bid, best_ask, best_sites_pair, best_arbitrage_results = \
-            find_best_arbitrage(bid_offers, ask_offers, site_list)
+        if bid_offers[site_list[0]] and bid_offers[site_list[1]] and ask_offers[site_list[0]] and \
+                bid_offers[site_list[1]]:
+            best_bid, best_ask, best_sites_pair, best_arbitrage_results = \
+                find_best_arbitrage(bid_offers, ask_offers, site_list)
 
-        arbitrage_list.append(get_profit_info(best_bid, best_sites_pair[0], best_ask, best_sites_pair[1],
-                                              best_arbitrage_results))
-        bid_offers.clear()
-        ask_offers.clear()
+            arbitrage_list.append(get_profit_info(best_bid, best_sites_pair[0], best_ask, best_sites_pair[1],
+                                                  best_arbitrage_results))
+            bid_offers.clear()
+            ask_offers.clear()
 
     return sorted(arbitrage_list, key=lambda arbitrage: arbitrage.percentage, reverse=True)
 
