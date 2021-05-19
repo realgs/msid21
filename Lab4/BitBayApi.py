@@ -1,7 +1,7 @@
 import json
 from Api import Api
 
-BITBAY_TAKER = 0.0037
+BITBAY_TAKER = 0.0043
 BITBAY_URL = "https://api.bitbay.net/rest/trading/"
 
 
