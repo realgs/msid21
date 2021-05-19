@@ -1,0 +1,19 @@
+{
+  "stock": {
+    "Germany" : {
+      "BMWG.DE" : {"Quantity": 0.08, "Rate": 37182.795},
+      "BASFn.DE" : {"Quantity": 0.08, "Rate": 37182.795}
+    },
+    "Switzerland" : {
+      "NESN.N" : {"Quantity": 0.08, "Rate": 37182.795},
+      "NOVN.S" : {"Quantity": 0.08, "Rate": 37182.795}
+    }
+  },
+  "currency": {
+    "EURUSD" : {"Quantity": 0.08, "Rate": 37182.795},
+    "EURCHF" : {"Quantity": 0.08, "Rate": 37182.795}
+  },
+  "cryptocurrency" : {
+    "BTCUSD" : {"Quantity": 0.08, "Rate": 37182.795}
+  }
+}

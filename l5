@@ -1,0 +1,44 @@
+Projekt portfolio inwestycyjne (20pkt)
+
+(estymowany czas realizacji listy ~6h)
+
+Zakładamy, że użytkownik naszego programu dysponuje zasobami finansowymi różnego pokroju: akcje zagraniczne, akcje polskie, kryptowaluty, waluty, ...
+Można rozszerzyć/zmodyfikować zbiór - modyfikacje do konsultacji. Nasz program ma w praktyczny sposób podsumować portfolio inwestycyjne.
+Wykorzystując nabyte podczas semestru umiejętności programistyczne piszemy namiastkę klienta inwestycyjnego.
+
+1. Program ma czytać z JSONa konfiguracyjnego informacje o posiadanych zasobach, ich ilościach oraz średniej cenie ich nabycia. Ma się tam również znaleźć info o walucie bazowej USD/EUR/PLN (1pkt)
+sami umieszczamy dane w jsonie i go z tamtad pobieramy
+
+2. Ściągamy z dostępnych API notowania zasobów w stosunku do waluty bazowej.
+a) Jeśli są dostępne informacje o kupnie/sprzedaży - patrzymy na kursy kupna i liczymy z którymi ofertami trzeba sparować zasób użytkownika, by wyprzedać całą posiadaną ilość (patrzymy wgłąb tabeli bids) (5pkt)
+b) Jeśli dla danego zasobu nie mamy dostępu o kursach kupna/sprzedaży (np bezpłatne api dla akcji) upraszczamy proces - bierzemy cenę ostatniej transakcji i nie liczymy wolumenu (2pkt)
+W wyniku zadania 2 wyświetlamy listę zasobów użytkownika w tabeli (nazwa zasobu, ilość, cena(cena ostatniej transakcji), wartość(liczona wg cen jak w punktach a i b) ).
+W ostatnim wierszu tabeli uwzględnić sumy poszczególnych pól z kolumny wartość (i dla przyszłej kolumny z zadania 3 i 4).
+Q: jesli nie ma danych to nie oslugujemy rynku
+
+
+3. Analogicznie do zadania 2 liczymy to samo tylko do zadanej głębokości portfolio.
+Użytkownik wprowadza informację, że chciałby sprzedać przykładowo 10% swoich zasobów i dla tej ilości robimy wycenę jak z zadania 2.
+Dodajemy do tabeli kolumnę "wartość 10%"
+(uwaga kontrolna - cena z podpunktu a) będzie korzystniejsza, bo patrzymy "płycej" w książce ofert kupna, czyli patrzymy tylko na korzystniejsze oferty) (3pkt)
+
+4. Uwzględnić w przybliżeniu należny podatek od zysków kapitałowych. W Polsce jest to 19% od zysków. By policzyć zysk musimy najpierw policzyć całkowity koszt nabycia zasobu lub części zasobu którą zamierzamy sprzedać.
+Do tabeli dodać kolumnę wartość netto (wartość danego zasobu po odjęciu należnego podatku od zysku. Zysk to obecna wartość DANEJ ILOŚCI ZASOBU pomniejszona o koszt JEJ nabycia).
+Analogicznie dodajemy "wartość 10% netto" dla uzupełnienia kwoty netto do zad 3 (2pkt)
+
+5. Do tabeli dodać skrótową informację o rekomendowanym miejscu sprzedaży - gdzie spośród dostępnych giełd najbardziej opłaca się sprzedać dany zasób.
+Mogą to być 3 pierwsze litery giełdy z najkorzystniejszą w danym momencie ceną. (2pkt)
+
+6. Wykorzystać zadanie realizowane w ramach poprzedniej listy i do tabeli z zasobami dodać informację o możliwym arbitrażu. Arbitraż sprawdzać tylko na zbiorze zasobów dostępnych w portfolio.
+Kolumnę nazwać arbitraż, wpisać do niej skrótowo nazwy giełd i parę walutową na której jest możliwy arbitraż oraz potencjalny zysk. Można założyć, że ten punkt dotyczy tylko kryptowalut.
+Przykładowo BB-BITT, LTCBTC, +0.6LTC (3pkt)
+
+7. Wygodny interfejs graficzny do programu, może być jako front postawiony do projektu. Interfejs ma umożliwiać wprowadzenie zasobów, ich ilości i średniego kosztu nabycia jednostki oraz zapis portfela do jsona (2pkt)
+mozna sobie odpuscic
+
+
+Hint: jeśli w którymś przypadku wystąpi u Was konieczność przeliczenia walut pomiędzy sobą np USD na PLN a na giełdzie nie będzie wiarygodnej informacji o kursie proszę wykorzystać API NBP, kursy średnie z ostatniego dostępnego dnia.
+
+Dla grup tygodnia parzystego deadline 09.06.2021r, dla grup z tygodnia nieparzystego 16.06.2021r.
+UWAGA - bardzo proszę o oddanie listy wcześniej, ten deadline jest absolutnie nieprzekraczalny. Po nim nie ma dosyłania, poprawiania, prostowania niejasności i nieporozumień.
+Potraktujcie powyższe terminy jako koniec przedmiotu, po którym nie ma ze mną kontaktu i możliwości zmiany czegokolwiek.
