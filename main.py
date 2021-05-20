@@ -54,18 +54,19 @@ def calculateProfit(api, symbol, currency, price, quantity, transactionFee=0):
         return profit * conversionMultiplier
 
 
-def getBestProfit(apiType, symbol, currency, price, quantity, apiName=None):
+def getBestProfit(apiType, symbol, currency, price, quantity, apiName=None, skipCurrentApi = False):
     profits = []
     transactionFee = 0
     if apiName != None:
         transactionFee = APIS[apiType][apiName].transactionFee
 
     for api in APIS[apiType]:
-        if api != apiName:
+        if api == apiName and skipCurrentApi == True:
+             profits.append(-math.inf)   
+        else:
             profits.append(calculateProfit(
                 APIS[apiType][api], symbol, currency, price, quantity, transactionFee))
-        else:
-            profits.append(-math.inf)
+            
 
     maxIndex = profits.index(max(profits))
     return {'name': list(APIS[apiType].keys())[maxIndex], 'profit': profits[maxIndex]}
@@ -80,7 +81,7 @@ def loadInvestments():
 def printInvestments(investments):
     toPrint = []
     headers = ["Symbol", "Cena", "Ilość", "Giełda",
-               "Zysk", "Zysk netto", "Zysk 10%", "Zysk 10% netto"]
+               "Zysk", "Zysk netto", "Zysk 10%", "Zysk 10% netto", "Arbitraż"]
     for investment in investments:
 
         api = None
@@ -101,7 +102,8 @@ def printInvestments(investments):
             f"{bestProfit['profit']:.2f}zł", 
             f"{(bestProfit['profit']*0.81):.2f}zł", 
             f"{bestProfit10['profit']:.2f}zł", 
-            f"{(bestProfit10['profit']*0.81):.2f}zł"
+            f"{(bestProfit10['profit']*0.81):.2f}zł",
+            0 # TODO: Arbitraż
         ])
 
     print(tabulate(toPrint, headers=headers))
