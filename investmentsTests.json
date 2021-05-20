@@ -36,5 +36,19 @@
     "pricePerShare": 3.5,
     "quantity": 1000,
     "currency": "PLN"
+  },
+  {
+    "symbol": "AAPL",
+    "type": "US",
+    "pricePerShare": 110,
+    "quantity": 2,
+    "currency": "USD"
+  },
+  {
+    "symbol": "TSLA",
+    "type": "US",
+    "pricePerShare": 420,
+    "quantity": 5,
+    "currency": "USD"
   }
 ]
