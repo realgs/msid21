@@ -31,14 +31,17 @@ async def getTransferFee(currency):
     return DEFAULT_TRANSFER_FEE
 
 
-async def getBestOrders(cryptos, amount):
-    apiResult = await getApiResponse(f"{API_BASE_URL}orderbook-limited/{cryptos[0]}-{cryptos[1]}/{amount}", STATUS_KEY, STATUS_OK)
+async def getBestOrders(cryptos, amount=None):
+    if amount:
+        apiResult = await getApiResponse(f"{API_BASE_URL}orderbook-limited/{cryptos[0]}-{cryptos[1]}/{amount}", STATUS_KEY, STATUS_OK)
+    else:
+        apiResult = await getApiResponse(f"{API_BASE_URL}orderbook-limited/{cryptos[0]}-{cryptos[1]}", STATUS_KEY, STATUS_OK)
 
     if apiResult:
         if apiResult['buy'] and apiResult['sell']:
             buys = [{"price": float(b['ra']), 'quantity': float(b['ca'])} for b in reversed(apiResult['buy'])]
             sells = [{"price": float(s['ra']), 'quantity': float(s['ca'])} for s in apiResult['sell']]
-            if len(buys) == amount and len(sells) == amount:
+            if not amount or len(buys) == amount and len(sells) == amount:
                 return {"success": True, "buys": buys, "sells": sells}
         else:
             return {"success": False, "cause": "There is not enough data"}
