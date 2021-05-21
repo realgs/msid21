@@ -20,7 +20,7 @@ API = {'cryptocurrencies': {
        'currencies': {
            'nbp': {'path': 'http://api.nbp.pl/api/exchangerates',
                    'request': ['tables/A'],
-                   'format': 'json', 'today': 'today'}}
+                   'format': 'json', 'last': 'last'}}
        }
 EOD_HIST = 'eodhistoricaldata'
 NBP = 'nbp'
@@ -40,7 +40,7 @@ def get_api_path(api, request_type, stock_NASDAQ_code=None):
     if api == NBP and request_type == API['currencies'][api]['request'][0]:
         api_data = API['currencies'][api]
         return str('{0}/{1}/{2}/?format={3}'.format(api_data['path'], request_type,
-                                                    api_data['today'], api_data['format']))
+                                                    api_data['last'], api_data['format']))
 
 
 def get_multiple_stocks_path(stock_api, stock_NASDAQ):
