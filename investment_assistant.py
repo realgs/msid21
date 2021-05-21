@@ -33,21 +33,48 @@ class DataFrameModel(QAbstractTableModel):
             return self._data.columns[col]
 
 
+class PercentWindow(QMainWindow):
+    def __init__(self, parent=None):
+        super(PercentWindow, self).__init__(parent)
+        self.setGeometry(100, 100, 350, 200)
+        self.setWindowTitle("Percent to sell")
+        self.setStyleSheet("background-color: ivory;")
+        self.instruction_text = QtWidgets.QLabel(self)
+        self.instruction_text.setText("Select percent of resources to sell")
+        self.instruction_text.move(60, 50)
+        self.instruction_text.adjustSize()
+
+        percents = [str(nbr) for nbr in range(1, 100)]
+        self.combo_percent = QtWidgets.QComboBox(self)
+        self.combo_percent.addItems(percents)
+        self.combo_percent.move(100, 100)
+        self.combo_percent.resize(100, 30)
+        self.combo_percent.activated[str].connect(self.open_investment_window)
+
+    def open_investment_window(self):
+        if self.combo_percent.currentText():
+            try:
+                percent = int(self.combo_percent.currentText())
+                invest_win = InvestmentWindow(percent, self)
+                invest_win.show()
+            except ValueError:
+                self.instruction_text.setText("Select percent of resources to sell !!!")
+                self.adjustSize()
+
+
 class InvestmentWindow(QMainWindow):
-    def __init__(self):
-        super(InvestmentWindow, self).__init__()
+    def __init__(self, percent, parent=None):
+        super(InvestmentWindow, self).__init__(parent)
         self.setGeometry(100, 100, 1600, 900)
         self.setWindowTitle('Investment Assistant')
         self.label = QtWidgets.QLabel(self)
         self.file_name = DEFAULT_WALLET
         self.openFileNameDialog()
         self.invest = lab5.Investment(self.file_name)
-        self.model = DataFrameModel(self.invest.data_frame_sell_resources())
+        self.model = DataFrameModel(self.invest.data_frame_sell_resources(percent))
         self.view = QTableView(self)
         self.save_button = QtWidgets.QPushButton(self)
-
         self.combo_text = ''
-
         self.text_base_currency = QtWidgets.QLabel(self)
         self.text_add = QtWidgets.QLabel(self)
         self.text_name = QtWidgets.QLabel(self)
@@ -174,7 +201,7 @@ class InvestmentWindow(QMainWindow):
 
 def window():
     app = QApplication(sys.argv)
-    win = InvestmentWindow()
+    win = PercentWindow()
     win.show()
     sys.exit(app.exec_())
 
