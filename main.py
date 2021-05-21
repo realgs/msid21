@@ -23,7 +23,7 @@ from models.resource import Resource
 # asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 # asyncio.run(main())
 
-portfolio = Portfolio('miko', 'PLN')
+portfolio = Portfolio('miko', 'USD')
 portfolio.read()
 portfolio.addResource(Resource('BTC', 5, 122.124))
 portfolio.save()

@@ -1,5 +1,6 @@
 from services.configurationService import readConfig, saveConfig
 from models.resource import Resource
+from services.converter import convertCurrencies
 
 FILENAME = 'portfolio_data.json'
 
@@ -13,9 +14,10 @@ class Portfolio:
     def read(self):
         data = readConfig(self._owner+"_"+FILENAME)
         if data:
-            # TODO: if currency not match - evaluate
-            self._baseValue = data['baseValue']
             self._resources = {resource['name']: Resource.fromDict(resource) for resource in data['resources']}
+            if self._baseValue != data['baseValue']:
+                for resource in self._resources.values():
+                    resource.meanPurchase = convertCurrencies(data['baseValue'], self._baseValue, resource.meanPurchase)
             return True
         else:
             return False
