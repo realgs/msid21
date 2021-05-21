@@ -7,7 +7,7 @@ ORDER_AMOUNT = 10
 ACCURACY = 0.00000000001
 
 
-class ProfitSeeker:
+class ProfitService:
     def __init__(self, firstApi, secondApi):
         self.__firstApi = firstApi
         self.__secondApi = secondApi

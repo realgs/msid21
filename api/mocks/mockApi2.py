@@ -1,4 +1,4 @@
-from mocks.mockHelper import prepareData
+from api.mocks.mockHelper import prepareData
 
 NAME = "Mock2"
 TAKER_FEE = 0.00002

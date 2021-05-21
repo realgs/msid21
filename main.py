@@ -1,23 +1,29 @@
 import asyncio
-import bitbay
-import bittrex
-import mocks.mockApi1 as mock1
-import mocks.mockApi2 as mock2
-from finance import ProfitSeeker
+from api import bitbay, bittrex
+import api.mocks.mockApi1 as mock1
+import api.mocks.mockApi2 as mock2
+from services.profitService import ProfitService
+from financePortfolio import Portfolio
+from models.resource import Resource
 
-interval = 5
+# INTERVAL = 5
+#
+#
+# async def main():
+#     bittrexBitbaySeeker = ProfitService(bittrex, bitbay)
+#     print(await bittrexBitbaySeeker.commonMarkets)
+#     await bittrexBitbaySeeker.displayAllPossibleProfits(INTERVAL)
+#
+#
+# async def test():
+#     mockSeeker = ProfitService(mock1, mock2)
+#     print(await mockSeeker.commonMarkets)
+#     await mockSeeker.displayAllPossibleProfits(INTERVAL)
+#
+# asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+# asyncio.run(main())
 
-
-async def main():
-    bittrexBitbaySeeker = ProfitSeeker(bittrex, bitbay)
-    print(await bittrexBitbaySeeker.commonMarkets)
-    await bittrexBitbaySeeker.displayAllPossibleProfits(interval)
-
-
-async def test():
-    mockSeeker = ProfitSeeker(mock1, mock2)
-    print(await mockSeeker.commonMarkets)
-    await mockSeeker.displayAllPossibleProfits(interval)
-
-asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-asyncio.run(main())
+portfolio = Portfolio('miko', 'PLN')
+portfolio.read()
+portfolio.addResource(Resource('BTC', 5, 122.124))
+portfolio.save()

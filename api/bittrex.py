@@ -1,4 +1,4 @@
-from apiConnection import getApiResponse
+from services.connectionService import getApiResponse
 
 NAME = "Bittrex"
 # https://www.cryptowisser.com/exchange/bittrex/#:~:text=Well%2C%20Bittrex%20is%20one%20of,flat%20trading%20fee%20of%200.20%25.

@@ -1,4 +1,4 @@
-from apiConnection import getApiResponse
+from services.connectionService import getApiResponse
 
 NAME = "Bitbay"
 TAKER_FEE = 0.001
