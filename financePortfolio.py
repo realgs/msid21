@@ -1,6 +1,7 @@
 from services.configurationService import readConfig, saveConfig
 from models.resource import Resource, ResourceValue, ResourceProfit, ResourceStats
 from api import bitbay, bittrex
+from services.profitService import ProfitService
 
 FILENAME = 'portfolio_data.json'
 API_LIST = [bitbay, bittrex]
@@ -15,6 +16,7 @@ class Portfolio:
         self._baseValue = baseValue
         self.cantorService = cantorService
         self._resources = {}
+        self._apiCrossProfitServices = None
 
     def read(self):
         data = readConfig(self._owner+"_"+FILENAME)
@@ -83,6 +85,46 @@ class Portfolio:
         if len(orderApiData):
             return orderApiData[0]['apiName']
         return 'Not Found'
+
+    async def getArbitration(self, resourceName1, resourceName2):
+        if resourceName1 not in self._resources or resourceName2 not in self._resources:
+            print(f'Warning - Portfolio - getArbitration: request with not existing resources: {resourceName1} or {resourceName2}')
+            return []
+
+        availableProfitServices = await self._getApiCrossProfitServices()
+        allProfits = []
+        for profitService in availableProfitServices:
+            # data = await profitService.getPossibleArbitration({'currency1': resourceName1, 'currency2': resourceName2}, True)
+            data = await profitService.getPossibleArbitration({'currency1': resourceName1, 'currency2': resourceName2})
+            if data and len(data):
+                allProfits.append(data[0])
+        allProfits = sorted(allProfits, key=lambda data: data['rate'], reverse=True)
+        return self._getPossibleProfits(allProfits, resourceName1, resourceName2)
+
+    def _getPossibleProfits(self, allProfits, resourceName1, resourceName2):
+        amount = min(self._resources[resourceName1].amount, self._resources[resourceName2].amount)
+        bestArbitration = []
+        for profit in allProfits:
+            quantity = min(amount, profit['quantity'])
+            profit['quantity'] = quantity
+            bestArbitration.append(profit)
+            amount -= quantity
+            if amount < 0:
+                break
+        return bestArbitration
+
+    async def _getApiCrossProfitServices(self):
+        if not self._apiCrossProfitServices:
+            self._apiCrossProfitServices = []
+            for idx1 in range(0, len(API_LIST)):
+                api1 = API_LIST[idx1]
+                for idx2 in range(idx1 + 1, len(API_LIST)):
+                    api2 = API_LIST[idx2]
+                    profitService = ProfitService(api1, api2)
+                    commonMarkets = await profitService.commonMarkets
+                    if commonMarkets:
+                        self._apiCrossProfitServices.append(profitService)
+        return self._apiCrossProfitServices
 
     @staticmethod
     def _toValidPart(part):

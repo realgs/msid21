@@ -1,28 +1,6 @@
 import asyncio
-from api import bitbay, bittrex
-import api.mocks.mockApi1 as mock1
-import api.mocks.mockApi2 as mock2
-from services.profitService import ProfitService
 from financePortfolio import Portfolio
 from services.cantorService import NBPCantorService
-from models.resource import Resource
-
-# INTERVAL = 5
-#
-#
-# async def main():
-#     bittrexBitbaySeeker = ProfitService(bittrex, bitbay)
-#     print(await bittrexBitbaySeeker.commonMarkets)
-#     await bittrexBitbaySeeker.displayAllPossibleProfits(INTERVAL)
-#
-#
-# async def test():
-#     mockSeeker = ProfitService(mock1, mock2)
-#     print(await mockSeeker.commonMarkets)
-#     await mockSeeker.displayAllPossibleProfits(INTERVAL)
-#
-# asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-# asyncio.run(main())
 
 PART = 10
 
@@ -31,6 +9,10 @@ portfolio.read()
 
 loop = asyncio.get_event_loop()
 values = loop.run_until_complete(asyncio.gather(portfolio.getStats(PART)))[0]
-
 for value in values:
     print(value.getStats())
+
+loop = asyncio.get_event_loop()
+values = loop.run_until_complete(asyncio.gather(portfolio.getArbitration('ETH', 'BTC')))[0]
+for value in values:
+    print(value)

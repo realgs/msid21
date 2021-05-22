@@ -94,22 +94,19 @@ class ProfitService:
         print(f"{colorPrefix}{currencies[0]} -> {currencies[1]},\t\tRate: {rate}%,\t\tFull profit: {profit} "
               f"{currencies[1]},\t\tBuy in {names[0]}, sell in {names[1]},\t\tQuantity: {quantityFixed} {currencies[1]}{colorSuffix}")
 
-    async def displayAllPossibleProfits(self, interval=5):
-        markets = await self.commonMarkets
-        while True:
-            startTime = datetime.now()
-            orders = await asyncio.gather(*[self._retrieveOrders(market) for market in markets])
-            orders = [o for o in orders if o[2]['success'] and o[3]['success']]
+    async def getPossibleArbitration(self, clientMarkets, onlyProfits=False):
+        allMarkets = await self.commonMarkets
+        markets = [markets for markets in allMarkets if markets['currency1'] == clientMarkets['currency1'] and markets['currency2'] == clientMarkets['currency2']]
 
-            marketsProfits = [await self._getTransferData(marketOrders) for marketOrders in orders]
-            marketsProfits.sort(key=lambda profitData: profitData['rate'], reverse=True)
+        orders = await asyncio.gather(*[self._retrieveOrders(market) for market in markets])
+        orders = [o for o in orders if o[2]['success'] and o[3]['success']]
 
-            endTime = datetime.now()
-            delta = interval - (endTime - startTime).total_seconds()
-            time.sleep(max(0.0, delta))
-            print(f"\nBest profits: {datetime.now()}")
-            for data in marketsProfits:
-                self._printFullInfo(data['names'], data['quantity'], data['profit'], data['currencies'])
+        marketsProfits = [await self._getTransferData(marketOrders) for marketOrders in orders]
+        if onlyProfits:
+            marketsProfits = [marketsProfit for marketsProfit in marketsProfits if marketsProfit['rate'] > 0]
+
+        marketsProfits.sort(key=lambda profitData: profitData['rate'], reverse=True)
+        return marketsProfits
 
     async def _getTransferData(self, marketOrders):
         currency1, currency2, market1Data, market2Data = marketOrders
