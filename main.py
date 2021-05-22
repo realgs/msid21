@@ -23,11 +23,13 @@ from models.resource import Resource
 # asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 # asyncio.run(main())
 
+PART = 10
+
 portfolio = Portfolio('miko', 'USD')
 portfolio.read()
 
 loop = asyncio.get_event_loop()
-values = loop.run_until_complete(asyncio.gather(portfolio.fullPortfolioValue()))[0]
+values = loop.run_until_complete(asyncio.gather(portfolio.getStats(PART)))[0]
 
 for value in values:
-    print(value)
+    print(value.getStats())
