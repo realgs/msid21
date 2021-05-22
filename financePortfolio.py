@@ -5,7 +5,7 @@ from api import bitbay, bittrex
 
 FILENAME = 'portfolio_data.json'
 API_LIST = [bitbay, bittrex]
-DEFAULT_VALUE = 'USD'
+DEFAULT_VALUE = 'PLN'
 SUCCESS_KEY = 'success'
 COUNTRY_PROFIT_FEE = 0.19
 
@@ -56,14 +56,14 @@ class Portfolio:
             buyFees = await self._getSortedOrders(resource.name)
             name, fullAmount = resource.name, resource.amount / 100 * part
             if not buyFees:
-                valuesOfResources.append(ResourceValue(name, fullAmount, 0, 0, self._baseValue, part))
+                recommendedApi = await self.getRecommendedApiForResource(name)
+                valuesOfResources.append(ResourceValue(name, fullAmount, 0, 0, self._baseValue, part, recommendedApi))
             else:
-                value = self._calcValue(name, resource.amount, buyFees, part)
+                value = await self._calcValue(name, resource.amount, buyFees, part)
                 valuesOfResources.append(value)
         return valuesOfResources
 
     async def getProfit(self, part=100, portfolioValue=None):
-        # TODO: Kwota JEJ nabycia
         part = self._toValidPart(part)
         if not portfolioValue:
             portfolioValue = await self.portfolioValue(part)
@@ -77,6 +77,13 @@ class Portfolio:
             profits.append(ResourceProfit(resourceValue.name, fullProfit, partProfit, part))
         return profits
 
+    async def getRecommendedApiForResource(self, resourceName, orderApiData=None):
+        if not orderApiData:
+            orderApiData = await self._getSortedOrders(resourceName)
+        if len(orderApiData):
+            return orderApiData[0]['apiName']
+        return 'Not Found'
+
     @staticmethod
     def _toValidPart(part):
         if part < 0:
@@ -85,43 +92,28 @@ class Portfolio:
             return 100
         return part
 
-    def _calcValue(self, name, fullAmount, buyFees, part):
-        leftPartAmount, leftFullAmount = fullAmount / 100 * part, fullAmount
-        partValue, fullValue = 0, 0
-        recommendedSell = buyFees[0]['apiName']
-
-        stopIdx = 0
-        for idx in range(0, len(buyFees)):
-            order, fee, quantity = self._getOrderData(buyFees, idx, leftPartAmount)
-
-            partValue += quantity * order['price'] * (1 - fee)
-            fullValue += quantity * order['price'] * (1 - fee)
-            leftPartAmount -= quantity
-            leftFullAmount -= quantity
-
-            if leftPartAmount <= 0:
-                stopIdx = idx
-                order['quantity'] -= quantity
-                break
-
-        for idx in range(stopIdx, len(buyFees)):
-            order, fee, quantity = self._getOrderData(buyFees, idx, leftFullAmount)
-            fullValue += quantity * order['price'] * (1 - fee)
-            leftFullAmount -= quantity
-
-            if leftFullAmount <= 0:
-                break
-        # Two cases:
-        # 1. if the amount of resources will exceed the capabilities of the api
-        # 2. if api does not provide an orderbook, it is obliged to return one price according to which the value will be calculated
-        if leftPartAmount > 0:
-            partValue += leftPartAmount * (buyFees[-1]['order']['price'] * (1 - buyFees[-1]['fee']))
-        if leftFullAmount > 0:
-            fullValue += leftFullAmount * (buyFees[-1]['order']['price'] * (1 - buyFees[-1]['fee']))
+    async def _calcValue(self, name, fullAmount, buyFees, part):
+        partValue = self._calcValueForAmount(buyFees, fullAmount / 100 * part)
+        fullValue = self._calcValueForAmount(buyFees, fullAmount)
 
         fullValue = convertCurrencies(DEFAULT_VALUE, self._baseValue, fullValue)
         partValue = convertCurrencies(DEFAULT_VALUE, self._baseValue, partValue)
-        return ResourceValue(name, fullAmount, fullValue, partValue, self._baseValue, part, recommendedSell)
+        recommendedApi = await self.getRecommendedApiForResource(name, buyFees)
+        return ResourceValue(name, fullAmount, fullValue, partValue, self._baseValue, part, recommendedApi)
+
+    def _calcValueForAmount(self, buysAndFee, leftAmount):
+        value = 0
+        for idx in range(0, len(buysAndFee)):
+            order, fee, quantity = self._getOrderData(buysAndFee, idx, leftAmount)
+
+            value += quantity * order['price'] * (1 - fee)
+            leftAmount -= quantity
+
+            if leftAmount <= 0:
+                break
+        if leftAmount > 0:
+            value += leftAmount * (buysAndFee[-1]['order']['price'] * (1 - buysAndFee[-1]['fee']))
+        return value
 
     @staticmethod
     def _getOrderData(buyFees, idx, leftAmount):
