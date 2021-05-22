@@ -17,9 +17,18 @@ class Resource:
     def toDict(self):
         return {'name': self.name, 'amount': self.amount, 'meanPurchase': self.meanPurchase}
 
+
 class ResourceValue:
-    def __init__(self, name, amount, price, value):
+    def __init__(self, name, amount, value, currency, part):
         self.name = name
         self.amount = amount
-        self.price = price
         self.value = value
+        self.part = part
+        self.currency = currency
+
+    @property
+    def price(self):
+        return self.value / self.amount
+
+    def __str__(self):
+        return f"name: {self.name}, amount: {self.amount}, price: {self.price}, value: {str(self.value) + ' ' + self.currency}, part: {self.part}"

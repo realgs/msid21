@@ -25,5 +25,9 @@ from models.resource import Resource
 
 portfolio = Portfolio('miko', 'USD')
 portfolio.read()
-portfolio.addResource(Resource('BTC', 5, 122.124))
-portfolio.save()
+
+loop = asyncio.get_event_loop()
+values = loop.run_until_complete(asyncio.gather(portfolio.fullPortfolioValue()))[0]
+
+for value in values:
+    print(value)
