@@ -12,7 +12,7 @@ values = loop.run_until_complete(asyncio.gather(portfolio.getStats(PART)))[0]
 for value in values:
     print(value.getStats())
 
-loop = asyncio.get_event_loop()
-values = loop.run_until_complete(asyncio.gather(portfolio.getArbitration('ETH', 'BTC')))[0]
-for value in values:
-    print(value)
+# loop = asyncio.get_event_loop()
+# values = loop.run_until_complete(asyncio.gather(portfolio.getAllArbitration('BTC')))[0]
+# for value in values:
+#     print(value)

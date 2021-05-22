@@ -1,5 +1,5 @@
 from services.configurationService import readConfig, saveConfig
-from models.resource import Resource, ResourceValue, ResourceProfit, ResourceStats
+from models.resource import Resource, ResourceValue, ResourceProfit, ResourceStats, ResourceArbitration
 from api import bitbay, bittrex
 from services.profitService import ProfitService
 
@@ -45,9 +45,11 @@ class Portfolio:
 
         profits = await self.getProfit(part, portfolioValue)
         for profit in profits:
-            value = nameToResourceValue[profit.name]
-            resource = self._resources[profit.name]
-            stats.append(ResourceStats(value, profit, resource.meanPurchase))
+            name = profit.name
+            value = nameToResourceValue[name]
+            resource = self._resources[name]
+            allArbitration = await self.getAllArbitration(name)
+            stats.append(ResourceStats(value, profit, resource.meanPurchase, allArbitration))
 
         return stats
 
@@ -85,6 +87,18 @@ class Portfolio:
         if len(orderApiData):
             return orderApiData[0]['apiName']
         return 'Not Found'
+
+    async def getAllArbitration(self, resource=None):
+        resourcePairs = self._getResourcesCrossProduct()
+        if resource:
+            resourcePairs = [pair for pair in self._getResourcesCrossProduct() if pair[0] == resource or pair[1] == resource]
+        resourcesProfits = []
+        for pair in resourcePairs:
+            profits = await self.getArbitration(pair[0], pair[1])
+            for profit in profits:
+                resourcesProfits.append(ResourceArbitration(
+                    profit['currencies'][0], profit['currencies'][1], profit['names'][0], profit['names'][1], profit['rate'], profit['profit'], profit['quantity']))
+        return resourcesProfits
 
     async def getArbitration(self, resourceName1, resourceName2):
         if resourceName1 not in self._resources or resourceName2 not in self._resources:
@@ -125,6 +139,15 @@ class Portfolio:
                     if commonMarkets:
                         self._apiCrossProfitServices.append(profitService)
         return self._apiCrossProfitServices
+
+    def _getResourcesCrossProduct(self):
+        resourcePairs = []
+        resourcesList = [name for name in self._resources]
+        for resource1 in resourcesList:
+            for resource2 in resourcesList:
+                if resource1 != resource2:
+                    resourcePairs.append((resource1, resource2))
+        return resourcePairs
 
     @staticmethod
     def _toValidPart(part):
