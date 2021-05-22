@@ -47,14 +47,15 @@ class ResourceValue:
 
 
 class ResourceProfit:
-    def __init__(self, name, fullProfit, partProfit, part):
+    def __init__(self, name, fullProfit, partProfit, part, currency):
         self.name = name
         self.fullProfit = fullProfit
         self.partProfit = partProfit
         self.part = part
+        self.currency = currency
 
     def __str__(self):
-        return f"name: {self.name},full profit: {self.fullProfit}, part profit: {self.partProfit}, part: {self.part} %, "
+        return f"name: {self.name},full profit: {self.fullProfit}, part profit: {self.partProfit}, part: {self.part} %, currency: {self.currency}"
 
 
 class ResourceStats:
@@ -62,13 +63,14 @@ class ResourceStats:
         self.resourceValue = resourceValue
         self.resourceProfit = resourceProfit
         self.meanPurchase = meanPurchase
-        if resourceValue.part != resourceProfit.part or resourceValue.name != resourceProfit.name:
+        if resourceValue.part != resourceProfit.part or resourceValue.name != resourceProfit.name or resourceValue.currency != resourceProfit.currency:
             print("Error: ResourceStats - value and profit do not match")
 
     def getStats(self):
         return {'name': self.resourceValue.name,
                 'meanPurchase': self.meanPurchase,
                 'recommendedSell': self.resourceValue.recommendedSell,
+                'currency': self.resourceValue.currency,
                 'full': {'amount': self.resourceValue.fullAmount, 'price': self.resourceValue.fullPrice, 'value': self.resourceValue.fullValue, 'profit': self.resourceProfit.fullProfit},
                 'part percent': self.resourceValue.part,
                 'part': {'amount': self.resourceValue.partAmount, 'price': self.resourceValue.partPrice, 'value': self.resourceValue.partValue, 'profit': self.resourceProfit.partProfit}}

@@ -4,6 +4,7 @@ import api.mocks.mockApi1 as mock1
 import api.mocks.mockApi2 as mock2
 from services.profitService import ProfitService
 from financePortfolio import Portfolio
+from services.cantorService import NBPCantorService
 from models.resource import Resource
 
 # INTERVAL = 5
@@ -25,7 +26,7 @@ from models.resource import Resource
 
 PART = 10
 
-portfolio = Portfolio('miko', 'USD')
+portfolio = Portfolio('miko', 'USD', NBPCantorService())
 portfolio.read()
 
 loop = asyncio.get_event_loop()

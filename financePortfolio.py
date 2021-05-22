@@ -1,19 +1,19 @@
 from services.configurationService import readConfig, saveConfig
 from models.resource import Resource, ResourceValue, ResourceProfit, ResourceStats
-from services.converter import convertCurrencies
 from api import bitbay, bittrex
 
 FILENAME = 'portfolio_data.json'
 API_LIST = [bitbay, bittrex]
-DEFAULT_VALUE = 'PLN'
+DEFAULT_VALUE = 'USD'
 SUCCESS_KEY = 'success'
 COUNTRY_PROFIT_FEE = 0.19
 
 
 class Portfolio:
-    def __init__(self, owner, baseValue):
+    def __init__(self, owner, baseValue, cantorService):
         self._owner = owner
         self._baseValue = baseValue
+        self.cantorService = cantorService
         self._resources = {}
 
     def read(self):
@@ -71,10 +71,10 @@ class Portfolio:
         for resourceValue in portfolioValue:
             fullValue, partValue = resourceValue.fullValue, resourceValue.partValue
             fullAmount, partAmount = resourceValue.fullAmount, resourceValue.fullAmount / 100 * part
-            meanPurchase = self._resources[resourceValue.name].meanPurchase
+            meanPurchase = await self.cantorService.convertCurrencies(DEFAULT_VALUE, self._baseValue, self._resources[resourceValue.name].meanPurchase)
             fullProfit = (fullValue - meanPurchase * fullAmount) * (1 - COUNTRY_PROFIT_FEE)
             partProfit = (partValue - meanPurchase * partAmount) * (1 - COUNTRY_PROFIT_FEE)
-            profits.append(ResourceProfit(resourceValue.name, fullProfit, partProfit, part))
+            profits.append(ResourceProfit(resourceValue.name, fullProfit, partProfit, part, self._baseValue))
         return profits
 
     async def getRecommendedApiForResource(self, resourceName, orderApiData=None):
@@ -96,8 +96,8 @@ class Portfolio:
         partValue = self._calcValueForAmount(buyFees, fullAmount / 100 * part)
         fullValue = self._calcValueForAmount(buyFees, fullAmount)
 
-        fullValue = convertCurrencies(DEFAULT_VALUE, self._baseValue, fullValue)
-        partValue = convertCurrencies(DEFAULT_VALUE, self._baseValue, partValue)
+        fullValue = await self.cantorService.convertCurrencies(DEFAULT_VALUE, self._baseValue, fullValue)
+        partValue = await self.cantorService.convertCurrencies(DEFAULT_VALUE, self._baseValue, partValue)
         recommendedApi = await self.getRecommendedApiForResource(name, buyFees)
         return ResourceValue(name, fullAmount, fullValue, partValue, self._baseValue, part, recommendedApi)
 
