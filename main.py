@@ -4,13 +4,13 @@ from services.cantorService import NBPCantorService
 
 PART = 10
 
-portfolio = Portfolio('miko', 'USD', NBPCantorService())
+portfolio = Portfolio('miko', NBPCantorService())
 portfolio.read()
 
 loop = asyncio.get_event_loop()
 values = loop.run_until_complete(asyncio.gather(portfolio.getStats(PART)))[0]
 for value in values:
-    print(value.getStats())
+    print(value.__repr__())
 
 # loop = asyncio.get_event_loop()
 # values = loop.run_until_complete(asyncio.gather(portfolio.getAllArbitration('BTC')))[0]

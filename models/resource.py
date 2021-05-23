@@ -14,7 +14,7 @@ class Resource:
     def fromDict(cls, dataDict):
         return cls(dataDict['name'], dataDict['amount'], dataDict['meanPurchase'])
 
-    def toDict(self):
+    def __repr__(self):
         return {'name': self.name, 'amount': self.amount, 'meanPurchase': self.meanPurchase}
 
 
@@ -68,7 +68,7 @@ class ResourceArbitration:
         self.profit = profit
         self.quantity = quantity
 
-    def toDict(self):
+    def __repr__(self):
         return {'currency1': self.currency1, 'currency2': self.currency2, 'api1': self.api1, 'api2': self.api2,
                 'rate': self.rate, 'profit': self.profit, 'quantity': self.quantity}
 
@@ -83,15 +83,20 @@ class ResourceStats:
         self.resourceProfit = resourceProfit
         self.meanPurchase = meanPurchase
         self.arbitration = arbitration
-        if resourceValue.part != resourceProfit.part or resourceValue.name != resourceProfit.name or resourceValue.currency != resourceProfit.currency:
+        if resourceValue.part != resourceProfit.part or resourceValue.name != resourceProfit.name \
+                or resourceValue.currency != resourceProfit.currency:
             print("Error: ResourceStats - value and profit do not match")
 
-    def getStats(self):
+    def __repr__(self):
         return {'name': self.resourceValue.name,
                 'meanPurchase': self.meanPurchase,
                 'recommendedSell': self.resourceValue.recommendedSell,
                 'currency': self.resourceValue.currency,
-                'full': {'amount': self.resourceValue.fullAmount, 'price': self.resourceValue.fullPrice, 'value': self.resourceValue.fullValue, 'profit': self.resourceProfit.fullProfit},
-                'part percent': self.resourceValue.part,
-                'part': {'amount': self.resourceValue.partAmount, 'price': self.resourceValue.partPrice, 'value': self.resourceValue.partValue, 'profit': self.resourceProfit.partProfit},
-                'arbitration': [arbitration.toDict() for arbitration in self.arbitration]}
+                'value': {
+                    'full': {'amount': self.resourceValue.fullAmount, 'price': self.resourceValue.fullPrice,
+                             'value': self.resourceValue.fullValue, 'profit': self.resourceProfit.fullProfit},
+                    'part percent': self.resourceValue.part,
+                    'part': {'amount': self.resourceValue.partAmount, 'price': self.resourceValue.partPrice,
+                             'value': self.resourceValue.partValue, 'profit': self.resourceProfit.partProfit},
+                },
+                'arbitration': [arbitration.__repr__() for arbitration in self.arbitration]}

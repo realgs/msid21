@@ -11,9 +11,9 @@ COUNTRY_PROFIT_FEE = 0.19
 
 
 class Portfolio:
-    def __init__(self, owner, baseValue, cantorService):
+    def __init__(self, owner, cantorService):
         self._owner = owner
-        self._baseValue = baseValue
+        self._baseValue = DEFAULT_VALUE
         self.cantorService = cantorService
         self._resources = {}
         self._apiCrossProfitServices = None
@@ -27,8 +27,8 @@ class Portfolio:
             return False
 
     def save(self):
-        data = {'baseValue': self._baseValue, 'resources': [resource.toDict() for _, resource in self._resources.items()]}
-        saveConfig(self._owner+"_"+FILENAME, data)
+        data = {'baseValue': self._baseValue, 'resources': [resource.__repr__() for _, resource in self._resources.items()]}
+        return saveConfig(self._owner+"_"+FILENAME, data)
 
     def addResource(self, resource):
         if resource.name in self._resources:

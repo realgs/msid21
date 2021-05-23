@@ -12,5 +12,9 @@ def readConfig(fileName):
 
 
 def saveConfig(fileName, data):
-    with open(fileName, 'w') as outfile:
-        json.dump(data, outfile)
+    try:
+        with open(fileName, 'w') as outfile:
+            json.dump(data, outfile)
+        return True
+    except OSError:
+        return False
