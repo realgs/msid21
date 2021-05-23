@@ -40,6 +40,13 @@ class ResourceValue:
     def partPrice(self):
         return self.partValue / self.partAmount
 
+    def __repr__(self):
+        return {'name': self.name,
+                'currency': self.currency,
+                'recommendedSell': self.recommendedSell,
+                'full': {'amount': self.fullAmount, 'price': self.fullPrice, 'value': self.fullValue},
+                'part': {'procent': self.part, 'amount': self.partAmount, 'price': self.partPrice, 'value': self.partValue}}
+
     def __str__(self):
         return f"name: {self.name}, full amount: {self.fullAmount}, full price: {self.fullPrice}, " \
                f"full value: {self.fullValue} {self.currency}, part: {self.part} %, " \
@@ -53,6 +60,12 @@ class ResourceProfit:
         self.partProfit = partProfit
         self.part = part
         self.currency = currency
+
+    def __repr__(self):
+        return {'name': self.name,
+                'currency': self.currency,
+                'full': {'profit': self.fullProfit},
+                'part': {'procent': self.part, 'profit': self.partProfit}}
 
     def __str__(self):
         return f"name: {self.name},full profit: {self.fullProfit}, part profit: {self.partProfit}, part: {self.part} %, currency: {self.currency}"

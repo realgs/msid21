@@ -4,7 +4,7 @@ from api import bitbay, bittrex
 from services.profitService import ProfitService
 
 FILENAME = 'portfolio_data.json'
-API_LIST = [bitbay, bittrex]
+API_LIST = [{'api': bitbay, 'type': 'crypto'}, {'api': bittrex, 'type': 'crypto'}]
 DEFAULT_VALUE = 'USD'
 SUCCESS_KEY = 'success'
 COUNTRY_PROFIT_FEE = 0.19
@@ -30,6 +30,10 @@ class Portfolio:
         data = {'baseValue': self._baseValue, 'resources': [resource.__repr__() for _, resource in self._resources.items()]}
         return saveConfig(self._owner+"_"+FILENAME, data)
 
+    @staticmethod
+    def availableApi():
+        return [(api['api'].getName(), api['type']) for api in API_LIST]
+
     def addResource(self, resource):
         if resource.name in self._resources:
             self._resources[resource.name].add(resource)
@@ -38,16 +42,28 @@ class Portfolio:
 
     async def getStats(self, part=100):
         part = self._toValidPart(part)
+        nameToValue, nameToProfit, stats = {}, {}, []
         portfolioValue = await self.portfolioValue(part)
-        nameToResourceValue, stats = {}, []
-        for resourceValue in portfolioValue:
-            nameToResourceValue[resourceValue.name] = resourceValue
-
         profits = await self.getProfit(part, portfolioValue)
-        for profit in profits:
-            name = profit.name
-            value = nameToResourceValue[name]
+
+        for resourceValue in portfolioValue:
+            nameToValue[resourceValue.name] = resourceValue
+
+        for resourceProfit in profits:
+            nameToProfit[resourceProfit.name] = resourceProfit
+
+        for name in self._resources:
             resource = self._resources[name]
+            if name in nameToValue:
+                value = nameToValue[name]
+            else:
+                print(f"Error - Portfolio - getStats: no value for name: {name}")
+                value = ResourceValue(name, 0, 0, 0, self._baseValue, 0, 0)
+            if name in nameToProfit:
+                profit = nameToProfit[name]
+            else:
+                print(f"Error - Portfolio - getStats: no profit for name: {name}")
+                profit = ResourceProfit(name, 0, 0, 0, self._baseValue)
             allArbitration = await self.getAllArbitration(name)
             stats.append(ResourceStats(value, profit, resource.meanPurchase, allArbitration))
 
@@ -134,10 +150,11 @@ class Portfolio:
                 api1 = API_LIST[idx1]
                 for idx2 in range(idx1 + 1, len(API_LIST)):
                     api2 = API_LIST[idx2]
-                    profitService = ProfitService(api1, api2)
-                    commonMarkets = await profitService.commonMarkets
-                    if commonMarkets:
-                        self._apiCrossProfitServices.append(profitService)
+                    if api1['type'] == api2['type']:
+                        profitService = ProfitService(api1['api'], api2['api'])
+                        commonMarkets = await profitService.commonMarkets
+                        if commonMarkets:
+                            self._apiCrossProfitServices.append(profitService)
         return self._apiCrossProfitServices
 
     def _getResourcesCrossProduct(self):
@@ -189,7 +206,7 @@ class Portfolio:
 
     @staticmethod
     async def _getSortedOrders(resourceName):
-        allOrders = [(await api.getBestOrders((resourceName, DEFAULT_VALUE)), api.getTakerFee(), api.getName()) for api in API_LIST]
+        allOrders = [(await api['api'].getBestOrders((resourceName, DEFAULT_VALUE)), api['api'].getTakerFee(), api['api'].getName()) for api in API_LIST]
         buyFees = []
 
         for orders, fee, apiName in allOrders:
