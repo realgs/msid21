@@ -7,7 +7,7 @@ FILENAME = 'portfolio_data.json'
 API_LIST = [{'api': bitbay, 'type': 'crypto'}, {'api': bittrex, 'type': 'crypto'}]
 DEFAULT_VALUE = 'USD'
 SUCCESS_KEY = 'success'
-COUNTRY_PROFIT_FEE = 0.19
+DEFAULT_COUNTRY_PROFIT_FEE = 0.19
 
 
 class Portfolio:
@@ -16,19 +16,32 @@ class Portfolio:
         self._baseValue = DEFAULT_VALUE
         self.cantorService = cantorService
         self._resources = {}
+        self._countryProfitFee = DEFAULT_COUNTRY_PROFIT_FEE
         self._apiCrossProfitServices = None
 
     def read(self):
         data = readConfig(self._owner+"_"+FILENAME)
         if data:
             self._resources = {resource['name']: Resource.fromDict(resource) for resource in data['resources']}
+            self._baseValue = data['baseValue']
+            self._countryProfitFee = data['countryProfitFee']
             return True
         else:
             return False
 
     def save(self):
-        data = {'baseValue': self._baseValue, 'resources': [resource.__repr__() for _, resource in self._resources.items()]}
+        data = {'baseValue': self._baseValue, 'countryProfitFee': self._countryProfitFee,
+                'resources': [resource.__repr__() for _, resource in self._resources.items()]}
         return saveConfig(self._owner+"_"+FILENAME, data)
+
+    def setCountryProfitFee(self, fee):
+        if fee < 0:
+            print(f"Warning - Portfolio - setCountryProfitFee: incorrect fee: {fee}")
+            fee = 0
+        elif fee > 1:
+            print(f"Warning - Portfolio - setCountryProfitFee: incorrect fee: {fee}")
+            fee = 1
+        self._countryProfitFee = fee
 
     @staticmethod
     def availableApi():
@@ -92,8 +105,8 @@ class Portfolio:
             fullValue, partValue = resourceValue.fullValue, resourceValue.partValue
             fullAmount, partAmount = resourceValue.fullAmount, resourceValue.fullAmount / 100 * part
             meanPurchase = await self.cantorService.convertCurrencies(DEFAULT_VALUE, self._baseValue, self._resources[resourceValue.name].meanPurchase)
-            fullProfit = (fullValue - meanPurchase * fullAmount) * (1 - COUNTRY_PROFIT_FEE)
-            partProfit = (partValue - meanPurchase * partAmount) * (1 - COUNTRY_PROFIT_FEE)
+            fullProfit = (fullValue - meanPurchase * fullAmount) * (1 - self._countryProfitFee)
+            partProfit = (partValue - meanPurchase * partAmount) * (1 - self._countryProfitFee)
             profits.append(ResourceProfit(resourceValue.name, fullProfit, partProfit, part, self._baseValue))
         return profits
 

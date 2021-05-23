@@ -21,6 +21,7 @@ def start():
                "<li>load data: /api/load?login=[login]</li>" \
                "<li>save: /api/save?login=[login]</li>" \
                "<li>available api: /api/available</li>" \
+               "<li>set fee: /api/setFee?login=[login]&fee=[fee]</li>" \
                "<li>add resource: /api/addResource?login=[login]&name=[name]&amount=[amount]&meanPurchase=[meanPurchase]</li>" \
                "<li>stats: /api/stats?login=[login]&part=[part]</li>" \
                "<li>portfolio value: /api/portfolioValue?login=[login]&part=[part]</li>" \
@@ -70,6 +71,24 @@ def start():
     async def availableApi():
         result = ApiResult(True, '', Portfolio.availableApi())
         return jsonify(result.__repr__())
+
+    @app.route('/api/setFee', methods=['POST'])
+    async def setFee():
+        error, login, fee = _getArgs(request.args, ['login', 'fee'])
+        if error:
+            return ApiResult(False, error)
+
+        try:
+            fee = float(fee)
+        except ValueError:
+            return jsonify(ApiResult(False, 'fee must be number').__repr__())
+
+        if login not in loaded:
+            return jsonify(ApiResult(False, 'not loaded').__repr__())
+
+        portfolio = loaded[login]
+        portfolio.setCountryProfitFee(fee)
+        return jsonify(ApiResult(True, '').__repr__())
 
     @app.route('/api/addResource', methods=['POST'])
     def addResource():
