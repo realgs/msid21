@@ -73,13 +73,13 @@ class Portfolio:
         part = self._toValidPart(part)
         valuesOfResources = []
         for _, resource in self._resources.items():
-            buyFees = await self._getSortedOrders(resource.name)
+            buys = await self._getSortedOrders(resource.name)
             name, fullAmount = resource.name, resource.amount / 100 * part
-            if not buyFees:
+            if not buys:
                 recommendedApi = await self.getRecommendedApiForResource(name)
                 valuesOfResources.append(ResourceValue(name, fullAmount, 0, 0, self._baseValue, part, recommendedApi))
             else:
-                value = await self._calcValue(name, resource.amount, buyFees, part)
+                value = await self._calcValue(name, resource.amount, buys, part)
                 valuesOfResources.append(value)
         return valuesOfResources
 
@@ -174,43 +174,44 @@ class Portfolio:
             return 100
         return part
 
-    async def _calcValue(self, name, fullAmount, buyFees, part):
-        partValue = self._calcValueForAmount(buyFees, fullAmount / 100 * part)
-        fullValue = self._calcValueForAmount(buyFees, fullAmount)
+    async def _calcValue(self, name, fullAmount, buys, part):
+        partValue = self._calcValueForAmount(buys, fullAmount / 100 * part)
+        fullValue = self._calcValueForAmount(buys, fullAmount)
 
         fullValue = await self.cantorService.convertCurrencies(DEFAULT_VALUE, self._baseValue, fullValue)
         partValue = await self.cantorService.convertCurrencies(DEFAULT_VALUE, self._baseValue, partValue)
-        recommendedApi = await self.getRecommendedApiForResource(name, buyFees)
+        recommendedApi = await self.getRecommendedApiForResource(name, buys)
         return ResourceValue(name, fullAmount, fullValue, partValue, self._baseValue, part, recommendedApi)
 
-    def _calcValueForAmount(self, buysAndFee, leftAmount):
+    def _calcValueForAmount(self, buys, leftAmount):
         value = 0
-        for idx in range(0, len(buysAndFee)):
-            order, fee, quantity = self._getOrderData(buysAndFee, idx, leftAmount)
+        for idx in range(0, len(buys)):
+            order, quantity = self._getOrderData(buys, idx, leftAmount)
 
-            value += quantity * order['price'] * (1 - fee)
+            value += quantity * order['price']
             leftAmount -= quantity
 
             if leftAmount <= 0:
                 break
         if leftAmount > 0:
-            value += leftAmount * (buysAndFee[-1]['order']['price'] * (1 - buysAndFee[-1]['fee']))
+            value += leftAmount * buys[-1]['order']['price']
         return value
 
     @staticmethod
-    def _getOrderData(buyFees, idx, leftAmount):
-        orderData = buyFees[idx]
-        order, fee = orderData['order'], orderData['fee']
+    def _getOrderData(buys, idx, leftAmount):
+        orderData = buys[idx]
+        order = orderData['order']
         quantity = min(leftAmount, float(order['quantity']))
-        return order, fee, quantity
+        return order, quantity
 
     @staticmethod
     async def _getSortedOrders(resourceName):
         allOrders = [(await api['api'].getBestOrders((resourceName, DEFAULT_VALUE)), api['api'].getTakerFee(), api['api'].getName()) for api in API_LIST]
-        buyFees = []
+        buys = []
 
         for orders, fee, apiName in allOrders:
             if orders[SUCCESS_KEY]:
                 for order in orders['buys']:
-                    buyFees.append({'order': order, 'fee': fee, 'apiName': apiName})
-        return sorted(buyFees, key=lambda buyFee: buyFee['order']['price'], reverse=True)
+                    order['price'] = order['price'] * (1 - fee)
+                    buys.append({'order': order, 'apiName': apiName})
+        return sorted(buys, key=lambda buy: buy['order']['price'], reverse=True)
