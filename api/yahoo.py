@@ -4,7 +4,7 @@ import yfinance as yf
 
 class Yahoo(Api):
     def __init__(self):
-        super().__init__("Yahoo", "http://api.nbp.pl/api/exchangerates/rates")
+        super().__init__("Nasdaq", "http://api.nbp.pl/api/exchangerates/rates")
 
     def orderbook(self, symbol):
         return None

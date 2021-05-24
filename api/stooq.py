@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 
 class Stooq(Api):
     def __init__(self):
-        super().__init__("Stooq", "https://stooq.pl")
+        super().__init__("GPW", "https://stooq.pl")
 
     def orderbook(self, symbol):
         return None
