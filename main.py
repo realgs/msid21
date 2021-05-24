@@ -19,67 +19,59 @@ def calculateDifference(buy, sell, withdrawalFee, transactionFee):
         'quantity': quantity
     }
 
-def calculateArbitrageDifference(buy, sell, withdrawalFee, transactionFee):
-    quantity = (min(buy['quantity'], sell['quantity']) -
-                withdrawalFee)
-
-    return {
-        'rate': (sell['rate'] - buy['rate']) * (1 - transactionFee),
-        'quantity': quantity
-    }
-
 
 def calculateArbitrage(apiFrom, apiTo, symbol):
-    queueFrom = deque(apiFrom.orderbook(symbol)['bid'])
-    queueTo = deque(apiFrom.orderbook(symbol)['ask'])
-    currency = symbol.split('-')[0]
+    if apiFrom.orderbook != None and apiFrom.orderbook != None:
+        queueFrom = deque(apiFrom.orderbook(symbol)['bid'])
+        queueTo = deque(apiFrom.orderbook(symbol)['ask'])
+        currency = symbol.split('-')[0]
 
-    previousProfit = 0
-    profit = None
-    quantity = 0
-    rateSum = 0
+        previousProfit = 0
+        profit = None
+        quantity = 0
+        rateSum = 0
 
-    while (profit == None or profit > 0) and len(queueFrom) > 0 and len(queueTo) > 0:
+        while (profit == None or profit > 0) and len(queueFrom) > 0 and len(queueTo) > 0:
 
-        # Updating old profit
-        if profit != None:
-            previousProfit = profit
+            # Updating old profit
+            if profit != None:
+                previousProfit = profit
 
-        # Getting 1st orders from queues
-        orderFrom = queueFrom.pop()
-        orderTo = queueTo.pop()
+            # Getting 1st orders from queues
+            orderFrom = queueFrom.pop()
+            orderTo = queueTo.pop()
 
-        difference = calculateArbitrageDifference(
-            orderFrom, orderTo, apiFrom, apiTo, currency)
+            difference = calculateDifference(
+                orderFrom, orderTo, apiFrom.withdrawalFee(currency), apiTo.transactionFee)
 
-        if profit == None:
-            previousProfit = profit = difference['rate']
-            quantity = difference['quantity']
-            rateSum = orderFrom['rate']
+            if profit == None:
+                previousProfit = profit = difference['rate']
+                quantity = difference['quantity']
+                rateSum = orderFrom['rate']
 
-        if difference['quantity'] > 0:
-            profit += difference['rate']
-            quantity += difference['quantity']
-            rateSum += orderFrom['rate']
+            if difference['quantity'] > 0:
+                profit += difference['rate']
+                quantity += difference['quantity']
+                rateSum += orderFrom['rate']
 
-        # Putting back order with quantity left
-        if orderFrom['quantity'] > orderTo['quantity'] and orderFrom['quantity'] > apiFrom.withdrawalFee(currency):
-            queueFrom.append({
-                'quantity': orderFrom['quantity'] - orderTo['quantity'],
-                'rate': orderFrom['rate']
-            })
-        elif orderFrom['quantity'] < orderTo['quantity'] and orderTo['quantity'] > apiFrom.withdrawalFee(currency):
-            queueTo.append({
-                'quantity': orderTo['quantity'] - orderFrom['quantity'],
-                'rate': orderTo['rate']
-            })
+            # Putting back order with quantity left
+            if orderFrom['quantity'] > orderTo['quantity'] and orderFrom['quantity'] > apiFrom.withdrawalFee(currency):
+                queueFrom.append({
+                    'quantity': orderFrom['quantity'] - orderTo['quantity'],
+                    'rate': orderFrom['rate']
+                })
+            elif orderFrom['quantity'] < orderTo['quantity'] and orderTo['quantity'] > apiFrom.withdrawalFee(currency):
+                queueTo.append({
+                    'quantity': orderTo['quantity'] - orderFrom['quantity'],
+                    'rate': orderTo['rate']
+                })
 
-    if rateSum != 0 and quantity < 0 and previousProfit < 0:
-        return (previousProfit * quantity) / rateSum * -100
-    elif rateSum != 0:
-        return (previousProfit * quantity) / rateSum * 100
+        if rateSum != 0 and quantity < 0 and previousProfit < 0:
+            return (previousProfit * quantity) / rateSum 
+        elif rateSum != 0:
+            return (previousProfit * quantity) / rateSum
 
-    return 0
+    return -math.inf
 
 
 # Returns profit in PLN
@@ -136,6 +128,21 @@ def getBestProfit(apiType, symbol, currency, price, quantity, apiName=None, skip
     return {'name': list(APIS[apiType].keys())[maxIndex], 'profit': profits[maxIndex]}
 
 
+def getBestArbitrage(apiType, symbol, currency, apiName):
+    profits = [0]
+
+    if apiName != None:
+        for api in APIS[apiType]:
+            if api == apiName:
+                profits.append(-math.inf)
+            else:
+                profits.append(calculateArbitrage(APIS[apiType][apiName],
+                                                  APIS[apiType][api], f"{symbol}-{currency}"))
+
+    maxIndex = profits.index(max(profits))
+    return {'name': f"{apiName}-{['---', *list(APIS[apiType].keys())][maxIndex]}", 'profit': profits[maxIndex]}
+
+
 def loadInvestments():
     file = open(
         '/home/karol/Documents/Projects/Studia/MSID/laboratoria/investments.json')
@@ -158,6 +165,12 @@ def printInvestments(investments):
         bestProfit10 = getBestProfit(investment['type'], investment['symbol'], investment['currency'],
                                      float(investment['pricePerShare']), float(investment['quantity']) * 0.1, api)
 
+        bestArbitrage = getBestArbitrage(
+            investment['type'], investment['symbol'], investment['currency'], api)
+
+        arbitragePrint = bestArbitrage['name'] if bestArbitrage[
+            'name'] == f"{api}----" else f"{bestArbitrage['name']}:{bestArbitrage['profit']:.2f}%"
+
         toPrint.append([
             investment['symbol'],
             investment['pricePerShare'],
@@ -167,7 +180,7 @@ def printInvestments(investments):
             f"{(bestProfit['profit']*0.81):.2f}zł",
             f"{bestProfit10['profit']:.2f}zł",
             f"{(bestProfit10['profit']*0.81):.2f}zł",
-            0  # TODO: Arbitraż
+            arbitragePrint
         ])
 
     print(tabulate(toPrint, headers=headers))
