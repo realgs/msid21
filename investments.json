@@ -30,7 +30,7 @@
     "api": "Bittrex"
   },
   {
-    "symbol": "CDP",
+    "symbol": "CDR",
     "type": "PL",
     "pricePerShare": 200,
     "quantity": 15,

@@ -54,7 +54,7 @@ def calculateProfit(api, symbol, currency, price, quantity, transactionFee=0):
         return profit * conversionMultiplier
 
 
-def getBestProfit(apiType, symbol, currency, price, quantity, apiName=None, skipCurrentApi = False):
+def getBestProfit(apiType, symbol, currency, price, quantity, apiName=None, skipCurrentApi=False):
     profits = []
     transactionFee = 0
     if apiName != None:
@@ -62,11 +62,10 @@ def getBestProfit(apiType, symbol, currency, price, quantity, apiName=None, skip
 
     for api in APIS[apiType]:
         if api == apiName and skipCurrentApi == True:
-             profits.append(-math.inf)   
+            profits.append(-math.inf)
         else:
             profits.append(calculateProfit(
                 APIS[apiType][api], symbol, currency, price, quantity, transactionFee))
-            
 
     maxIndex = profits.index(max(profits))
     return {'name': list(APIS[apiType].keys())[maxIndex], 'profit': profits[maxIndex]}
@@ -74,7 +73,7 @@ def getBestProfit(apiType, symbol, currency, price, quantity, apiName=None, skip
 
 def loadInvestments():
     file = open(
-        '/home/karol/Documents/Projects/Studia/MSID/laboratoria/investmentsTests.json')
+        '/home/karol/Documents/Projects/Studia/MSID/laboratoria/investments.json')
     return json.load(file)
 
 
@@ -89,29 +88,29 @@ def printInvestments(investments):
             api = investment['api']
 
         bestProfit = getBestProfit(investment['type'], investment['symbol'], investment['currency'],
-                               float(investment['pricePerShare']), float(investment['quantity']), api)
+                                   float(investment['pricePerShare']), float(investment['quantity']), api)
 
         bestProfit10 = getBestProfit(investment['type'], investment['symbol'], investment['currency'],
-                               float(investment['pricePerShare']), float(investment['quantity']) * 0.1, api)
+                                     float(investment['pricePerShare']), float(investment['quantity']) * 0.1, api)
 
         toPrint.append([
             investment['symbol'],
             investment['pricePerShare'],
             investment['quantity'],
             bestProfit['name'],
-            f"{bestProfit['profit']:.2f}zł", 
-            f"{(bestProfit['profit']*0.81):.2f}zł", 
-            f"{bestProfit10['profit']:.2f}zł", 
+            f"{bestProfit['profit']:.2f}zł",
+            f"{(bestProfit['profit']*0.81):.2f}zł",
+            f"{bestProfit10['profit']:.2f}zł",
             f"{(bestProfit10['profit']*0.81):.2f}zł",
-            0 # TODO: Arbitraż
+            0  # TODO: Arbitraż
         ])
 
     print(tabulate(toPrint, headers=headers))
 
 
 def main():
-    # print(list(APIS['Crypto'].keys()))
     printInvestments(loadInvestments())
+    
 
 
 if __name__ == "__main__":
