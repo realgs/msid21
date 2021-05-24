@@ -62,7 +62,7 @@ class Wallet:
 
     def get_complete_assets_dataframe(self, percentage=.1):
         columns = ['name', 'volume', 'buy price', 'current price', 'current value', 'net profit',
-                   f'{percentage * 100}% value', f'net {percentage * 100}% value', 'stock exchange', 'arbitrage']
+                   f'{percentage * 100}% value', f'net {percentage * 100}% profit', 'stock exchange', 'arbitrage']
         result_df = pd.DataFrame(columns=columns)
 
         for currency_asset in self.currencies:
@@ -93,6 +93,10 @@ class Wallet:
             current_price_result = self.data_retriever.get_current_price_summary(share)['c']
             self.append_to_dataframe(current_price_result, i, current_price_result, percentage, result_df, share)
 
+        result_df.loc['Total'] = pd.Series(result_df[['current value', 'net profit',
+                                                      f'{percentage * 100}% value',
+                                                      f'net {percentage * 100}% profit']].sum())
+        result_df.loc['Total', 'name'] = 'Total'
         result_df.fillna('', inplace=True)
         pd.set_option("display.max_rows", None, "display.max_columns", None)
         return result_df
