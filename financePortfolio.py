@@ -43,17 +43,33 @@ class Portfolio:
             fee = 1
         self._countryProfitFee = fee
 
+    def setBaseCurrency(self, currency):
+        self._baseValue = currency
+
     @staticmethod
     def availableApi():
-        return [(api['api'].getName(), api['type']) for api in API_LIST]
+        return [{'name': api['api'].getName(), 'type': api['type']} for api in API_LIST]
 
-    def addResource(self, resource):
+    def addResource(self, name, amount, meanPurchase):
+        resource = Resource(name, amount, meanPurchase)
         if resource.name in self._resources:
             self._resources[resource.name].add(resource)
         else:
             self._resources[resource.name] = resource
 
-    async def getStats(self, part=100):
+    def removeResource(self, resourceName, amount):
+        if resourceName not in self._resources:
+            return False
+        resource = self._resources[resourceName]
+        if amount > resource.amount:
+            return False
+        if resource.amount == amount:
+            self._resources.pop(resourceName)
+        else:
+            resource.amount -= amount
+        return True
+
+    async def getStats(self, part=10):
         part = self._toValidPart(part)
         nameToValue, nameToProfit, stats = {}, {}, []
         portfolioValue = await self.portfolioValue(part)
@@ -82,7 +98,7 @@ class Portfolio:
 
         return stats
 
-    async def portfolioValue(self, part=100):
+    async def portfolioValue(self, part=10):
         part = self._toValidPart(part)
         valuesOfResources = []
         for _, resource in self._resources.items():
@@ -96,7 +112,7 @@ class Portfolio:
                 valuesOfResources.append(value)
         return valuesOfResources
 
-    async def getProfit(self, part=100, portfolioValue=None):
+    async def getProfit(self, part=10, portfolioValue=None):
         part = self._toValidPart(part)
         if not portfolioValue:
             portfolioValue = await self.portfolioValue(part)

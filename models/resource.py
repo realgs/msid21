@@ -108,7 +108,7 @@ class ResourceStats:
                 'value': {
                     'full': {'amount': self.resourceValue.fullAmount, 'price': self.resourceValue.fullPrice,
                              'value': self.resourceValue.fullValue, 'profit': self.resourceProfit.fullProfit},
-                    'part percent': self.resourceValue.part,
+                    'partPercent': self.resourceValue.part,
                     'part': {'amount': self.resourceValue.partAmount, 'price': self.resourceValue.partPrice,
                              'value': self.resourceValue.partValue, 'profit': self.resourceProfit.partProfit},
                 },

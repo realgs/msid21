@@ -4,7 +4,6 @@ from flask_cors import CORS
 from financePortfolio import Portfolio
 from services.cantorService import NBPCantorService
 from models.apiResult import ApiResult
-from models.resource import Resource
 
 
 def start():
@@ -22,7 +21,9 @@ def start():
                "<li>save: /api/save?login=[login]</li>" \
                "<li>available api: /api/available</li>" \
                "<li>set fee: /api/setFee?login=[login]&fee=[fee]</li>" \
+               "<li>set currency: /api/setCurrency?login=[login]&currency=[currency]</li>" \
                "<li>add resource: /api/addResource?login=[login]&name=[name]&amount=[amount]&meanPurchase=[meanPurchase]</li>" \
+               "<li>remove resource: /api/removeResource?login=[login]&name=[name]&amount=[amount]</li>" \
                "<li>stats: /api/stats?login=[login]&part=[part]</li>" \
                "<li>portfolio value: /api/portfolioValue?login=[login]&part=[part]</li>" \
                "<li>portfolio profit: /api/profit?login=[login]&part=[part]</li>" \
@@ -90,6 +91,19 @@ def start():
         portfolio.setCountryProfitFee(fee)
         return jsonify(ApiResult(True, '').__repr__())
 
+    @app.route('/api/setCurrency', methods=['POST'])
+    async def setCurrency():
+        error, login, currency = _getArgs(request.args, ['login', 'currency'])
+        if error:
+            return ApiResult(False, error)
+
+        if login not in loaded:
+            return jsonify(ApiResult(False, 'not loaded').__repr__())
+
+        portfolio = loaded[login]
+        portfolio.setBaseCurrency(currency)
+        return jsonify(ApiResult(True, '').__repr__())
+
     @app.route('/api/addResource', methods=['POST'])
     def addResource():
         error, login, name, amount, meanPurchase = _getArgs(request.args, ['login', 'name', 'amount', 'meanPurchase'])
@@ -100,10 +114,24 @@ def start():
             return jsonify(ApiResult(False, 'not loaded').__repr__())
 
         portfolio = loaded[login]
-        resource = Resource(name, amount, meanPurchase)
-        portfolio.addResource(resource)
+        portfolio.addResource(name, amount, meanPurchase)
 
         return jsonify(ApiResult(True, 'added').__repr__())
+
+    @app.route('/api/removeResource', methods=['POST'])
+    def removeResource():
+        error, login, name, amount = _getArgs(request.args, ['login', 'name', 'amount'])
+        if error:
+            return ApiResult(False, error)
+
+        if login not in loaded:
+            return jsonify(ApiResult(False, 'not loaded').__repr__())
+
+        portfolio = loaded[login]
+        if portfolio.removeResource(name, amount):
+            return jsonify(ApiResult(True, 'removed').__repr__())
+        else:
+            return jsonify(ApiResult(False, 'not removed').__repr__())
 
     @app.route('/api/stats', methods=['GET'])
     async def stats():
@@ -204,7 +232,7 @@ def _getArgs(args, requiredFields, optionalFields=[]):
 
 
 def _getArgsWithPart(args):
-    error, login, part = _getArgs(args, ['login'], [('part', "100")])
+    error, login, part = _getArgs(args, ['login'], [('part', "10")])
 
     if not part.isdigit():
         error = 'part should be digit'
