@@ -19,6 +19,68 @@ def calculateDifference(buy, sell, withdrawalFee, transactionFee):
         'quantity': quantity
     }
 
+def calculateArbitrageDifference(buy, sell, withdrawalFee, transactionFee):
+    quantity = (min(buy['quantity'], sell['quantity']) -
+                withdrawalFee)
+
+    return {
+        'rate': (sell['rate'] - buy['rate']) * (1 - transactionFee),
+        'quantity': quantity
+    }
+
+
+def calculateArbitrage(apiFrom, apiTo, symbol):
+    queueFrom = deque(apiFrom.orderbook(symbol)['bid'])
+    queueTo = deque(apiFrom.orderbook(symbol)['ask'])
+    currency = symbol.split('-')[0]
+
+    previousProfit = 0
+    profit = None
+    quantity = 0
+    rateSum = 0
+
+    while (profit == None or profit > 0) and len(queueFrom) > 0 and len(queueTo) > 0:
+
+        # Updating old profit
+        if profit != None:
+            previousProfit = profit
+
+        # Getting 1st orders from queues
+        orderFrom = queueFrom.pop()
+        orderTo = queueTo.pop()
+
+        difference = calculateArbitrageDifference(
+            orderFrom, orderTo, apiFrom, apiTo, currency)
+
+        if profit == None:
+            previousProfit = profit = difference['rate']
+            quantity = difference['quantity']
+            rateSum = orderFrom['rate']
+
+        if difference['quantity'] > 0:
+            profit += difference['rate']
+            quantity += difference['quantity']
+            rateSum += orderFrom['rate']
+
+        # Putting back order with quantity left
+        if orderFrom['quantity'] > orderTo['quantity'] and orderFrom['quantity'] > apiFrom.withdrawalFee(currency):
+            queueFrom.append({
+                'quantity': orderFrom['quantity'] - orderTo['quantity'],
+                'rate': orderFrom['rate']
+            })
+        elif orderFrom['quantity'] < orderTo['quantity'] and orderTo['quantity'] > apiFrom.withdrawalFee(currency):
+            queueTo.append({
+                'quantity': orderTo['quantity'] - orderFrom['quantity'],
+                'rate': orderTo['rate']
+            })
+
+    if rateSum != 0 and quantity < 0 and previousProfit < 0:
+        return (previousProfit * quantity) / rateSum * -100
+    elif rateSum != 0:
+        return (previousProfit * quantity) / rateSum * 100
+
+    return 0
+
 
 # Returns profit in PLN
 def calculateProfit(api, symbol, currency, price, quantity, transactionFee=0):
@@ -112,7 +174,7 @@ def printInvestments(investments):
 
 
 def main():
-    
+
     printInvestments(loadInvestments())
 
 
