@@ -11,11 +11,11 @@ def convertToPLN(currency):
 
 
 def calculateDifference(buy, sell, withdrawalFee, transactionFee):
-    quantity = min(buy['quantity'], sell['quantity']) * \
-        (1 - transactionFee) - withdrawalFee
+    quantity = (min(buy['quantity'], sell['quantity']) -
+                withdrawalFee)
 
     return {
-        'rate': (sell['rate'] - buy['rate']),
+        'rate': (sell['rate'] - buy['rate']) * (1 - transactionFee),
         'quantity': quantity
     }
 
@@ -36,7 +36,8 @@ def calculateProfit(api, symbol, currency, price, quantity, transactionFee=0):
         tickerPrice = ticker['price']
         return (tickerPrice - price) * quantity * conversionMultiplier
     else:
-        queue = deque(orderbook['bid'])
+        queue = deque(
+            sorted(orderbook['bid'], key=lambda order: order['rate']))
         profit = 0
         withdrawalFee = api.withdrawalFee(symbol)
         while quantity > 0 and len(queue) > 0:
@@ -47,9 +48,11 @@ def calculateProfit(api, symbol, currency, price, quantity, transactionFee=0):
                 withdrawalFee,
                 transactionFee
             )
-
-            profit += difference['rate'] * difference['quantity']
-            quantity -= min(quantity, order['quantity'])
+            if(difference['quantity'] < 0 and difference['rate'] < 0):
+                profit -= difference['rate'] * difference['quantity']
+            else:
+                profit += difference['rate'] * difference['quantity']
+            quantity -= abs(min(quantity, order['quantity']))
 
         return profit * conversionMultiplier
 
@@ -109,8 +112,8 @@ def printInvestments(investments):
 
 
 def main():
-    printInvestments(loadInvestments())
     
+    printInvestments(loadInvestments())
 
 
 if __name__ == "__main__":
