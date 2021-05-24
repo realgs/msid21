@@ -1,0 +1,46 @@
+[
+  {
+    "symbol": "AAPL",
+    "type": "US",
+    "pricePerShare": 110,
+    "quantity": 20,
+    "currency": "USD"
+  },
+  {
+    "symbol": "TSLA",
+    "type": "US",
+    "pricePerShare": 420,
+    "quantity": 15,
+    "currency": "USD"
+  },
+  {
+    "symbol": "BTC",
+    "type": "Crypto",
+    "pricePerShare": 19860,
+    "quantity": 10,
+    "currency": "USD",
+    "api": "BitBay"
+  },
+  {
+    "symbol": "ETH",
+    "type": "Crypto",
+    "pricePerShare": 1215,
+    "quantity": 30,
+    "currency": "USD",
+    "api": "Bittrex"
+  },
+  {
+    "symbol": "CDR",
+    "type": "PL",
+    "pricePerShare": 200,
+    "quantity": 45,
+    "currency": "PLN"
+  },
+  {
+    "symbol": "EUR",
+    "type": "Currency",
+    "pricePerShare": 3.5,
+    "quantity": 15000,
+    "currency": "PLN"
+  }
+]
