@@ -67,7 +67,7 @@ def calculateArbitrage(apiFrom, apiTo, symbol):
                 })
 
         if rateSum != 0 and quantity < 0 and previousProfit < 0:
-            return (previousProfit * quantity) / rateSum 
+            return (previousProfit * quantity) / rateSum
         elif rateSum != 0:
             return (previousProfit * quantity) / rateSum
 
@@ -125,7 +125,7 @@ def getBestProfit(apiType, symbol, currency, price, quantity, apiName=None, skip
                 APIS[apiType][api], symbol, currency, price, quantity, transactionFee))
 
     maxIndex = profits.index(max(profits))
-    return {'name': list(APIS[apiType].keys())[maxIndex], 'profit': profits[maxIndex]}
+    return {'name': APIS[apiType][list(APIS[apiType].keys())[maxIndex]].name, 'profit': profits[maxIndex]}
 
 
 def getBestArbitrage(apiType, symbol, currency, apiName):
@@ -153,8 +153,10 @@ def printInvestments(investments):
     toPrint = []
     headers = ["Symbol", "Cena", "Ilość", "Giełda",
                "Zysk", "Zysk netto", "Zysk 10%", "Zysk 10% netto", "Arbitraż"]
-    for investment in investments:
 
+    sumToPrint = ["Suma", "---", "---", "---", 0, 0, 0, 0, "---"]
+
+    for investment in investments:
         api = None
         if 'api' in investment:
             api = investment['api']
@@ -168,7 +170,7 @@ def printInvestments(investments):
         bestArbitrage = getBestArbitrage(
             investment['type'], investment['symbol'], investment['currency'], api)
 
-        arbitragePrint = bestArbitrage['name'] if bestArbitrage[
+        arbitragePrint = "---" if bestArbitrage[
             'name'] == f"{api}----" else f"{bestArbitrage['name']}:{bestArbitrage['profit']:.2f}%"
 
         toPrint.append([
@@ -182,6 +184,14 @@ def printInvestments(investments):
             f"{(bestProfit10['profit']*0.81):.2f}zł",
             arbitragePrint
         ])
+
+        sumToPrint[4] += float(bestProfit['profit'])
+        sumToPrint[5] += float(bestProfit['profit'] * 0.81)
+        sumToPrint[6] += float(bestProfit10['profit'])
+        sumToPrint[7] += float(bestProfit10['profit'] * 0.81)
+
+    toPrint.append([sumToPrint[0], sumToPrint[1], sumToPrint[2], sumToPrint[3],
+                    f"{sumToPrint[4]:.2f}zł", f"{sumToPrint[5]:.2f}zł", f"{sumToPrint[6]:.2f}zł", f"{sumToPrint[7]:.2f}zł", sumToPrint[8]])
 
     print(tabulate(toPrint, headers=headers))
 
