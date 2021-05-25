@@ -62,9 +62,14 @@ def add_asset():
         session['currencies'] = wallet.currencies
         session['polish shares'] = wallet.polish_shares
         session['foreign shares'] = wallet.foreign_shares
-    return render_template('index.html',
-                           portfolio=wallet.get_complete_assets_dataframe(percentage).set_index('name').to_html(),
-                           messages=messages)
+
+    try:
+        portfolio = wallet.get_complete_assets_dataframe(percentage).set_index('name').to_html()
+    except Exception:
+        messages.append('Connection error. Try again later')
+        portfolio = None
+
+    return render_template('index.html', portfolio=portfolio, messages=messages)
 
 
 @app.route('/changepercentage', methods=['POST'])
@@ -93,13 +98,19 @@ def change_percentage():
 
     session['percentage'] = percentage
 
-    return render_template('index.html',
-                           portfolio=wallet.get_complete_assets_dataframe(percentage).set_index('name').to_html(),
-                           messages=messages)
+    try:
+        portfolio = wallet.get_complete_assets_dataframe(percentage).set_index('name').to_html()
+    except Exception:
+        messages.append('Connection error. Try again later')
+        portfolio = None
+
+    return render_template('index.html', portfolio=portfolio, messages=messages)
 
 
 @app.route('/load', methods=['POST'])
 def load_from_file():
+    messages = []
+
     file = request.files['file']
 
     file_name = werkzeug.utils.secure_filename(file.filename)
@@ -112,12 +123,20 @@ def load_from_file():
     session['currencies'] = wallet.currencies
     session['polish shares'] = wallet.polish_shares
     session['foreign shares'] = wallet.foreign_shares
-    return render_template('index.html',
-                           portfolio=wallet.get_complete_assets_dataframe(percentage).set_index('name').to_html())
+
+    try:
+        portfolio = wallet.get_complete_assets_dataframe(percentage).set_index('name').to_html()
+    except Exception:
+        messages.append('Connection error. Try again later')
+        portfolio = None
+
+    return render_template('index.html', portfolio=portfolio, messages=messages)
 
 
 @app.route('/saveportfolio', methods=['POST'])
 def save_portfolio_to_file():
+    messages = []
+
     file_name, percentage, wallet = prepare_to_saving()
 
     portfolio = wallet.get_complete_assets_dataframe(percentage)
@@ -125,11 +144,19 @@ def save_portfolio_to_file():
     with open(file_name, 'w') as f:
         json.dump(portfolio.to_json(), f)
 
-    return render_template('index.html', portfolio=portfolio.to_html())
+    try:
+        portfolio = wallet.get_complete_assets_dataframe(percentage).set_index('name').to_html()
+    except Exception:
+        messages.append('Connection error. Try again later')
+        portfolio = None
+
+    return render_template('index.html', portfolio=portfolio, messages=messages)
 
 
 @app.route('/savewallet', methods=['POST'])
 def save_wallet_to_file():
+    messages = []
+
     file_name, percentage, wallet = prepare_to_saving()
 
     wallet_dict = {
@@ -145,8 +172,13 @@ def save_wallet_to_file():
     with open(file_name, 'w') as f:
         json.dump(wallet_dict, f)
 
-    return render_template('index.html', portfolio=wallet.get_complete_assets_dataframe(percentage).to_html())
+    try:
+        portfolio = wallet.get_complete_assets_dataframe(percentage).set_index('name').to_html()
+    except Exception:
+        messages.append('Connection error. Try again later')
+        portfolio = None
 
+    return render_template('index.html', portfolio=portfolio, messages=messages)
 
 def prepare_to_saving():
     file = request.files['file']

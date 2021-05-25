@@ -22,11 +22,11 @@
         <div class="row" style="height: 50px"></div>
         {% if messages %}
             <div class="row justify-content-center">
-                <ol>
+                <ul>
                     {% for message in messages %}
-                        <li>message</li>
+                        <li>{{ message }}</li>
                     {% endfor %}
-                </ol>
+                </ul>
             </div>
             <div class="row" style="height: 50px"></div>
         {% endif %}

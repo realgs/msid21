@@ -8,3 +8,8 @@ body {
     align-items: center;
     text-align: center;
 }
+
+ul {
+    list-style-type:none;
+    color: red;
+}
