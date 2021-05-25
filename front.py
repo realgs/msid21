@@ -9,7 +9,6 @@ TEXTBOX_HEIGHT_SHIFT = 30
 COLUMNS_WIDTH_SHIFT = 120
 DOT = '.'
 PLN = 'PLN'
-DEFAULT_CONF_FILE = 'default.json'
 
 
 class DataFrameModel(QAbstractTableModel):
@@ -180,10 +179,8 @@ class Front(QMainWindow):
     def save_wallet(self):
         columns_text = self.get_columns_texts()
         new_data = self.make_json()
-        print(new_data)
         result_text = 'Problem occurred, not saved'
         result = None
-        print(new_data)
         if new_data:
             result = save_to_json(self.file_name, new_data)
         if result:
@@ -199,13 +196,8 @@ class Front(QMainWindow):
 
     def make_json(self):
         value_list = self.get_columns_texts().split(" ")
-        print(value_list)
         data = None
-        print(self.check_name_and_currency(value_list[0], value_list[3], self.resource_type),
-              check_numeric(value_list[1]), check_numeric(value_list[2]))
         if len(value_list) == 4:
-            print(self.check_name_and_currency(value_list[0], value_list[3], self.resource_type),
-                  check_numeric(value_list[1]), check_numeric(value_list[2]))
             if self.check_name_and_currency(value_list[0], value_list[3], self.resource_type) \
                     and check_numeric(value_list[1]) and check_numeric(value_list[2]):
                 data = {self.resource_type: {SELL_CONST[NAME]: value_list[0], SELL_CONST[QUANTITY]: value_list[1],
@@ -232,7 +224,6 @@ def merge_data(load_data, new_data):
 
 
 def save_to_json(file_name, new_data):
-    print('Saving....')
     load_data = get_resources(file_name)
     if not load_data:
         return False

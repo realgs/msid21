@@ -20,6 +20,7 @@ PRICE = 'PRICE'
 NAME = 'NAME'
 RESOURCES = 'RESOURCES'
 BASE_CURRENCY = 'BASE_CURRENCY'
+DEFAULT_CONF_FILE = 'default.json'
 
 ADDRESSES_LOCAL = {NBP: 'http://api.nbp.pl/api/exchangerates/tables/A/?format=json',
                    EODDATA: {ONE_MARKET: 'https://eodhistoricaldata.com/api/real-time/{1}?api_token={0}&fmt=json',
@@ -94,7 +95,7 @@ class Portfolio(object):
     def __init__(self, file_name):
         json_data = get_resources(file_name)
         if not json_data:
-            json_data = get_resources('default.json')
+            json_data = get_resources(DEFAULT_CONF_FILE)
         self.resources = json_data[SELL_CONST[RESOURCES]]
         self.base_currency = json_data[SELL_CONST[BASE_CURRENCY]]
         self.bittrex_markets, self.bitbay_markets = task1_2_3.get_markets()
@@ -131,11 +132,11 @@ class Portfolio(object):
         currencies_sell_data = self.sell_currencies(percent)
         table, table_sums = self.write_to_table(percent, table, table_sums, currencies_sell_data)
 
-        # pol_st_sell_data = self.sell_stocks(StockType.POLISH.value, percent)
-        # table, table_sums = self.write_to_table(percent, table, table_sums, pol_st_sell_data)
-        #
-        # for_st_sell_data = self.sell_stocks(StockType.FOREIGN.value, percent)
-        # table, table_sums = self.write_to_table(percent, table, table_sums, for_st_sell_data)
+        pol_st_sell_data = self.sell_stocks(StockType.POLISH.value, percent)
+        table, table_sums = self.write_to_table(percent, table, table_sums, pol_st_sell_data)
+
+        for_st_sell_data = self.sell_stocks(StockType.FOREIGN.value, percent)
+        table, table_sums = self.write_to_table(percent, table, table_sums, for_st_sell_data)
 
         table.append(['Sum', '', '', round(table_sums[0], ROUNDING),
                       round(table_sums[1], ROUNDING), '',
@@ -231,7 +232,7 @@ class Portfolio(object):
         per_netto_value = per_value - get_gain_tax(per_quantity, price, per_value)
         return per_name, netto_per_name, netto_value, per_netto_value
 
-    def sell_crypto_currencies(self, percent=100):
+    def sell_crypto_currencies(self, percent=30):
         crypto_currencies_dict = self.resources['crypto_currencies']
         sell_dict = {}
         sell_bitbay = {}
