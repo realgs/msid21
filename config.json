@@ -1,0 +1,40 @@
+{
+    "foreign_stocks": [
+        {
+            "name": "TSLA",
+            "quantity": 150,
+            "avg_price": 597.96,
+            "curr": "USD"
+        }
+    ],
+    "polish_stocks": [
+        {
+            "name": "KGHM",
+            "quantity": 100,
+            "avg_price": 195.85,
+            "curr": "PLN"
+        }
+    ],
+    "cryptocurrencies": [
+        {
+            "name": "BTC",
+            "quantity": 10,
+            "avg_price": 40000,
+            "curr": "USD"
+        },
+        {
+            "name": "DOGE",
+            "quantity": 1500,
+            "avg_price": 0.3,
+            "curr": "USD"
+        }
+    ],
+    "currencies": [
+        {
+            "name": "EUR",
+            "quantity": 1000,
+            "avg_price": 4.48,
+            "curr": "PLN"
+        }
+    ]
+}
