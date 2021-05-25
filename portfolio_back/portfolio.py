@@ -127,10 +127,3 @@ class Wallet:
             asset.pop('type', None)
             asset['buy price'] = asset.pop('price')
             self.cryptocurrencies.append(asset)
-
-
-if __name__ == '__main__':
-    wallet = Wallet.wallet_from_json(r"D:\Studia\IV semestr\MSiD\Lab\Lista5\wallet.json")
-    # wallet = Wallet.empty_wallet()
-    # wallet.add_asset({'type': 'cryptocurrency', 'name': 'ETH', 'price': 50, 'volume': 100})
-    print(wallet.get_complete_assets_dataframe())
