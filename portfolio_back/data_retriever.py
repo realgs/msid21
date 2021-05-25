@@ -5,6 +5,8 @@ from portfolio_back.offers import get_bidlist
 from portfolio_back.utils import get_polish_stock_quote
 from portfolio_back.finnhub_handler import FinnhubHandler
 
+DEFAULT_DEPTH = 50
+
 
 class DataRetriever:
 
@@ -25,20 +27,20 @@ class DataRetriever:
     def get_current_price_of_polish_stock_summary(self, asset_to_sell):
         return get_polish_stock_quote(asset_to_sell['name'])
 
-    def find_best_offer_for_national_currency(self, currency_to_sell, base_currency):
+    def get_best_offer_for_national_currency(self, currency_to_sell, base_currency):
         related_symbols = [currency['symbol'] for market in self.forex_markets for currency
                            in self.forex_currencies[market]
                            if currency_to_sell['name'] in currency['pair'] and base_currency in currency['pair']]
 
         return self.find_best_finnhub_price_for_currency(currency_to_sell, related_symbols)
 
-    def find_best_offer_for_cryptocurrency(self, currency_to_sell, base_currency, percentage=1, num_offers=50):
+    def get_best_offer_for_cryptocurrency(self, currency_to_sell, base_currency, percentage=1, num_offers=50):
         related_symbols = [currency['symbol'] for market in self.crypto_markets for currency
                            in self.crypto_currencies[market]
                            if currency['pair'] == f"{currency_to_sell['name']}/{base_currency}"]
 
         finnhub_result = self.find_best_finnhub_price_for_currency(currency_to_sell, related_symbols)
-        orderbooks_result = self.check_orderbooks(currency_to_sell, base_currency, 50, 1)
+        orderbooks_result = self.check_orderbooks(currency_to_sell, base_currency, DEFAULT_DEPTH, 1)
         orderbooks_result_percentage = self.check_orderbooks(currency_to_sell, base_currency, num_offers, percentage)
 
         return finnhub_result if finnhub_result[0] > orderbooks_result[0] else orderbooks_result, \

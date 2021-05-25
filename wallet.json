@@ -1,17 +1,17 @@
 {
-	"base currency": "USD",
+	"base currency": "PLN",
 	"assets": {
 		"currencies": [
-			{"name": "EUR", "volume": 1000, "buy price": 1.2}
+			{"name": "EUR", "volume": 1000, "buy price": 4.4}
 		],
 		"cryptocurrencies":[
-			{"name": "BTC", "volume": 1, "buy price": 45000.1}
+			{"name": "BTC", "volume": 1, "buy price": 135819.32}
 		],
 		"polish shares": [
-			{"name": "PKN.WAR", "volume": 1, "buy price": 76.4}
+			{"name": "PKN.WAR", "volume": 1, "buy price": 75.98}
 		],
 		"foreign shares":[
-			{"name": "IBM", "volume": 25.46, "buy price": 145.35}
+			{"name": "IBM", "volume": 25.46, "buy price": 529.64}
 		]
 	}
 }

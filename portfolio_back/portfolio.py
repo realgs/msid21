@@ -6,7 +6,8 @@ from portfolio_back.data_retriever import DataRetriever
 
 TAX_RATIO = .19
 DEPTH = 25
-DEFAULT_BASE_CURRENCY = 'USD'
+DEFAULT_CURRENCY = 'USD'
+POLISH_CURRENCY = 'PLN'
 
 
 class Asset:
@@ -30,6 +31,11 @@ class Wallet:
         self.foreign_shares = wallet_dict['assets']['foreign shares']
         self.polish_shares = wallet_dict['assets']['polish shares']
         self.data_retriever = DataRetriever()
+        self.default_to_base_currency = \
+            self.data_retriever.get_best_offer_for_national_currency({'name': DEFAULT_CURRENCY}, self.base_currency)[0]\
+                if self.base_currency != DEFAULT_CURRENCY else 1
+        self.zloty_to_default_currency = \
+            self.data_retriever.get_best_offer_for_national_currency({'name': POLISH_CURRENCY}, DEFAULT_CURRENCY)[0]
 
     @classmethod
     def wallet_from_json(cls, wallet_path):
@@ -39,7 +45,7 @@ class Wallet:
     @classmethod
     def empty_wallet(cls):
         wallet_dict = {
-            'base currency': DEFAULT_BASE_CURRENCY,
+            'base currency': DEFAULT_CURRENCY,
             'assets': {
                 'currencies': [],
                 'cryptocurrencies': [],
@@ -55,6 +61,12 @@ class Wallet:
             temp_wallet = json.load(f)
         return temp_wallet
 
+    def convert_default_to_base_currency(self, amount):
+        return amount * self.default_to_base_currency
+
+    def convert_zloty_to_default_currency(self, amount):
+        return amount / self.zloty_to_default_currency
+
     @staticmethod
     def calculate_net(volume, buy_price, sell_price, tax=TAX_RATIO):
         gross = volume * sell_price - volume * buy_price
@@ -67,15 +79,15 @@ class Wallet:
 
         for currency_asset in self.currencies:
             i = len(result_df)
-            current_price_result = self.data_retriever.find_best_offer_for_national_currency(currency_asset,
-                                                                                             self.base_currency)
+            current_price_result = self.data_retriever.get_best_offer_for_national_currency(currency_asset,
+                                                                                            DEFAULT_CURRENCY)
             self.append_to_dataframe(current_price_result[0], i, current_price_result[0], percentage, result_df,
                                      currency_asset, current_price_result[1].split(':')[0])
 
         for cryptocurrency_asset in self.cryptocurrencies:
             i = len(result_df)
-            current_price_result, current_price_percentage = self.data_retriever.find_best_offer_for_cryptocurrency(
-                cryptocurrency_asset, self.base_currency, percentage, DEPTH)
+            current_price_result, current_price_percentage = self.data_retriever.get_best_offer_for_cryptocurrency(
+                cryptocurrency_asset, DEFAULT_CURRENCY, percentage, DEPTH)
 
             arbitrage = self.data_retriever.get_arbitrage_for_cryptocurrency(cryptocurrency_asset)
             arbitrage.profit = arbitrage.profit * cryptocurrency_asset['volume'] / arbitrage.quantity
@@ -86,6 +98,7 @@ class Wallet:
         for share in self.polish_shares:
             i = len(result_df)
             current_price_result = self.data_retriever.get_current_price_of_polish_stock_summary(share)['close']
+            current_price_result = self.convert_zloty_to_default_currency(current_price_result)
             self.append_to_dataframe(current_price_result, i, current_price_result, percentage, result_df, share)
 
         for share in self.foreign_shares:
@@ -103,6 +116,10 @@ class Wallet:
 
     def append_to_dataframe(self, current_price, i, current_price_percentage, percentage, result_df, item,
                             stock_name=None, arbitrage=None):
+
+        current_price = self.convert_default_to_base_currency(current_price)
+        current_price_percentage = self.convert_default_to_base_currency(current_price_percentage)
+
         result_df.loc[i] = [item['name'], item['volume'], item['buy price'], current_price,
                             current_price * item['volume'],
                             Wallet.calculate_net(item['volume'], item['buy price'], current_price),

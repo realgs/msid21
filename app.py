@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 
 import werkzeug.utils
 from flask import Flask, render_template, request, session
@@ -179,6 +180,7 @@ def save_wallet_to_file():
         portfolio = None
 
     return render_template('index.html', portfolio=portfolio, messages=messages)
+
 
 def prepare_to_saving():
     file = request.files['file']
