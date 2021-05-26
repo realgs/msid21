@@ -38,11 +38,19 @@ class BitBayAPI(API):
         result = []
 
         if quantity < float(orderbook_buy[0]['ca']):
-            return result.append(orderbook_buy[0])
+            map = {
+                'Quantity': orderbook_buy[0]['ca'],
+                'Rate': orderbook_buy[0]['ra']
+            }
+            return result.append(map)
         else:
             i = 0
             while quantity >= 0:
-                result.append(orderbook_buy[i])
+                map = {
+                    'Quantity': orderbook_buy[i]['ca'],
+                    'Rate': orderbook_buy[i]['ra']
+                }
+                result.append(map)
                 quantity = quantity - float(orderbook_buy[i]['ca'])
                 i = i + 1
         return result
