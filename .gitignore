@@ -1,2 +1,13 @@
 /*portfolio_data.json
 /l5.txt
+/portfolioClient/*.*
+/portfolioClient/.editorconfig
+/portfolioClient/.browserslistrc
+/portfolioClient/node_modules/
+/portfolioClient/e2e/
+
+/portfolioClient/src/test.ts
+/portfolioClient/src/polyfills.ts
+/portfolioClient/src/favicon.ico
+/portfolioClient/src/environments/
+/portfolioClient/src/assets/

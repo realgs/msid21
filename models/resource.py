@@ -1,8 +1,9 @@
 class Resource:
-    def __init__(self, name, amount, meanPurchase):
+    def __init__(self, name, amount, meanPurchase, currency=None):
         self.name = name
         self.amount = amount
         self.meanPurchase = meanPurchase
+        self.currency = currency
 
     def add(self, resource):
         fullAmount = self.amount + resource.amount
@@ -15,7 +16,7 @@ class Resource:
         return cls(dataDict['name'], dataDict['amount'], dataDict['meanPurchase'])
 
     def __repr__(self):
-        return {'name': self.name, 'amount': self.amount, 'meanPurchase': self.meanPurchase}
+        return {'name': self.name, 'amount': self.amount, 'meanPurchase': self.meanPurchase, 'currency': self.currency}
 
 
 class ResourceValue:
@@ -54,21 +55,27 @@ class ResourceValue:
 
 
 class ResourceProfit:
-    def __init__(self, name, fullProfit, partProfit, part, currency):
+    def __init__(self, name, fullProfit, partProfit, amount, part, currency):
         self.name = name
         self.fullProfit = fullProfit
         self.partProfit = partProfit
         self.part = part
         self.currency = currency
+        self.fullAmount = amount
+
+    @property
+    def partAmount(self):
+        return self.fullAmount / 100 * self.part
 
     def __repr__(self):
         return {'name': self.name,
                 'currency': self.currency,
-                'full': {'profit': self.fullProfit},
-                'part': {'procent': self.part, 'profit': self.partProfit}}
+                'full': {'profit': self.fullProfit, 'amount': self.fullAmount},
+                'part': {'procent': self.part, 'profit': self.partProfit, 'amount': self.partAmount}}
 
     def __str__(self):
-        return f"name: {self.name},full profit: {self.fullProfit}, part profit: {self.partProfit}, part: {self.part} %, currency: {self.currency}"
+        return f"name: {self.name}, full profit: {self.fullProfit}, full amount: {self.fullAmount}, part profit: " \
+               f"{self.partProfit}, part amount: {self.partAmount}, part: {self.part} %, currency: {self.currency}"
 
 
 class ResourceArbitration:

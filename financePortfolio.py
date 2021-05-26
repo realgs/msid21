@@ -34,6 +34,10 @@ class Portfolio:
                 'resources': [resource.__repr__() for _, resource in self._resources.items()]}
         return saveConfig(self._owner+"_"+FILENAME, data)
 
+    @property
+    def countryProfitFee(self):
+        return self._countryProfitFee
+
     def setCountryProfitFee(self, fee):
         if fee < 0:
             print(f"Warning - Portfolio - setCountryProfitFee: incorrect fee: {fee}")
@@ -43,12 +47,20 @@ class Portfolio:
             fee = 1
         self._countryProfitFee = fee
 
-    def setBaseCurrency(self, currency):
+    @property
+    def baseValue(self):
+        return self._baseValue
+
+    def setBaseValue(self, currency):
         self._baseValue = currency
 
     @staticmethod
     def availableApi():
         return [{'name': api['api'].getName(), 'type': api['type']} for api in API_LIST]
+
+    @property
+    def resources(self):
+        return [Resource(resource.name, resource.amount, resource.meanPurchase, self.baseValue) for _, resource in self._resources.items()]
 
     def addResource(self, name, amount, meanPurchase):
         resource = Resource(name, amount, meanPurchase)
@@ -92,7 +104,7 @@ class Portfolio:
                 profit = nameToProfit[name]
             else:
                 print(f"Error - Portfolio - getStats: no profit for name: {name}")
-                profit = ResourceProfit(name, 0, 0, 0, self._baseValue)
+                profit = ResourceProfit(name, 0, 0, 0, 0, self._baseValue)
             allArbitration = await self.getAllArbitration(name)
             stats.append(ResourceStats(value, profit, resource.meanPurchase, allArbitration))
 
@@ -123,7 +135,7 @@ class Portfolio:
             meanPurchase = await self.cantorService.convertCurrencies(DEFAULT_VALUE, self._baseValue, self._resources[resourceValue.name].meanPurchase)
             fullProfit = (fullValue - meanPurchase * fullAmount) * (1 - self._countryProfitFee)
             partProfit = (partValue - meanPurchase * partAmount) * (1 - self._countryProfitFee)
-            profits.append(ResourceProfit(resourceValue.name, fullProfit, partProfit, part, self._baseValue))
+            profits.append(ResourceProfit(resourceValue.name, fullProfit, partProfit, fullAmount, part, self._baseValue))
         return profits
 
     async def getRecommendedApiForResource(self, resourceName, orderApiData=None):
