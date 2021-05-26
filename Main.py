@@ -7,6 +7,7 @@ from APIs.MarketStackAPI import MarketStackAPI
 from APIs.OpenExchangeRatesAPI import OpenExchangeRatesAPI
 
 BASE_CURRENCY = 'USD'
+PROFIT_TAX = 0.19
 APIS = {
     'US': {
         'MarketStack': MarketStackAPI()
@@ -15,7 +16,7 @@ APIS = {
         'OpenExchangeRates': OpenExchangeRatesAPI()
     },
     'Crypto': {
-        'Bittrex': BittRexAPI(),
+        'BittRex': BittRexAPI(),
         'BitBay': BitBayAPI()
     }
 }
@@ -43,7 +44,7 @@ def add_best_sell_offers(bit_bay, bitt_rex, market_stack, open_exchange, portfol
     stocks = portfolio.get('stock')
     us_stocks = stocks.get('US')
     currencies = portfolio.get('currency')
-    crypto_currencies = portfolio.get('cryptocurrency')
+    crypto_currencies = portfolio.get('crypto_currency')
     percentage = 100
 
     for us_stock in us_stocks:
@@ -51,25 +52,28 @@ def add_best_sell_offers(bit_bay, bitt_rex, market_stack, open_exchange, portfol
         if askForPercentage:
             print("What percentage would you like to sell?")
             percentage = read_int_between_from_command(0, 100)
-        portfolio['stock']['US'][us_stock]['percentage'] = percentage
-        portfolio['stock']['US'][us_stock]['last_transaction'] = last_transaction['last']
+        portfolio['stock']['US'][us_stock]['Percentage'] = percentage
+        portfolio['stock']['US'][us_stock]['Last_transaction'] = last_transaction['last'] if (
+                last_transaction['last'] is not None) else last_transaction['open']
 
     for currency in currencies:
         currency_pair = currency.split("-")
-        last_course = open_exchange.get_latest_currency_pair(currency_pair[0], currency_pair[1])
+        last_course = open_exchange.get_latest_currency_pair(currency_pair[1], currency_pair[0])
         if askForPercentage:
             print("What percentage would you like to sell?")
             percentage = read_int_between_from_command(0, 100)
-        portfolio['currency'][currency]['percentage'] = percentage
-        portfolio['currency'][currency]['last_transaction'] = last_course
-        portfolio['currency'][currency]['base_currency'] = currency_pair[0]
+        portfolio['currency'][currency]['Percentage'] = percentage
+        portfolio['currency'][currency]['Last_transaction'] = last_course
+        portfolio['currency'][currency]['Base_currency'] = currency_pair[0]
 
     for crypto_currency in crypto_currencies:
         if askForPercentage:
             print("What percentage would you like to sell?")
             percentage = read_int_between_from_command(0, 100)
-        portfolio['cryptocurrency'][crypto_currency]['percentage'] = percentage
         currency_pair = crypto_currency.split("-")
+        portfolio['crypto_currency'][crypto_currency]['Percentage'] = percentage
+        portfolio['crypto_currency'][crypto_currency]['Base_currency'] = currency_pair[1]
+        portfolio['crypto_currency'][crypto_currency]['Crypto_currency'] = currency_pair[0]
         quantity = crypto_currencies.get(crypto_currency)['Quantity'] * percentage / 100
         bit_bay_best_sell_offer = bit_bay.find_best_sell_offer(currency_pair[0], currency_pair[1], quantity)
         exchanges_map = {}
@@ -78,11 +82,53 @@ def add_best_sell_offers(bit_bay, bitt_rex, market_stack, open_exchange, portfol
         bitt_rex_best_sell_offer = bitt_rex.find_best_sell_offer(currency_pair[0], currency_pair[1], quantity)
         if bitt_rex_best_sell_offer is not None:
             exchanges_map['BittRex'] = bitt_rex_best_sell_offer
-        portfolio['cryptocurrency'][crypto_currency]['exchanges'] = exchanges_map
+        portfolio['crypto_currency'][crypto_currency]['Exchanges'] = exchanges_map
     return portfolio
 
 
-# def calculate_profit
+def calculate_profit_with_last_transaction(info):
+    quantity_to_sell = info['Percentage'] / 100 * info['Quantity']
+    buy_rate = info['Rate']
+    sell_rate = info['Last_transaction']
+    return quantity_to_sell * (sell_rate - buy_rate)
+
+
+def calculate_profit_with_best_offers(info, exchange):
+    quantity_to_sell = info['Percentage'] / 100 * info['Quantity']
+    buy_rate = info['Rate']
+    sell_rate_minus_fees = 0
+
+    for orders in info['Exchanges'][exchange]:
+        rate = float(orders['Rate'])
+        quantity = float(orders['Quantity'])
+        fees = APIS['Crypto'][exchange].get_fees(rate, quantity, info['Crypto_currency'])
+        sell_rate_minus_fees += rate * quantity - fees
+
+    return quantity_to_sell * (sell_rate_minus_fees - buy_rate)
+
+
+def add_possible_profit(portfolio):  # Profit -> fees included in the calc, tax not included
+    stocks = portfolio.get('stock')
+    us_stocks = stocks.get('US')
+    currencies = portfolio.get('currency')
+    crypto_currencies = portfolio.get('crypto_currency')
+
+    for us_stock in us_stocks:
+        profit = calculate_profit_with_last_transaction(us_stocks[us_stock])
+        portfolio['stock']['US'][us_stock]['Profit'] = profit
+        portfolio['stock']['US'][us_stock]['Profit_netto'] = profit * (1 - PROFIT_TAX)
+
+    for currency in currencies:
+        profit = calculate_profit_with_last_transaction(currencies[currency])
+        portfolio['currency'][currency]['Profit'] = profit
+        portfolio['currency'][currency]['Profit_netto'] = profit * (1 - PROFIT_TAX)
+
+    for crypto_currency in crypto_currencies:
+        for exchange in portfolio['crypto_currency'][crypto_currency]['Exchanges']:
+            profit = calculate_profit_with_best_offers(crypto_currencies[crypto_currency], exchange)
+            portfolio['crypto_currency'][crypto_currency]['Exchanges'][exchange]['Profit'] = profit
+            portfolio['crypto_currency'][crypto_currency]['Exchanges'][exchange]['Profit_netto'] = profit * (
+                    1 - PROFIT_TAX)
 
 
 def print_best_sell_offers(best_sell_map):
@@ -92,13 +138,16 @@ def print_best_sell_offers(best_sell_map):
 # Jeśli są dostępne informacje o kupnie/sprzedaży - patrzymy na kursy kupna i liczymy z którymi ofertami trzeba sparować zasób użytkownika, by wyprzedać całą posiadaną ilość (patrzymy wgłąb tabeli bids) (5pkt)
 def exc_1(bit_bay, bitt_rex, market_stack, open_exchange, portfolio):
     best_sell_map = add_best_sell_offers(bit_bay, bitt_rex, market_stack, open_exchange, portfolio, False)
-    print_best_sell_offers(best_sell_map)
 
 
 # Analogicznie do zadania 2 liczymy to samo tylko do zadanej głębokości portfolio. Użytkownik wprowadza informację, że chciałby sprzedać przykładowo 10% swoich zasobów i dla tej ilości robimy wycenę jak z zadania 2.
 def exc_2(bit_bay, bitt_rex, market_stack, open_exchange, portfolio):
     best_sell_map = add_best_sell_offers(bit_bay, bitt_rex, market_stack, open_exchange, portfolio, True)
-    print_best_sell_offers(best_sell_map)
+
+
+def exc_3(bit_bay, bitt_rex, market_stack, open_exchange, portfolio):
+    best_sell_map = add_best_sell_offers(bit_bay, bitt_rex, market_stack, open_exchange, portfolio, False)
+    add_possible_profit(best_sell_map)
 
 
 bit_bay = BitBayAPI()
@@ -109,4 +158,4 @@ open_exchange = OpenExchangeRatesAPI()
 portfolio = get_json_from_file("Data/MyInvestmentPortfolio.json")
 settlement_currency = get_json_from_file("Data/SettlementCurrency.json")
 
-exc_1(bit_bay, bitt_rex, market_stack, open_exchange, portfolio)
+exc_3(bit_bay, bitt_rex, market_stack, open_exchange, portfolio)

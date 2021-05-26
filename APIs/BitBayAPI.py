@@ -83,6 +83,12 @@ class BitBayAPI(API):
                 else:
                     return response.json()
 
+    def get_fees(self, price, amount, crypto_currency):
+        if crypto_currency in self.TRANSFER_FEE:
+            return price * amount * self.TAKER_FEE + self.TRANSFER_FEE[crypto_currency]
+        else:
+            raise Exception("Transfer fee not mapped for " + crypto_currency)
+
     def __quick_sort_orderbook_by_rate(self, unsorted):
         if len(unsorted) <= 1:
             return unsorted
