@@ -1,3 +1,19 @@
+th, td {
+    width: 180px;
+    text-align: center;
+}
+
+.content {
+    display: flex;
+    justify-content: space-around;
+    margin: 10px;
+}
+
+.header {
+    font-size: x-large;
+    margin: 20px 0 30px 10px;
+}
+
 .green {
     background-color: #00BD9D;
 }
@@ -7,11 +23,31 @@
 }
 
 .action {
-    margin: 5px;
+    margin: 10px;
     width: 100px;
 }
 
-.content {
+.input-row{
+    width: 350px;
     display: flex;
     justify-content: space-between;
+    font-size: large;
+    padding: 5px;
+}
+
+.input-row input{
+    width: 100px;
+    font-size: large;
+}
+
+.input-row div{
+    display: flex;
+}
+
+mat-form-field {
+    font-size: medium;
+}
+
+.input-label {
+    width: 80px;
 }

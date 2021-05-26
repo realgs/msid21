@@ -1,7 +1,6 @@
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
 import { PortfolioService } from '../portfolio.service';
-import { ResourceStats } from  '../models/resourceStats';
+import { ResourceStats } from  '../models/resource';
 import { MatDialog } from '@angular/material/dialog';
 import { ResourceDetailsComponent } from '../resource-details/resource-details.component';
 import { CookieService } from 'ngx-cookie';

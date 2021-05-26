@@ -62,14 +62,17 @@ class Portfolio:
     def resources(self):
         return [Resource(resource.name, resource.amount, resource.meanPurchase, self.baseValue) for _, resource in self._resources.items()]
 
-    def addResource(self, name, amount, meanPurchase):
-        resource = Resource(name, amount, meanPurchase)
-        if resource.name in self._resources:
-            self._resources[resource.name].add(resource)
-        else:
-            self._resources[resource.name] = resource
+    def addResource(self, name, amount, price):
+        if amount > 0:
+            price = max(price, 0)
+            resource = Resource(name, amount, price)
+            if resource.name in self._resources:
+                self._resources[resource.name].add(resource)
+            else:
+                self._resources[resource.name] = resource
 
     def removeResource(self, resourceName, amount):
+        amount = max(amount, 0)
         if resourceName not in self._resources:
             return False
         resource = self._resources[resourceName]

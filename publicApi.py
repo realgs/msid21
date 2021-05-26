@@ -105,15 +105,21 @@ def start():
 
     @app.route('/api/addResource', methods=['POST'])
     def addResource():
-        error, login, name, amount, meanPurchase = _getArgs(request.args, ['login', 'name', 'amount', 'meanPurchase'])
+        error, login, name, amount, price = _getArgs(request.args, ['login', 'name', 'amount', 'price'])
         if error:
             return ApiResult(False, error)
 
         if login not in loaded:
             return jsonify(ApiResult(False, 'not loaded').__repr__())
 
+        try:
+            amount = float(amount)
+            price = float(price)
+        except ValueError:
+            return jsonify(ApiResult(False, 'amount and price must be number').__repr__())
+
         portfolio = loaded[login]
-        portfolio.addResource(name, amount, meanPurchase)
+        portfolio.addResource(name, amount, price)
         portfolio.save()
 
         return jsonify(ApiResult(True, 'added').__repr__())
@@ -127,12 +133,17 @@ def start():
         if login not in loaded:
             return jsonify(ApiResult(False, 'not loaded').__repr__())
 
+        try:
+            amount = float(amount)
+        except ValueError:
+            return jsonify(ApiResult(False, 'amount must be number').__repr__())
+
         portfolio = loaded[login]
         if portfolio.removeResource(name, amount):
             portfolio.save()
             return jsonify(ApiResult(True, 'removed').__repr__())
         else:
-            return jsonify(ApiResult(False, 'not removed').__repr__())
+            return jsonify(ApiResult(False, 'could not remove').__repr__())
 
     @app.route('/api/stats', methods=['GET'])
     async def stats():

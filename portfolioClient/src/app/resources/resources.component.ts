@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import { CookieService } from 'ngx-cookie';
 import { PortfolioService } from '../portfolio.service';
+import { Resource } from '../models/resource';
 
 @Component({
   selector: 'app-resources',
@@ -10,7 +11,7 @@ import { PortfolioService } from '../portfolio.service';
 })
 export class ResourcesComponent implements OnInit {
   private login?: string;
-  resources: any[] = [];
+  resources: Resource[] = [];
   selectedResource = new FormControl('new');
   currency: string = 'USD';
   name: string = '';
@@ -29,7 +30,12 @@ export class ResourcesComponent implements OnInit {
       this.service.getResources(this.login)
       .subscribe(apiResult => {
         if (apiResult.success && apiResult.data.length){
-          this.resources = apiResult.data;
+          const retrieved: Resource[] = [];
+          for (let i = 0; i < apiResult.data.length; i++){
+            const res = apiResult.data[i];
+            retrieved.push({name: res.name, amount: res.amount, meanPurchase: res.meanPurchase});
+          }
+          this.resources = retrieved;
           this.currency = apiResult.data[0].currency;
         }
       })
@@ -38,17 +44,55 @@ export class ResourcesComponent implements OnInit {
 
   addResource(): void {
     if (this.login){
-      this.clear();
-      this.service.addResource(this.login, this.name, this.amount, this.price)
+      let name = this.selectedResource.value;
+      if (name == 'new') {
+        name = this.name;
+      }
+      this.service.addResource(this.login, name, this.amount, this.price)
       .subscribe(apiResult => {
         if (apiResult.success){
           this.retrieveResources();
         }
-      })
+      });
+      this.clear();
     }
   }
 
-  clear(): void{
+  removeResource(): void {
+    if (this.login){
+      let name = this.selectedResource.value;
+      if (name != 'new'){
+        this.service.removeResource(this.login, name, this.amount)
+        .subscribe(apiResult => {
+          if (apiResult.success){
+            this.retrieveResources();
+          }
+        });
+        this.clear();
+      }
+    }
+  }
+
+  setAllAmount(): void {
+    const resourceName = this.selectedResource.value;
+    if (resourceName != 'new') {
+      const resource = this.getResourceByName(resourceName);
+      if (resource){
+        this.amount = resource.amount;
+      }
+    }
+  }
+
+  private getResourceByName(name: string): Resource | undefined {
+    for (let i = 0; i < this.resources.length; i++) {
+      if (this.resources[i].name == name){
+        return this.resources[i];
+      }
+    }
+    return undefined;
+  }
+
+  private clear(): void{
     this.name = '';
     this.amount = 0;
     this.price = 0;

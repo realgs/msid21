@@ -3,7 +3,7 @@ import { FormControl } from '@angular/forms';
 import { CookieService } from 'ngx-cookie';
 import { Observable } from 'rxjs';
 import { ApiResult } from '../models/apiResult';
-import { ResourceArbitration } from '../models/resourceStats';
+import { ResourceArbitration } from '../models/resource';
 import { PortfolioService } from '../portfolio.service';
 
 @Component({
