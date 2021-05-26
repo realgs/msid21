@@ -1,0 +1,30 @@
+{
+  "base_currency": "USD",
+  "currency": [
+    {
+      "name": "EUR",
+      "quantity": 1200,
+      "rate": 1.21
+    },
+    {
+      "name": "PLN",
+      "quantity": 5100,
+      "rate": 0.27
+    }
+  ],
+  "crypto_currency": [
+    {
+      "name": "BTC",
+      "quantity": 0.0045,
+      "rate": 33827.6
+    }
+  ],
+  "polish_stock": [],
+  "foreign_stock": [
+    {
+      "name": "AAPL",
+      "quantity": 1.5,
+      "rate": 33827.6
+    }
+  ]
+}
