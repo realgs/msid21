@@ -1,0 +1,32 @@
+.content {
+    top: 20px;
+}
+
+.green-button {
+    background-color: #00BD9D;
+    color: white;
+    width: 150px;
+    font-size: larger;
+}
+
+label {
+    font-size: x-large;
+    margin: 20px 0;
+}
+
+.message{
+    font-size: larger;
+    margin: 10px 0;
+}
+
+.error {
+    color: #FF5C33;
+}
+
+.green{
+    color: #00BD9D;
+}
+
+.blue {
+    color: #54DEFD;
+}

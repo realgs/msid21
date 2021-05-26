@@ -1,0 +1,29 @@
+.bold{
+    font-weight: bold;
+}
+
+.content{
+    width: 1000px;
+    padding: 10px;
+}
+
+.row{
+    display: flex;
+    justify-content: space-between;
+    padding: 0 20px;
+}
+
+.green{
+    background-color: #00BD9D;
+}
+
+.section{
+    border-top: 2px solid #8BD7D2;
+    margin: 10px 0;
+    padding: 12px 20px;
+}
+
+th, td {
+    width: 185px;
+    text-align: center;
+}

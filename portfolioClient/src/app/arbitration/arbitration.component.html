@@ -1,0 +1,34 @@
+<div class="content">
+    <label class="header" for="selected">Select Resource: </label>
+
+    <mat-form-field id="selected" appearance="fill">
+        <mat-select [formControl]="selectedResource">
+            <mat-option value="all">All</mat-option>
+            <mat-option *ngFor="let resource of resources" value="{{resource}}">{{ resource }}</mat-option>
+        </mat-select>
+    </mat-form-field>
+
+    <button mat-raised-button class="green-button" [disabled]="status == 'pending'" (click)="search()">Search</button>
+
+    <span *ngIf="status == 'prending'" class="pending message">Loading arbitrations</span>
+    <span *ngIf="status == 'error'" class="error message">Could not load data</span>
+</div>
+
+<div>
+    <table>
+        <tr>
+            <th><h4>Resources</h4></th>
+            <th><h4>Between</h4></th>
+            <th><h4>Rate</h4></th>
+            <th><h4>Profit</h4></th>
+            <th><h4>Quantity</h4></th>
+        </tr>
+        <tr *ngFor="let arbitration of arbitrations">
+            <td><h4>{{ arbitration.currency1 }} -> {{ arbitration.currency2 }}</h4></td>
+            <td><h4>{{ arbitration.api1 }} -> {{ arbitration.api2 }}</h4></td>
+            <td><h4>{{ arbitration.rate | number : '1.6-6' }}</h4></td>
+            <td><h4>{{ arbitration.profit | number : '1.6-6' }} {{ arbitration.currency1 }}</h4></td>
+            <td><h4>{{ arbitration.quantity | number : '1.0-6' }} {{ arbitration.currency1 }}</h4></td>
+        </tr>
+    </table>
+</div>

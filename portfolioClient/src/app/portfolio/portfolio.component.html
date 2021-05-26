@@ -1,0 +1,22 @@
+<div>
+    <p>Hello {{ login }}</p>
+
+    <div *ngIf="stats.length">
+        <p >Base currency: {{stats[0].currency}}</p>
+    
+        <table>
+            <tr>
+                <th>Resource Name</th>
+                <th>Amount</th>
+                <th>Mean Purchase</th>
+            </tr>
+            <tr *ngFor='let stat of stats'>
+                <th>{{stat.name}}</th>
+                <th>{{stat.value.full.amount}}</th>
+                <th>{{stat.meanPurchase}}</th>
+                <th> <button mat-raised-button (click)=openDetails(stat)>Details</button> </th>
+            </tr>
+        </table>
+    </div>   
+</div>
+

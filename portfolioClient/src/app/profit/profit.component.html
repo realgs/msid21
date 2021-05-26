@@ -1,0 +1,41 @@
+<div class="header">
+    <label for="newPart">Part Of Resources: </label>
+    <input id="newPart" type="number" [(ngModel)]="newPart" />
+    <button mat-raised-button class="count-button" (click)="retriveProfit()">Count</button>
+</div>
+
+
+<table>
+    <tr>
+        <th>Resources</th>
+        <th>
+            100%
+            <div class="row">
+                <span class="cell">Amount</span>
+                <span class="cell">Profit</span>
+            </div>
+        </th>
+        <th>
+            {{ part }}%
+            <div class="row">
+                <span class="cell">Amount</span>
+                <span class="cell">Profit</span>
+            </div>
+        </th>
+    </tr>
+    <tr *ngFor="let profit of profits">
+        <td><h4>{{ profit.name }}</h4></td>
+        <td>
+            <div class="row">
+                <h4 class="cell">{{ profit.full.amount | number : '1.6-6' }}</h4>
+                <h4 class="cell" [ngClass]="{'positive': profit.full.profit>0, 'negative': 0>profit.full.profit}">{{ profit.full.profit | number : '1.0-2' }} {{ profit.currency }}</h4>
+            </div>
+        </td>
+        <td>
+            <div class="row">
+                <h4 class="cell">{{ profit.part.amount | number : '1.6-6' }}</h4>
+                <h4 class="cell" [ngClass]="{'positive': profit.part.profit>0, 'negative': 0>profit.part.profit}">{{ profit.part.profit | number : '1.0-2' }} {{ profit.currency }}</h4>
+            </div>
+        </td>
+    </tr>
+</table>

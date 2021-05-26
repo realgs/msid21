@@ -1,0 +1,17 @@
+.green {
+    background-color: #00BD9D;
+}
+
+.red {
+    background-color: #FF4B1F;
+}
+
+.action {
+    margin: 5px;
+    width: 100px;
+}
+
+.content {
+    display: flex;
+    justify-content: space-between;
+}

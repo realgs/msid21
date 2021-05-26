@@ -1,0 +1,20 @@
+<div  class='body' *ngIf="logged">
+    <div *ngIf="logged" class="nav-horizontal">
+        <p class="name">Hello {{ login }}</p>
+        <div><a class="nav-button" mat-raised-button routerLink="portfolio">Portfolio</a></div>
+        <div><a class="nav-button" mat-raised-button routerLink="resources">Resources</a></div>
+        <div><a class="nav-button" mat-raised-button routerLink="profit">Profit</a></div>
+        <div><a class="nav-button" mat-raised-button routerLink="arbitrations">Arbitrations</a></div>
+        <div><a class="nav-button" mat-raised-button routerLink="configuration">Configuration</a></div>
+        <div><a class="nav-button" mat-raised-button routerLink="availableApi">Available Api</a></div>
+        <div><button class="nav-button" mat-raised-button (click)='logout()'>Logout</button></div>
+    </div>
+
+    <div class="content">
+        <router-outlet></router-outlet>
+    </div>
+</div>
+
+<div *ngIf="!logged">
+    <app-login (logged)="onLogged()"></app-login>
+</div>

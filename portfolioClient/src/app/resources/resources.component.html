@@ -1,0 +1,47 @@
+<h2>Your resources: </h2>
+<br />
+
+<div class="content">
+    <table>
+        <tr>
+            <th>Name</th>
+            <th>Amount</th>
+            <th>Mean Purchase</th>
+            <th>Actions</th>
+        </tr>
+        <tr *ngFor="let resource of resources">
+            <td>{{ resource.name }}</td>
+            <td>{{ resource.amount }}</td>
+            <td>{{ resource.meanPurchase }} {{ currency }}</td>
+        </tr>
+    </table>
+
+    <div>
+        <div>
+            <label class="header" for="selected">Resource: </label>
+            <mat-form-field id="selected" appearance="fill">
+                <mat-select [formControl]="selectedResource">
+                    <mat-option value="new">New</mat-option>
+                    <mat-option *ngFor="let resource of resources" value="{{resource.name}}">{{ resource.name }}</mat-option>
+                </mat-select>
+            </mat-form-field>
+        </div>
+        <div *ngIf="selectedResource.value == 'new'">
+            <label for="name">Name: </label>
+            <input id="name" [(ngModel)]="name"/>
+        </div>
+        <div>
+            <label for="amount">Amount: </label>
+            <input id="amount" [(ngModel)]="amount" type="number"/>
+        </div>
+        <div>
+            <label for="price">Price: </label>
+            <input id="price" [(ngModel)]="price" type="number"/>
+            <span>{{ currency }}</span>
+        </div>
+        <div>
+            <button mat-raised-button class="green action">Add</button>
+            <button mat-raised-button class="red action">Remove</button>
+        </div>
+    </div>
+</div>
