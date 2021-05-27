@@ -28,14 +28,13 @@ class Wallet:
         self.base_currency = wallet_dict['base currency']
         self.currencies = wallet_dict['assets']['currencies']
         self.cryptocurrencies = wallet_dict['assets']['cryptocurrencies']
-        self.foreign_shares = wallet_dict['assets']['foreign shares']
-        self.polish_shares = wallet_dict['assets']['polish shares']
+        self.shares = wallet_dict['assets']['shares']
         self.data_retriever = DataRetriever()
         self.default_to_base_currency = \
-            self.data_retriever.get_best_offer_for_national_currency({'name': DEFAULT_CURRENCY}, self.base_currency)[0]\
-                if self.base_currency != DEFAULT_CURRENCY else 1
+            self.data_retriever.get_exchange_rate(DEFAULT_CURRENCY,
+                                                  self.base_currency) if self.base_currency != DEFAULT_CURRENCY else 1
         self.zloty_to_default_currency = \
-            self.data_retriever.get_best_offer_for_national_currency({'name': POLISH_CURRENCY}, DEFAULT_CURRENCY)[0]
+            self.data_retriever.get_exchange_rate(POLISH_CURRENCY, DEFAULT_CURRENCY)
 
     @classmethod
     def wallet_from_json(cls, wallet_path):
@@ -49,8 +48,7 @@ class Wallet:
             'assets': {
                 'currencies': [],
                 'cryptocurrencies': [],
-                'foreign shares': [],
-                'polish shares': []
+                'shares': [],
             }
         }
         return cls(wallet_dict)
@@ -95,16 +93,15 @@ class Wallet:
             self.append_to_dataframe(current_price_result[0], i, current_price_percentage[0], percentage, result_df,
                                      cryptocurrency_asset, current_price_result[1].split(':')[0], arbitrage)
 
-        for share in self.polish_shares:
+        current_price_results = self.data_retriever.get_current_prices_of_stocks(self.shares)
+        for current_price_result in current_price_results:
             i = len(result_df)
-            current_price_result = self.data_retriever.get_current_price_of_polish_stock_summary(share)['close']
-            current_price_result = self.convert_zloty_to_default_currency(current_price_result)
-            self.append_to_dataframe(current_price_result, i, current_price_result, percentage, result_df, share)
+            current_item = next(item for item in self.shares if item['name'] in current_price_result['name'])
+            current_price_result['volume'], current_price_result['buy price'] = \
+                current_item['volume'], current_item['buy price']
 
-        for share in self.foreign_shares:
-            i = len(result_df)
-            current_price_result = self.data_retriever.get_current_price_summary(share)['c']
-            self.append_to_dataframe(current_price_result, i, current_price_result, percentage, result_df, share)
+            self.append_to_dataframe(current_price_result['price'], i, current_price_result['price'], percentage,
+                                     result_df, current_price_result)
 
         result_df.loc['Total'] = pd.Series(result_df[['current value', 'net profit',
                                                       f'{percentage * 100}% value',
@@ -128,14 +125,10 @@ class Wallet:
                                                  current_price), stock_name, arbitrage]
 
     def add_asset(self, asset):
-        if asset['type'] == 'polish stock':
+        if asset['type'] == 'stock':
             asset.pop('type', None)
             asset['buy price'] = asset.pop('price')
-            self.polish_shares.append(asset)
-        elif asset['type'] == 'foreign stock':
-            asset.pop('type', None)
-            asset['buy price'] = asset.pop('price')
-            self.foreign_shares.append(asset)
+            self.shares.append(asset)
         elif asset['type'] == 'currency':
             asset.pop('type', None)
             asset['buy price'] = asset.pop('price')

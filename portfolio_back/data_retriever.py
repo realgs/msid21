@@ -1,8 +1,10 @@
+import json
+
 import credentials
 from portfolio_back.arbitrages import get_arbitrage
 from portfolio_back.offers import get_bidlist
 
-from portfolio_back.utils import get_polish_stock_quote
+from portfolio_back.utils import get_stocks_quotes, get_current_exchange_rate
 from portfolio_back.finnhub_handler import FinnhubHandler
 
 DEFAULT_DEPTH = 50
@@ -12,20 +14,38 @@ class DataRetriever:
 
     def __init__(self, api_key=credentials.FINNHUB_API_KEY):
         self.api_handler = FinnhubHandler(api_key)
-        self.forex_markets = self.api_handler.get_forex_markets()
-        self.crypto_markets = self.api_handler.get_crypto_markets()
-        self.forex_currencies = {}
-        for market in self.forex_markets:
-            self.forex_currencies[market] = self.api_handler.get_forex_currencies(market.upper())
-        self.crypto_currencies = {}
-        for market in self.crypto_markets:
-            self.crypto_currencies[market] = self.api_handler.get_crypto_currencies(market.upper())
+        self.forex_markets, self.crypto_markets, self.forex_currencies, self.crypto_currencies = \
+            DataRetriever.read_default_config()
+
+    def save_default_config(self, output_file='data_retriever_config.json'):
+        config_dict = {
+            'forex markets': self.forex_markets,
+            'forex currencies': self.forex_currencies,
+            'crypto markets': self.crypto_markets,
+            'crypto currencies': self.crypto_currencies
+        }
+
+        with open(output_file, 'w') as f:
+            json.dump(config_dict, f)
+
+    @staticmethod
+    def read_default_config(input_file='portfolio_back/data_retriever_config.json'):
+        with open(input_file, 'r') as f:
+            config_dict = json.load(f)
+
+        return config_dict['forex markets'], config_dict['crypto markets'], config_dict['forex currencies'], \
+               config_dict['crypto currencies']
 
     def get_current_price_summary(self, asset_to_sell):
         return self.api_handler.get_quote(asset_to_sell['name'])
 
-    def get_current_price_of_polish_stock_summary(self, asset_to_sell):
-        return get_polish_stock_quote(asset_to_sell['name'])
+    def get_current_prices_of_stocks(self, assets_to_sell):
+        returned_json = get_stocks_quotes([asset_to_sell['name'] for asset_to_sell in assets_to_sell])
+        return [{'name': item['code'], 'price': item['close']} for item in returned_json]
+
+    def get_exchange_rate(self, currency_to_sell_symbol, base_currency_symbol):
+        return float(get_current_exchange_rate(currency_to_sell_symbol, base_currency_symbol)[
+            'Realtime Currency Exchange Rate']['5. Exchange Rate'])
 
     def get_best_offer_for_national_currency(self, currency_to_sell, base_currency):
         related_symbols = [currency['symbol'] for market in self.forex_markets for currency

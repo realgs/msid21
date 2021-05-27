@@ -33,9 +33,9 @@
         <div class="row justify-content-center">
             <form action="{{ url_for('change_percentage') }}" enctype="multipart/form-data" method="POST">
                 <div class="form-row">
-                    <label for="percentage_input">Percentage value:</label>
+                    <label for="percentage_input">How many percent of your assets do you want to sell?</label>
                     <input type="text" id="percentage_input" name="percentage">
-                    <input type="submit" name="" value="Change percentage">
+                    <input type="submit" name="" value="Change">
                 </div>
             </form>
         </div>
@@ -61,8 +61,8 @@
                     <select id="type_input" name="asset_type">
                         <option value="cryptocurrency">Cryptocurrency</option>
                         <option value="currency">Currency</option>
-                        <option value="polish stock">Polish stocks</option>
-                        <option value="foreign stock">Foreign stocks</option>
+{#                        <option value="polish stock">Polish stocks</option>#}
+                        <option value="stock">Stocks</option>
                     </select>
                     <input type="submit" name="" value="Add asset">
                 </div>

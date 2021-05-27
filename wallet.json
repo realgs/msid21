@@ -7,11 +7,9 @@
 		"cryptocurrencies":[
 			{"name": "BTC", "volume": 1, "buy price": 135819.32}
 		],
-		"polish shares": [
+		"shares":[
+			{"name": "IBM", "volume": 25.46, "buy price": 529.64},
 			{"name": "PKN.WAR", "volume": 1, "buy price": 75.98}
-		],
-		"foreign shares":[
-			{"name": "IBM", "volume": 25.46, "buy price": 529.64}
 		]
 	}
 }

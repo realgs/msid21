@@ -33,8 +33,8 @@ def add_asset():
             'assets': {
                 'cryptocurrencies': session['cryptocurrencies'],
                 'currencies': session['currencies'],
-                'polish shares': session['polish shares'],
-                'foreign shares': session['foreign shares']
+                # 'polish shares': session['polish shares'],
+                'shares': session['shares']
             }
         }
         wallet = Wallet(wallet_dict)
@@ -61,8 +61,8 @@ def add_asset():
         session['base currency'] = wallet.base_currency
         session['cryptocurrencies'] = wallet.cryptocurrencies
         session['currencies'] = wallet.currencies
-        session['polish shares'] = wallet.polish_shares
-        session['foreign shares'] = wallet.foreign_shares
+        # session['polish shares'] = wallet.polish_shares
+        session['shares'] = wallet.shares
 
     try:
         portfolio = wallet.get_complete_assets_dataframe(percentage).set_index('name').to_html()
@@ -122,8 +122,8 @@ def load_from_file():
     session['base currency'] = wallet.base_currency
     session['cryptocurrencies'] = wallet.cryptocurrencies
     session['currencies'] = wallet.currencies
-    session['polish shares'] = wallet.polish_shares
-    session['foreign shares'] = wallet.foreign_shares
+    # session['polish shares'] = wallet.polish_shares
+    session['shares'] = wallet.shares
 
     try:
         portfolio = wallet.get_complete_assets_dataframe(percentage).set_index('name').to_html()
@@ -165,8 +165,8 @@ def save_wallet_to_file():
         'assets': {
             'cryptocurrencies': wallet.cryptocurrencies,
             'currencies': wallet.currencies,
-            'polish shares': wallet.polish_shares,
-            'foreign shares': wallet.foreign_shares
+            # 'polish shares': wallet.polish_shares,
+            'shares': wallet.shares
         }
     }
 
@@ -191,8 +191,8 @@ def prepare_to_saving():
             'assets': {
                 'cryptocurrencies': session['cryptocurrencies'],
                 'currencies': session['currencies'],
-                'polish shares': session['polish shares'],
-                'foreign shares': session['foreign shares']
+                # 'polish shares': session['polish shares'],
+                'shares': session['foreign shares']
             }
         }
         wallet = Wallet(wallet_dict)
