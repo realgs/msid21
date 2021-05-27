@@ -18,6 +18,8 @@ class BitBayAPI(API):
                        'USDT', 'EUR', 'EUR', 'USD', 'USDT', 'USDT', 'USD', 'EUR', 'EUR', 'EUR', 'BTC', 'BTC', 'BTC',
                        'BTC', 'ETH', 'USD', 'USD', 'USD', 'USDT', 'BTC'}
     VALID_TYPE = {"buy", "sell", "both"}
+    RATE = 'Rate'
+    QUANTITY = 'Quantity'
     TAKER_FEE = 0.0043  # percentage
     TRANSFER_FEE = {
         "AAVE": 0.54, "ALG": 426.0, "AMLT": 1743.0, "BAT": 156.0, "BCC": 0.001, "BCP": 1237.0, "BOB": 11645.0,
@@ -82,6 +84,10 @@ class BitBayAPI(API):
                     return response.json().get("sell")
                 else:
                     return response.json()
+
+    def get_orderbook_sorted(self, crypto, base_curr, type):
+        orderbook = self.get_orderbook(crypto, base_curr, type)
+        return self.__quick_sort_orderbook_by_rate(orderbook)
 
     def get_fees(self, price, amount, crypto_currency):
         if crypto_currency in self.TRANSFER_FEE:

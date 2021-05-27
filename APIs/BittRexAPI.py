@@ -16,6 +16,8 @@ class BittRexAPI(API):
                        'BTC', 'USD', 'ETH', 'USDT', 'USDT', 'BTC', 'BTC', 'EUR', 'ETH', 'USD', 'USDT', 'BTC', 'BTC',
                        'USDT', 'EUR', 'EUR', 'USD', 'USDT', 'USDT', 'USD', 'EUR', 'EUR', 'EUR', 'BTC', 'BTC', 'BTC',
                        'BTC', 'ETH', 'USD', 'USD', 'USD', 'USDT', 'BTC'}
+    RATE = 'ra'
+    QUANTITY = 'ca'
     VALID_TYPE = {"buy", "sell", "both"}
     TAKER_FEE = 0.0035  # percentage
     TRANSFER_FEE = {
@@ -67,11 +69,44 @@ class BittRexAPI(API):
             if response.status_code == 200:
                 return response.json()
 
+    def get_orderbook_sorted(self, crypto, base_curr, type):
+        orderbook = self.get_orderbook(crypto, base_curr, type)
+        return self.__quick_sort_orderbook_by_rate(orderbook['result'])
+
     def get_fees(self, price, amount, crypto_currency):
         if crypto_currency in self.TRANSFER_FEE:
             return price * amount * self.TAKER_FEE + self.TRANSFER_FEE[crypto_currency]
         else:
             raise Exception("Transfer fee not mapped for " + crypto_currency)
+
+    def calculate_arbitrage(self, bitt_rex, crypto_currency, base_currency, buyOrSellOnBitBay):
+        if buyOrSellOnBitBay == "sell": #buy on bittrex and sell on bitbay
+            bitt_rex_order_book = bitt_rex.get_orderbook_sorted(crypto_currency, base_currency, "sell")
+            bit_bay_order_book = self.get_orderbook_sorted(crypto_currency, base_currency, "buy")
+            bitt_rex_best_sell = float(bitt_rex_order_book[len(bitt_rex_order_book) - 1][self.RATE])
+            bitt_rex_best_sell_amount = float(bitt_rex_order_book[len(bitt_rex_order_book) - 1][self.QUANTITY])
+            bit_bay_best_buy = float(bit_bay_order_book[0][bitt_rex.RATE])
+            bit_bay_best_buy_amount = float(bit_bay_order_book[0][bitt_rex.QUANTITY])
+
+            if bit_bay_best_buy_amount < bitt_rex_best_sell_amount:  # if someone wants to buy less than i have to sell
+                fees_for_bitt_rex = bitt_rex.get_fees(bitt_rex_best_sell, bit_bay_best_buy_amount, crypto_currency)
+                fees_for_bit_bay = self.get_fees(bit_bay_best_buy, bit_bay_best_buy_amount, crypto_currency)
+                return bit_bay_best_buy * bit_bay_best_buy_amount - bitt_rex_best_sell * bit_bay_best_buy_amount - fees_for_bitt_rex - fees_for_bit_bay
+            else:
+                missing_amount = bit_bay_best_buy_amount
+                total = 0
+                i = len(bitt_rex_order_book) - 1
+
+                while missing_amount >= 0:
+                    fees_for_bitt_rex = bitt_rex.get_fees(bitt_rex_best_sell, bit_bay_best_buy_amount, crypto_currency)
+                    fees_for_bit_bay = self.get_fees(bit_bay_best_buy, bit_bay_best_buy_amount, crypto_currency)
+                    total = total + bit_bay_best_buy * bit_bay_best_buy_amount - bitt_rex_best_sell * bit_bay_best_buy_amount - fees_for_bitt_rex - fees_for_bit_bay
+                    missing_amount = missing_amount - bitt_rex_best_sell_amount
+                    i = i - 1
+                    bitt_rex_best_sell = float(bitt_rex_order_book[i]['ra'])
+                    bitt_rex_best_sell_amount = float(bitt_rex_order_book[i]['ca'])
+
+                return total
 
     def __quick_sort_orderbook_by_rate(self, unsorted):
         if len(unsorted) <= 1:
