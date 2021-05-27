@@ -176,6 +176,26 @@ def add_arbitrage(portfolio):
     return portfolio
 
 
+def calculate_total_profit(portfolio):
+    stocks = portfolio.get('stock')
+    us_stocks = stocks.get('US')
+    currencies = portfolio.get('currency')
+    crypto_currencies = portfolio.get('crypto_currency')
+    profit = 0
+
+    for us_stock in us_stocks:
+        profit += us_stocks[us_stock]['Profit']
+
+    for currency in currencies:
+        profit += currencies[currency]['Profit']
+
+    for crypto_currency in crypto_currencies:
+        best_exchange = crypto_currencies[crypto_currency]['Best_exchange']
+        profit += crypto_currencies[crypto_currency]['Exchanges'][best_exchange]['Profit']
+
+    return profit
+
+
 def get_value(map, key):
     try:
         value = map[key]
@@ -218,6 +238,12 @@ def append_first_line(table, type, symbol, info):
     table.append(row)
 
 
+def append_summary(table, portfolio):
+    profit = calculate_total_profit(portfolio)
+    row = ["TOTAL", "", "", "", "", "", "", profit, profit * 0.81, "", "", "", ""]
+    table.append(row)
+
+
 def print_portfolio(portfolio):
     table = []
     stocks = portfolio.get('stock')
@@ -234,10 +260,12 @@ def print_portfolio(portfolio):
     for crypto_currency in crypto_currencies:
         append_row_for_best_offer(table, "crypto", crypto_currency, crypto_currencies[crypto_currency])
 
+    append_summary(table, portfolio)
+
     print(tabulate(table, headers=["Type", "Symbol", "Quantity", "Purchase Price", "Percentage to sell",
                                    "Price of last transaction", "Exchange", "Profit", "Profit netto",
-                                   "Recomended Exchange", "Offer Price",
-                                   "Offer Quantity", "Arbitrage (buy in this exchange sell on other)"]))
+                                   "Recommended Exchange", "Offer Price", "Offer Quantity",
+                                   "Arbitrage (buy in this exchange sell on other)"], tablefmt="github"))
 
 
 # Jeśli są dostępne informacje o kupnie/sprzedaży - patrzymy na kursy kupna i liczymy z którymi ofertami trzeba sparować zasób użytkownika, by wyprzedać całą posiadaną ilość (patrzymy wgłąb tabeli bids) (5pkt)
