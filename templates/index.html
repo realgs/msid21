@@ -39,13 +39,21 @@
                 </div>
             </form>
         </div>
-        <div class="row" style="height: 50px"></div>
         <div class="row justify-content-center">
-            {% if portfolio %}
-                {{ portfolio | safe }}
-            {% else %}
-                <h2>No portfolio loaded</h2>
-            {% endif %}
+            <form action="{{ url_for('change_base_currency') }}" enctype="multipart/form-data" method="POST">
+                <div class="form-row">
+                    <label for="currency_input">Change base currency</label>
+                    <input type="text" id="currency_input" name="base currency">
+                    <input type="submit" name="" value="Change">
+                </div>
+            </form>
+        </div>
+        <div class="row" style="height: 50px"></div>
+    <div class="row justify-content-center">
+            <h3>Current base currency: {{ session['base currency'] }}</h3>
+        </div>
+        <div class="row justify-content-center">
+            {{ portfolio | safe }}
         </div>
         <div class="row" style="height: 50px"></div>
         <div class="row justify-content-center">
@@ -61,7 +69,7 @@
                     <select id="type_input" name="asset_type">
                         <option value="cryptocurrency">Cryptocurrency</option>
                         <option value="currency">Currency</option>
-{#                        <option value="polish stock">Polish stocks</option>#}
+                        {#                        <option value="polish stock">Polish stocks</option>#}
                         <option value="stock">Stocks</option>
                     </select>
                     <input type="submit" name="" value="Add asset">

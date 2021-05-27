@@ -65,6 +65,16 @@ class Wallet:
     def convert_zloty_to_default_currency(self, amount):
         return amount / self.zloty_to_default_currency
 
+    def change_base_currency(self, currency):
+        current_to_new = self.data_retriever.get_exchange_rate(self.base_currency, currency)
+        self.base_currency = currency
+        self.default_to_base_currency = \
+            self.data_retriever.get_exchange_rate(DEFAULT_CURRENCY,
+                                                  self.base_currency) if self.base_currency != DEFAULT_CURRENCY else 1
+        for asset_type in [self.cryptocurrencies, self.currencies, self.shares]:
+            for item in asset_type:
+                item['buy price'] *= current_to_new
+
     @staticmethod
     def calculate_net(volume, buy_price, sell_price, tax=TAX_RATIO):
         gross = volume * sell_price - volume * buy_price
@@ -75,12 +85,31 @@ class Wallet:
                    f'{percentage * 100}% value', f'net {percentage * 100}% profit', 'stock exchange', 'arbitrage']
         result_df = pd.DataFrame(columns=columns)
 
-        for currency_asset in self.currencies:
+        self.process_currencies(percentage, result_df)
+        self.process_cryptocurrencies(percentage, result_df)
+        self.process_stocks(percentage, result_df)
+
+        result_df.loc['Total', 'name'] = 'Total'
+        result_df.fillna('', inplace=True)
+        pd.set_option("display.max_rows", None, "display.max_columns", None)
+        return result_df
+
+    def process_stocks(self, percentage, result_df):
+
+        current_price_results = self.data_retriever.get_current_prices_of_stocks(self.shares)
+        for current_price_result in current_price_results:
             i = len(result_df)
-            current_price_result = self.data_retriever.get_best_offer_for_national_currency(currency_asset,
-                                                                                            DEFAULT_CURRENCY)
-            self.append_to_dataframe(current_price_result[0], i, current_price_result[0], percentage, result_df,
-                                     currency_asset, current_price_result[1].split(':')[0])
+            current_item = next(item for item in self.shares if item['name'] in current_price_result['name'])
+            current_price_result['volume'], current_price_result['buy price'] = \
+                current_item['volume'], current_item['buy price']
+
+            self.append_to_dataframe(current_price_result['price'], i, current_price_result['price'], percentage,
+                                     result_df, current_price_result)
+        result_df.loc['Total'] = pd.Series(result_df[['current value', 'net profit',
+                                                      f'{percentage * 100}% value',
+                                                      f'net {percentage * 100}% profit']].sum())
+
+    def process_cryptocurrencies(self, percentage, result_df):
 
         for cryptocurrency_asset in self.cryptocurrencies:
             i = len(result_df)
@@ -93,23 +122,14 @@ class Wallet:
             self.append_to_dataframe(current_price_result[0], i, current_price_percentage[0], percentage, result_df,
                                      cryptocurrency_asset, current_price_result[1].split(':')[0], arbitrage)
 
-        current_price_results = self.data_retriever.get_current_prices_of_stocks(self.shares)
-        for current_price_result in current_price_results:
+    def process_currencies(self, percentage, result_df):
+
+        for currency_asset in self.currencies:
             i = len(result_df)
-            current_item = next(item for item in self.shares if item['name'] in current_price_result['name'])
-            current_price_result['volume'], current_price_result['buy price'] = \
-                current_item['volume'], current_item['buy price']
-
-            self.append_to_dataframe(current_price_result['price'], i, current_price_result['price'], percentage,
-                                     result_df, current_price_result)
-
-        result_df.loc['Total'] = pd.Series(result_df[['current value', 'net profit',
-                                                      f'{percentage * 100}% value',
-                                                      f'net {percentage * 100}% profit']].sum())
-        result_df.loc['Total', 'name'] = 'Total'
-        result_df.fillna('', inplace=True)
-        pd.set_option("display.max_rows", None, "display.max_columns", None)
-        return result_df
+            current_price_result = self.data_retriever.get_best_offer_for_national_currency(currency_asset,
+                                                                                            DEFAULT_CURRENCY)
+            self.append_to_dataframe(current_price_result[0], i, current_price_result[0], percentage, result_df,
+                                     currency_asset, current_price_result[1].split(':')[0])
 
     def append_to_dataframe(self, current_price, i, current_price_percentage, percentage, result_df, item,
                             stock_name=None, arbitrage=None):

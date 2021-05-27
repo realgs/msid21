@@ -29,9 +29,15 @@ class FinnhubHandler:
                 self.finnhub_client.crypto_symbols(market)]
 
     def get_quote(self, asset_name):
+        result = self.get_price_for_asset(asset_name)
+        while not result:
+            result = self.get_price_for_asset(asset_name)
+
+        return result
+
+    def get_price_for_asset(self, asset_name):
         try:
             return self.finnhub_client.quote(asset_name)
         except requests.exceptions.ReadTimeout:
             print("TIMEOUT ERROR. Try again later")
-
         return None

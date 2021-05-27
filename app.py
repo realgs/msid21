@@ -1,7 +1,7 @@
 import json
 import os
-import sys
 
+import pandas
 import werkzeug.utils
 from flask import Flask, render_template, request, session
 from flask_cors import CORS, cross_origin
@@ -21,7 +21,9 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 @cross_origin()
 def index():
     wallet = Wallet.empty_wallet()
-    return render_template('index.html', portfolio=wallet.get_complete_assets_dataframe().set_index('name').to_html())
+    portfolio = wallet.get_complete_assets_dataframe().set_index('name')
+    session['portfolio'] = portfolio.to_json()
+    return render_template('index.html', portfolio=portfolio.to_html())
 
 
 @app.route('/addasset', methods=['POST'])
@@ -33,7 +35,6 @@ def add_asset():
             'assets': {
                 'cryptocurrencies': session['cryptocurrencies'],
                 'currencies': session['currencies'],
-                # 'polish shares': session['polish shares'],
                 'shares': session['shares']
             }
         }
@@ -61,16 +62,16 @@ def add_asset():
         session['base currency'] = wallet.base_currency
         session['cryptocurrencies'] = wallet.cryptocurrencies
         session['currencies'] = wallet.currencies
-        # session['polish shares'] = wallet.polish_shares
         session['shares'] = wallet.shares
 
     try:
-        portfolio = wallet.get_complete_assets_dataframe(percentage).set_index('name').to_html()
+        portfolio = wallet.get_complete_assets_dataframe(percentage).set_index('name')
+        session['portfolio'] = portfolio.to_json()
     except Exception:
         messages.append('Connection error. Try again later')
-        portfolio = None
+        portfolio = pandas.read_json(session['portfolio'])
 
-    return render_template('index.html', portfolio=portfolio, messages=messages)
+    return render_template('index.html', portfolio=portfolio.to_html(), messages=messages)
 
 
 @app.route('/changepercentage', methods=['POST'])
@@ -82,8 +83,7 @@ def change_percentage():
             'assets': {
                 'cryptocurrencies': session['cryptocurrencies'],
                 'currencies': session['currencies'],
-                'polish shares': session['polish shares'],
-                'foreign shares': session['foreign shares']
+                'shares': session['shares']
             }
         }
         wallet = Wallet(wallet_dict)
@@ -100,12 +100,51 @@ def change_percentage():
     session['percentage'] = percentage
 
     try:
-        portfolio = wallet.get_complete_assets_dataframe(percentage).set_index('name').to_html()
+        portfolio = wallet.get_complete_assets_dataframe(percentage).set_index('name')
+        session['portfolio'] = portfolio.to_json()
     except Exception:
         messages.append('Connection error. Try again later')
-        portfolio = None
+        portfolio = pandas.read_json(session['portfolio'])
 
-    return render_template('index.html', portfolio=portfolio, messages=messages)
+    return render_template('index.html', portfolio=portfolio.to_html(), messages=messages)
+
+
+@app.route('/changebasecurrency', methods=['POST'])
+@cross_origin()
+def change_base_currency():
+    messages = []
+
+    if 'base currency' in session.keys():
+        wallet_dict = {
+            'base currency': session['base currency'],
+            'assets': {
+                'cryptocurrencies': session['cryptocurrencies'],
+                'currencies': session['currencies'],
+                'shares': session['shares']
+            }
+        }
+        wallet = Wallet(wallet_dict)
+
+        try:
+            wallet.change_base_currency(request.form['base currency'])
+        except Exception:
+            messages.append('You should enter a valid currency!')
+
+    else:
+        wallet = Wallet.empty_wallet()
+
+    session['base currency'] = wallet.base_currency
+
+    percentage = session['percentage'] if 'percentage' in session.keys() else DEFAULT_PERCENTAGE
+
+    try:
+        portfolio = wallet.get_complete_assets_dataframe(percentage).set_index('name')
+        session['portfolio'] = portfolio.to_json()
+    except Exception:
+        messages.append('Connection error. Try again later')
+        portfolio = pandas.read_json(session['portfolio'])
+
+    return render_template('index.html', portfolio=portfolio.to_html(), messages=messages)
 
 
 @app.route('/load', methods=['POST'])
@@ -122,16 +161,16 @@ def load_from_file():
     session['base currency'] = wallet.base_currency
     session['cryptocurrencies'] = wallet.cryptocurrencies
     session['currencies'] = wallet.currencies
-    # session['polish shares'] = wallet.polish_shares
     session['shares'] = wallet.shares
 
     try:
-        portfolio = wallet.get_complete_assets_dataframe(percentage).set_index('name').to_html()
+        portfolio = wallet.get_complete_assets_dataframe(percentage).set_index('name')
+        session['portfolio'] = portfolio.to_json()
     except Exception:
         messages.append('Connection error. Try again later')
-        portfolio = None
+        portfolio = pandas.read_json(session['portfolio'])
 
-    return render_template('index.html', portfolio=portfolio, messages=messages)
+    return render_template('index.html', portfolio=portfolio.to_html(), messages=messages)
 
 
 @app.route('/saveportfolio', methods=['POST'])
@@ -146,12 +185,13 @@ def save_portfolio_to_file():
         json.dump(portfolio.to_json(), f)
 
     try:
-        portfolio = wallet.get_complete_assets_dataframe(percentage).set_index('name').to_html()
+        portfolio = wallet.get_complete_assets_dataframe(percentage).set_index('name')
+        session['portfolio'] = portfolio.to_json()
     except Exception:
         messages.append('Connection error. Try again later')
-        portfolio = None
+        portfolio = pandas.read_json(session['portfolio'])
 
-    return render_template('index.html', portfolio=portfolio, messages=messages)
+    return render_template('index.html', portfolio=portfolio.to_html(), messages=messages)
 
 
 @app.route('/savewallet', methods=['POST'])
@@ -165,7 +205,6 @@ def save_wallet_to_file():
         'assets': {
             'cryptocurrencies': wallet.cryptocurrencies,
             'currencies': wallet.currencies,
-            # 'polish shares': wallet.polish_shares,
             'shares': wallet.shares
         }
     }
@@ -174,12 +213,13 @@ def save_wallet_to_file():
         json.dump(wallet_dict, f)
 
     try:
-        portfolio = wallet.get_complete_assets_dataframe(percentage).set_index('name').to_html()
+        portfolio = wallet.get_complete_assets_dataframe(percentage).set_index('name')
+        session['portfolio'] = portfolio.to_json()
     except Exception:
         messages.append('Connection error. Try again later')
-        portfolio = None
+        portfolio = pandas.read_json(session['portfolio'])
 
-    return render_template('index.html', portfolio=portfolio, messages=messages)
+    return render_template('index.html', portfolio=portfolio.to_html(), messages=messages)
 
 
 def prepare_to_saving():
@@ -191,8 +231,7 @@ def prepare_to_saving():
             'assets': {
                 'cryptocurrencies': session['cryptocurrencies'],
                 'currencies': session['currencies'],
-                # 'polish shares': session['polish shares'],
-                'shares': session['foreign shares']
+                'shares': session['shares']
             }
         }
         wallet = Wallet(wallet_dict)
