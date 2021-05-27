@@ -5,35 +5,77 @@
             "quantity": 150,
             "avg_price": 597.96,
             "curr": "USD"
+        },
+        {
+            "name": "AAPL",
+            "quantity": 300,
+            "avg_price": 125.28,
+            "curr": "USD"
         }
     ],
     "polish_stocks": [
         {
-            "name": "KGHM",
-            "quantity": 100,
+            "name": "KGH",
+            "quantity": 232,
             "avg_price": 195.85,
+            "curr": "PLN"
+        },
+        {
+            "name": "CDR",
+            "quantity": 200,
+            "avg_price": 168.72,
+            "curr": "PLN"
+        },
+        {
+            "name": "WWL",
+            "quantity": 50,
+            "avg_price": 598.3,
             "curr": "PLN"
         }
     ],
     "cryptocurrencies": [
         {
             "name": "BTC",
-            "quantity": 10,
-            "avg_price": 40000,
+            "quantity": 0.5224,
+            "avg_price": 33485.90,
             "curr": "USD"
         },
         {
             "name": "DOGE",
-            "quantity": 1500,
+            "quantity": 1500.50,
             "avg_price": 0.3,
+            "curr": "USD"
+        },
+        {
+            "name": "LTC",
+            "quantity": 12.13,
+            "avg_price": 194.07,
+            "curr": "USD"
+        },
+        {
+            "name": "ETH",
+            "quantity": 5.43,
+            "avg_price": 2751.86,
             "curr": "USD"
         }
     ],
     "currencies": [
         {
             "name": "EUR",
-            "quantity": 1000,
-            "avg_price": 4.48,
+            "quantity": 8245,
+            "avg_price": 4.49,
+            "curr": "PLN"
+        },
+        {
+            "name": "USD",
+            "quantity": 5000,
+            "avg_price": 3.68,
+            "curr": "PLN"
+        },
+        {
+            "name": "CHF",
+            "quantity": 15744,
+            "avg_price": 4.11,
             "curr": "PLN"
         }
     ]

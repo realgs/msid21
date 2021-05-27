@@ -76,6 +76,8 @@ class Api:
             return self.__get_yahoo_rate(market)
         elif api == STOOQ:
             return self.__get_stooq_rate(market)
+        else:
+            return None
 
     def __get_nbp_rate(self, market):
         if market in self.__nbp_rate.keys():
@@ -118,7 +120,7 @@ class Api:
         return {'rate': rate, 'amount': None}
 
     @classmethod
-    def orders(cls, api, market, orderType, depth=LIMIT):
+    def orders(cls, api, market, orderType='sell', depth=LIMIT):
         data = cls.__get_orders(api, market)
         orders = []
         if data is None:
@@ -143,7 +145,7 @@ class Api:
             return 1
         for currency in data:
             symbol = currency['symbol']
-            result[f'{symbol}'] = currency['txFee']
+            result[f'{symbol}'] = float(currency['txFee'])
         return result
 
     @classmethod
@@ -170,17 +172,19 @@ class Api:
         if not(api in URL):
             print('unknown API')
             return None
-        if URL[api]['markets'] is None:
+        if URL[api]['orders'] is None:
             return None
         url = URL[api]['orders'] + market + URL[api]['suffix']
         response = cls.__data_request(url)
+        if response is None:
+            return None
         data = response.json()
         if API_RESPONSE_OPTIONS[api]['code'] not in data:
             return data
         elif data[API_RESPONSE_OPTIONS[api]['code']] == API_RESPONSE_OPTIONS[api]['success']:
             return data
         else:
-            print(data[API_RESPONSE_OPTIONS[api]['info']])
+            # print(data[API_RESPONSE_OPTIONS[api]['info']])
             return None
 
     @staticmethod
@@ -190,7 +194,7 @@ class Api:
         else:
             response = requests.request("GET", url, headers=headers, params=querystring)
         if response.status_code != 200:
-            print(response.text)
+            # print(response.text)
             return None
         else:
             return response
@@ -198,9 +202,10 @@ class Api:
 
 if __name__ == '__main__':
     api1 = Api()
-    data1 = api1.last_rate(STOOQ, 'CDR-PLN')
-    print(data1['rate'])
-    data2 = api1.last_rate(YAHOO, 'TSLA-PLN')
-    print(data2['rate'])
-    data3 = api1.last_rate(NBP, 'USD-PLN')
-    print(data3['rate'])
+    print(api1.last_rate(STOOQ, 'WWL-PLN')['rate'])
+    # data1 = api1.last_rate(STOOQ, 'CDR-PLN')
+    # print(data1['rate'])
+    # data2 = api1.last_rate(YAHOO, 'TSLA-PLN')
+    # print(data2['rate'])
+    # data3 = api1.last_rate(NBP, 'USD-PLN')
+    # print(data3['rate'])
