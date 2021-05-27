@@ -78,10 +78,12 @@ def add_best_sell_offers(bit_bay, bitt_rex, market_stack, open_exchange, portfol
         bit_bay_best_sell_offer = bit_bay.find_best_sell_offer(currency_pair[0], currency_pair[1], quantity)
         exchanges_map = {}
         if bit_bay_best_sell_offer is not None:
-            exchanges_map['BitBay'] = bit_bay_best_sell_offer
+            offers_bit_bay = {'offers': bit_bay_best_sell_offer}
+            exchanges_map['BitBay'] = offers_bit_bay
         bitt_rex_best_sell_offer = bitt_rex.find_best_sell_offer(currency_pair[0], currency_pair[1], quantity)
         if bitt_rex_best_sell_offer is not None:
-            exchanges_map['BittRex'] = bitt_rex_best_sell_offer
+            offers_bitt_rex = {'offers': bitt_rex_best_sell_offer}
+            exchanges_map['BittRex'] = offers_bitt_rex
         portfolio['crypto_currency'][crypto_currency]['Exchanges'] = exchanges_map
     return portfolio
 
@@ -98,9 +100,9 @@ def calculate_profit_with_best_offers(info, exchange):
     buy_rate = info['Rate']
     sell_rate_minus_fees = 0
 
-    for orders in info['Exchanges'][exchange]:
-        rate = float(orders['Rate'])
-        quantity = float(orders['Quantity'])
+    for offers in info['Exchanges'][exchange]['offers']:
+        rate = float(offers['Rate'])
+        quantity = float(offers['Quantity'])
         fees = APIS['Crypto'][exchange].get_fees(rate, quantity, info['Crypto_currency'])
         sell_rate_minus_fees += rate * quantity - fees
 
@@ -131,24 +133,30 @@ def add_possible_profit(portfolio):  # Profit -> fees included in the calc, tax 
                     1 - PROFIT_TAX)
 
 
-def print_best_sell_offers(best_sell_map):
-    pass
+def add_recommended_selling_place(portfolio):
+    crypto_currencies = portfolio.get('crypto_currency')
+    print()
 
 
 # Jeśli są dostępne informacje o kupnie/sprzedaży - patrzymy na kursy kupna i liczymy z którymi ofertami trzeba sparować zasób użytkownika, by wyprzedać całą posiadaną ilość (patrzymy wgłąb tabeli bids) (5pkt)
-def exc_1(bit_bay, bitt_rex, market_stack, open_exchange, portfolio):
+def exc_2(bit_bay, bitt_rex, market_stack, open_exchange, portfolio):
     best_sell_map = add_best_sell_offers(bit_bay, bitt_rex, market_stack, open_exchange, portfolio, False)
 
 
 # Analogicznie do zadania 2 liczymy to samo tylko do zadanej głębokości portfolio. Użytkownik wprowadza informację, że chciałby sprzedać przykładowo 10% swoich zasobów i dla tej ilości robimy wycenę jak z zadania 2.
-def exc_2(bit_bay, bitt_rex, market_stack, open_exchange, portfolio):
+def exc_3(bit_bay, bitt_rex, market_stack, open_exchange, portfolio):
     best_sell_map = add_best_sell_offers(bit_bay, bitt_rex, market_stack, open_exchange, portfolio, True)
 
 
-def exc_3(bit_bay, bitt_rex, market_stack, open_exchange, portfolio):
-    best_sell_map = add_best_sell_offers(bit_bay, bitt_rex, market_stack, open_exchange, portfolio, False)
-    add_possible_profit(best_sell_map)
+def exc_4(bit_bay, bitt_rex, market_stack, open_exchange, portfolio):
+    with_best_sell = add_best_sell_offers(bit_bay, bitt_rex, market_stack, open_exchange, portfolio, False)
+    with_profit = add_possible_profit(with_best_sell)
 
+# Do tabeli dodać skrótową informację o rekomendowanym miejscu sprzedaży - gdzie spośród dostępnych giełd najbardziej opłaca się sprzedać dany zasób.
+def exc_5(bit_bay, bitt_rex, market_stack, open_exchange, portfolio):
+    with_best_sell = add_best_sell_offers(bit_bay, bitt_rex, market_stack, open_exchange, portfolio, False)
+    with_profit = add_possible_profit(with_best_sell)
+    add_recommended_selling_place(with_profit)
 
 bit_bay = BitBayAPI()
 bitt_rex = BittRexAPI()
@@ -158,4 +166,4 @@ open_exchange = OpenExchangeRatesAPI()
 portfolio = get_json_from_file("Data/MyInvestmentPortfolio.json")
 settlement_currency = get_json_from_file("Data/SettlementCurrency.json")
 
-exc_3(bit_bay, bitt_rex, market_stack, open_exchange, portfolio)
+exc_5(bit_bay, bitt_rex, market_stack, open_exchange, portfolio)
