@@ -95,6 +95,41 @@ class BitBayAPI(API):
         else:
             raise Exception("Transfer fee not mapped for " + crypto_currency)
 
+    def calculate_arbitrage(self, other_market, crypto_currency, base_currency, buyOrSellOnBitBay):
+        if buyOrSellOnBitBay == "sell":  # buy on bit_bay and sell on bittrex
+            buy_market = other_market
+            sell_market = self
+        else:
+            buy_market = self
+            sell_market = other_market
+
+        sell_offers_order_book = buy_market.get_orderbook_sorted(crypto_currency, base_currency, "sell")
+        buy_offers_order_book = sell_market.get_orderbook_sorted(crypto_currency, base_currency, "buy")
+        best_sell_offer = float(sell_offers_order_book[len(sell_offers_order_book) - 1][sell_market.RATE])
+        best_sell_offer_amount = float(sell_offers_order_book[len(sell_offers_order_book) - 1][sell_market.QUANTITY])
+        best_buy_offer = float(buy_offers_order_book[0][buy_market.RATE])
+        best_buy_offer_amount = float(buy_offers_order_book[0][buy_market.QUANTITY])
+
+        if best_buy_offer_amount < best_sell_offer_amount:  # if someone wants to buy less than i have to sell
+            fees_for_buying = buy_market.get_fees(best_sell_offer, best_buy_offer_amount, crypto_currency)
+            fees_for_selling = sell_market.get_fees(best_buy_offer, best_buy_offer_amount, crypto_currency)
+            return best_buy_offer * best_buy_offer_amount - best_sell_offer * best_buy_offer_amount - fees_for_buying - fees_for_selling
+        else:
+            missing_amount = best_buy_offer_amount
+            total = 0
+            i = len(sell_offers_order_book) - 1
+
+            while missing_amount >= 0:
+                fees_for_buying = buy_market.get_fees(best_sell_offer, best_buy_offer_amount, crypto_currency)
+                fees_for_selling = sell_market.get_fees(best_buy_offer, best_buy_offer_amount, crypto_currency)
+                total = total + best_buy_offer * best_buy_offer_amount - best_sell_offer * best_buy_offer_amount - fees_for_buying - fees_for_selling
+                missing_amount = missing_amount - best_sell_offer_amount
+                i = i - 1
+                best_sell_offer = float(sell_offers_order_book[i][sell_market.RATE])
+                best_sell_offer_amount = float(sell_offers_order_book[i][sell_market.QUANTITY])
+
+            return total
+
     def __quick_sort_orderbook_by_rate(self, unsorted):
         if len(unsorted) <= 1:
             return unsorted

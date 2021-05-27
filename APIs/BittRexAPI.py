@@ -80,7 +80,7 @@ class BittRexAPI(API):
             raise Exception("Transfer fee not mapped for " + crypto_currency)
 
     def calculate_arbitrage(self, other_market, crypto_currency, base_currency, buyOrSellOnBitBay):
-        if buyOrSellOnBitBay == "sell": #buy on bittrex and sell on bitbay
+        if buyOrSellOnBitBay == "sell":  # buy on bittrex and sell on bitbay
             buy_market = other_market
             sell_market = self
         else:

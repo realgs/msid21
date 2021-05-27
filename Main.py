@@ -151,14 +151,24 @@ def add_recommended_selling_place(portfolio):
 
 
 def add_arbitrage(portfolio):
-    pass
-#     crypto_currencies = portfolio.get('crypto_currency')
-#     for crypto_currency in crypto_currencies:
-#         for exchange in portfolio['crypto_currency'][crypto_currency]['Exchanges']:
-#             print()
-#             # APIS['Crypto'][exchange].calculate_arbitrage()
-#
-#     return portfolio
+    crypto_currencies = portfolio.get('crypto_currency')
+    for crypto_currency in crypto_currencies:
+        for exchange in portfolio['crypto_currency'][crypto_currency]['Exchanges']:
+            if exchange == "BitBay":
+                my_exchange = APIS['Crypto'][exchange]
+                other_exchange_name = 'BittRex'
+                other_exchange = APIS['Crypto'][other_exchange_name]
+            else:
+                my_exchange = APIS['Crypto'][exchange]
+                other_exchange_name = 'BitBay'
+                other_exchange = APIS['Crypto'][other_exchange_name]
+            arbitrage_buy_on_my_sell_on_other = my_exchange.calculate_arbitrage(other_exchange, crypto_currencies[crypto_currency]['Crypto_currency'], crypto_currencies[crypto_currency]['Base_currency'], "sell")
+            portfolio['crypto_currency'][crypto_currency]['Exchanges'][exchange]['Arbitrage'] = {
+                'Sell_on': type(other_exchange),
+                'Profit': arbitrage_buy_on_my_sell_on_other
+            }
+
+    return portfolio
 
 
 # Jeśli są dostępne informacje o kupnie/sprzedaży - patrzymy na kursy kupna i liczymy z którymi ofertami trzeba sparować zasób użytkownika, by wyprzedać całą posiadaną ilość (patrzymy wgłąb tabeli bids) (5pkt)
@@ -182,20 +192,21 @@ def exc_5(bit_bay, bitt_rex, market_stack, open_exchange, portfolio):
     with_profit = add_possible_profit(with_best_sell)
     with_recommended_selling_place = add_recommended_selling_place(with_profit)
 
+
 # Wykorzystać zadanie realizowane w ramach poprzedniej listy i do tabeli z zasobami dodać informację o możliwym arbitrażu.
 def exc_6(bit_bay, bitt_rex, market_stack, open_exchange, portfolio):
     with_best_sell = add_best_sell_offers(bit_bay, bitt_rex, market_stack, open_exchange, portfolio, False)
     with_profit = add_possible_profit(with_best_sell)
     with_recommended_selling_place = add_recommended_selling_place(with_profit)
-    add_arbitrage(with_recommended_selling_place)
+    with_arbitrage = add_arbitrage(with_recommended_selling_place)
     print()
+
 
 bit_bay = APIS['Crypto']['BitBay']
 bitt_rex = APIS['Crypto']['BittRex']
 market_stack = APIS['US']['MarketStack']
 open_exchange = APIS['Currency']['OpenExchangeRates']
-portfolio = get_json_from_file("Data/MyInvestmentPortfolio.json") #exc 1
+portfolio = get_json_from_file("Data/MyInvestmentPortfolio.json")  # exc 1
 settlement_currency = get_json_from_file("Data/SettlementCurrency.json")
 
-# exc_2(bit_bay, bitt_rex, market_stack, open_exchange, portfolio)
-bitt_rex.calculate_arbitrage(bit_bay, "BTC", "USD", "sell")
+exc_6(bit_bay, bitt_rex, market_stack, open_exchange, portfolio)
