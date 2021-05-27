@@ -131,6 +131,7 @@ def add_possible_profit(portfolio):  # Profit -> fees included in the calc, tax 
             portfolio['crypto_currency'][crypto_currency]['Exchanges'][exchange]['Profit'] = profit
             portfolio['crypto_currency'][crypto_currency]['Exchanges'][exchange]['Profit_netto'] = profit * (
                     1 - PROFIT_TAX)
+    return portfolio
 
 
 def add_recommended_selling_place(portfolio):
@@ -152,17 +153,18 @@ def exc_4(bit_bay, bitt_rex, market_stack, open_exchange, portfolio):
     with_best_sell = add_best_sell_offers(bit_bay, bitt_rex, market_stack, open_exchange, portfolio, False)
     with_profit = add_possible_profit(with_best_sell)
 
+
 # Do tabeli dodać skrótową informację o rekomendowanym miejscu sprzedaży - gdzie spośród dostępnych giełd najbardziej opłaca się sprzedać dany zasób.
 def exc_5(bit_bay, bitt_rex, market_stack, open_exchange, portfolio):
     with_best_sell = add_best_sell_offers(bit_bay, bitt_rex, market_stack, open_exchange, portfolio, False)
     with_profit = add_possible_profit(with_best_sell)
     add_recommended_selling_place(with_profit)
 
-bit_bay = BitBayAPI()
-bitt_rex = BittRexAPI()
-market_stack = MarketStackAPI()
-open_exchange = OpenExchangeRatesAPI()
 
+bit_bay = APIS['Crypto']['BitBay']
+bitt_rex =APIS['Crypto']['BitBay']
+market_stack = APIS['US']['MarketStack']
+open_exchange = APIS['Currency']['OpenExchangeRates']
 portfolio = get_json_from_file("Data/MyInvestmentPortfolio.json")
 settlement_currency = get_json_from_file("Data/SettlementCurrency.json")
 

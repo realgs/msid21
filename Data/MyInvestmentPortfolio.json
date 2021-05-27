@@ -5,8 +5,7 @@
     }
   },
   "currency": {
-    "EUR-USD" : {"Quantity": 0.08, "Rate": 37182.795},
-    "CHF-USD" : {"Quantity": 0.08, "Rate": 37182.795}
+    "EUR-USD" : {"Quantity": 0.08, "Rate": 37182.795}
   },
   "crypto_currency" : {
     "BTC-USD" : {"Quantity": 0.08, "Rate": 37182.795}
