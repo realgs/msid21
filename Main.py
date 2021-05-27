@@ -1,4 +1,6 @@
 import json
+import sys
+
 from tabulate import tabulate
 
 from APIs.BitBayAPI import BitBayAPI
@@ -136,7 +138,16 @@ def add_possible_profit(portfolio):  # Profit -> fees included in the calc, tax 
 
 def add_recommended_selling_place(portfolio):
     crypto_currencies = portfolio.get('crypto_currency')
-    print()
+    bestExchange = None
+    bestProfit = sys.float_info.min
+    for crypto_currency in crypto_currencies:
+        for exchange in portfolio['crypto_currency'][crypto_currency]['Exchanges']:
+            exchange_profit_netto = portfolio['crypto_currency'][crypto_currency]['Exchanges'][exchange]['Profit_netto']
+            if exchange_profit_netto > bestProfit:
+                bestExchange = exchange
+                bestProfit = exchange_profit_netto
+        portfolio['crypto_currency'][crypto_currency]['Best_exchange'] = bestExchange
+    return portfolio
 
 
 # Jeśli są dostępne informacje o kupnie/sprzedaży - patrzymy na kursy kupna i liczymy z którymi ofertami trzeba sparować zasób użytkownika, by wyprzedać całą posiadaną ilość (patrzymy wgłąb tabeli bids) (5pkt)
@@ -158,7 +169,8 @@ def exc_4(bit_bay, bitt_rex, market_stack, open_exchange, portfolio):
 def exc_5(bit_bay, bitt_rex, market_stack, open_exchange, portfolio):
     with_best_sell = add_best_sell_offers(bit_bay, bitt_rex, market_stack, open_exchange, portfolio, False)
     with_profit = add_possible_profit(with_best_sell)
-    add_recommended_selling_place(with_profit)
+    with_recommended_selling_place = add_recommended_selling_place(with_profit)
+    print()
 
 
 bit_bay = APIS['Crypto']['BitBay']
