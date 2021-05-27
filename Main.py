@@ -193,13 +193,44 @@ def exc_5(bit_bay, bitt_rex, market_stack, open_exchange, portfolio):
     with_recommended_selling_place = add_recommended_selling_place(with_profit)
 
 
+def get_value_of_none_if_missing(map, key):
+    try:
+        return map[key]
+    except:
+        return '-'
+
+def get_row_to_add_for_last_transaction(type, symbol, info):
+    return [type, symbol, get_value_of_none_if_missing(info, 'Quantity'), info['Rate'], info['Percentage'], info['Last_transaction'], info['Profit'], info['Profit_netto']]
+
+def print_portfolio(with_arbitrage):
+    table = []
+    stocks = portfolio.get('stock')
+    us_stocks = stocks.get('US')
+    currencies = portfolio.get('currency')
+    crypto_currencies = portfolio.get('crypto_currency')
+
+    for us_stock in us_stocks:
+        row = get_row_to_add_for_last_transaction("stock", us_stock, us_stocks[us_stock])
+        table.append(row)
+
+    for currency in currencies:
+        row = get_row_to_add_for_last_transaction("currency", currency, currencies[currency])
+        table.append(row)
+
+    for crypto_currency in crypto_currencies:
+        row = get_row_to_add_for_last_transaction("crypto", crypto_currency, crypto_currencies[crypto_currency])
+        table.append(row)
+
+    print(tabulate(table, headers=["Type", "Symbol", "Quantity", "Purchase Price", "Percentage to sell", "Price of last transaction", "Profit", "Profit netto"]))
+
+
 # Wykorzystać zadanie realizowane w ramach poprzedniej listy i do tabeli z zasobami dodać informację o możliwym arbitrażu.
 def exc_6(bit_bay, bitt_rex, market_stack, open_exchange, portfolio):
     with_best_sell = add_best_sell_offers(bit_bay, bitt_rex, market_stack, open_exchange, portfolio, False)
     with_profit = add_possible_profit(with_best_sell)
     with_recommended_selling_place = add_recommended_selling_place(with_profit)
     with_arbitrage = add_arbitrage(with_recommended_selling_place)
-    print()
+    print_portfolio(with_arbitrage)
 
 
 bit_bay = APIS['Crypto']['BitBay']
