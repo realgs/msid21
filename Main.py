@@ -52,7 +52,7 @@ def add_best_sell_offers(bit_bay, bitt_rex, market_stack, open_exchange, portfol
     for us_stock in us_stocks:
         last_transaction = market_stack.get_last_transaction(us_stock)
         if askForPercentage:
-            print("What percentage would you like to sell?")
+            print(us_stock + " - What percentage would you like to sell?")
             percentage = read_int_between_from_command(0, 100)
         portfolio['stock']['US'][us_stock]['Percentage'] = percentage
         portfolio['stock']['US'][us_stock]['Last_transaction'] = last_transaction['last'] if (
@@ -62,7 +62,7 @@ def add_best_sell_offers(bit_bay, bitt_rex, market_stack, open_exchange, portfol
         currency_pair = currency.split("-")
         last_course = open_exchange.get_latest_currency_pair(currency_pair[1], currency_pair[0])
         if askForPercentage:
-            print("What percentage would you like to sell?")
+            print(currency + " - What percentage would you like to sell?")
             percentage = read_int_between_from_command(0, 100)
         portfolio['currency'][currency]['Percentage'] = percentage
         portfolio['currency'][currency]['Last_transaction'] = last_course
@@ -70,7 +70,7 @@ def add_best_sell_offers(bit_bay, bitt_rex, market_stack, open_exchange, portfol
 
     for crypto_currency in crypto_currencies:
         if askForPercentage:
-            print("What percentage would you like to sell?")
+            print(crypto_currency + " - What percentage would you like to sell?")
             percentage = read_int_between_from_command(0, 100)
         currency_pair = crypto_currency.split("-")
         portfolio['crypto_currency'][crypto_currency]['Percentage'] = percentage
@@ -244,7 +244,7 @@ def append_summary(table, portfolio):
     table.append(row)
 
 
-def print_portfolio(portfolio):
+def print_portfolio(portfolio, withSummary):
     table = []
     stocks = portfolio.get('stock')
     us_stocks = stocks.get('US')
@@ -260,7 +260,8 @@ def print_portfolio(portfolio):
     for crypto_currency in crypto_currencies:
         append_row_for_best_offer(table, "crypto", crypto_currency, crypto_currencies[crypto_currency])
 
-    append_summary(table, portfolio)
+    if withSummary:
+        append_summary(table, portfolio)
 
     print(tabulate(table, headers=["Type", "Symbol", "Quantity", "Purchase Price", "Percentage to sell",
                                    "Price of last transaction", "Exchange", "Profit", "Profit netto",
@@ -271,16 +272,19 @@ def print_portfolio(portfolio):
 # Jeśli są dostępne informacje o kupnie/sprzedaży - patrzymy na kursy kupna i liczymy z którymi ofertami trzeba sparować zasób użytkownika, by wyprzedać całą posiadaną ilość (patrzymy wgłąb tabeli bids) (5pkt)
 def exc_2(bit_bay, bitt_rex, market_stack, open_exchange, portfolio):
     best_sell_map = add_best_sell_offers(bit_bay, bitt_rex, market_stack, open_exchange, portfolio, False)
+    print_portfolio(best_sell_map, False)
 
 
 # Analogicznie do zadania 2 liczymy to samo tylko do zadanej głębokości portfolio. Użytkownik wprowadza informację, że chciałby sprzedać przykładowo 10% swoich zasobów i dla tej ilości robimy wycenę jak z zadania 2.
 def exc_3(bit_bay, bitt_rex, market_stack, open_exchange, portfolio):
     best_sell_map = add_best_sell_offers(bit_bay, bitt_rex, market_stack, open_exchange, portfolio, True)
+    print_portfolio(best_sell_map, False)
 
 
 def exc_4(bit_bay, bitt_rex, market_stack, open_exchange, portfolio):
     with_best_sell = add_best_sell_offers(bit_bay, bitt_rex, market_stack, open_exchange, portfolio, False)
     with_profit = add_possible_profit(with_best_sell)
+    print_portfolio(with_profit, True)
 
 
 # Do tabeli dodać skrótową informację o rekomendowanym miejscu sprzedaży - gdzie spośród dostępnych giełd najbardziej opłaca się sprzedać dany zasób.
@@ -288,7 +292,7 @@ def exc_5(bit_bay, bitt_rex, market_stack, open_exchange, portfolio):
     with_best_sell = add_best_sell_offers(bit_bay, bitt_rex, market_stack, open_exchange, portfolio, False)
     with_profit = add_possible_profit(with_best_sell)
     with_recommended_selling_place = add_recommended_selling_place(with_profit)
-
+    print_portfolio(with_recommended_selling_place, True)
 
 # Wykorzystać zadanie realizowane w ramach poprzedniej listy i do tabeli z zasobami dodać informację o możliwym arbitrażu.
 def exc_6(bit_bay, bitt_rex, market_stack, open_exchange, portfolio):
@@ -296,7 +300,7 @@ def exc_6(bit_bay, bitt_rex, market_stack, open_exchange, portfolio):
     with_profit = add_possible_profit(with_best_sell)
     with_recommended_selling_place = add_recommended_selling_place(with_profit)
     with_arbitrage = add_arbitrage(with_recommended_selling_place)
-    print_portfolio(with_arbitrage)
+    print_portfolio(with_arbitrage, True)
 
 
 bit_bay = APIS['Crypto']['BitBay']
@@ -306,4 +310,5 @@ open_exchange = APIS['Currency']['OpenExchangeRates']
 portfolio = get_json_from_file("Data/MyInvestmentPortfolio.json")  # exc 1
 settlement_currency = get_json_from_file("Data/SettlementCurrency.json")
 
-exc_6(bit_bay, bitt_rex, market_stack, open_exchange, portfolio)
+exc_3(bit_bay, bitt_rex, market_stack, open_exchange, portfolio)
+#test 4
