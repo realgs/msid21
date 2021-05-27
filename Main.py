@@ -162,13 +162,82 @@ def add_arbitrage(portfolio):
                 my_exchange = APIS['Crypto'][exchange]
                 other_exchange_name = 'BitBay'
                 other_exchange = APIS['Crypto'][other_exchange_name]
-            arbitrage_buy_on_my_sell_on_other = my_exchange.calculate_arbitrage(other_exchange, crypto_currencies[crypto_currency]['Crypto_currency'], crypto_currencies[crypto_currency]['Base_currency'], "sell")
-            portfolio['crypto_currency'][crypto_currency]['Exchanges'][exchange]['Arbitrage'] = {
-                'Sell_on': type(other_exchange),
-                'Profit': arbitrage_buy_on_my_sell_on_other
-            }
-
+            arbitrage_buy_on_my_sell_on_other = my_exchange.calculate_arbitrage(other_exchange,
+                                                                                crypto_currencies[crypto_currency][
+                                                                                    'Crypto_currency'],
+                                                                                crypto_currencies[crypto_currency][
+                                                                                    'Base_currency'], "sell")
+            portfolio['crypto_currency'][crypto_currency]['Exchanges'][exchange][
+                'Arbitrage'] = arbitrage_buy_on_my_sell_on_other
+            # {
+            #     'Sell_on': type(other_exchange),
+            #     'Profit': arbitrage_buy_on_my_sell_on_other
+            # }
     return portfolio
+
+
+def get_value(map, key):
+    try:
+        value = map[key]
+        if value is None:
+            return ''
+        else:
+            return value
+    except:
+        return ''
+
+
+def append_first_line_exchange(table, exchange, info):
+    row = ["", "", "", "", "", "", exchange, get_value(info, 'Profit'), get_value(info, 'Profit_netto'), "",
+           info['offers'][0]['Rate'],
+           info['offers'][0]['Quantity'], get_value(info, 'Arbitrage')]
+    table.append(row)
+
+
+def append_rest_of_offers(table, info):
+    row = ["", "", "", "", "", "", "", "", "", "", get_value(info, 'Rate'), get_value(info, 'Quantity'), ""]
+    table.append(row)
+
+
+def append_row_for_best_offer(table, type, symbol, info):
+    append_first_line(table, type, symbol, info)
+    for exchange in info['Exchanges']:
+        append_first_line_exchange(table, exchange, info['Exchanges'][exchange])
+        i = 0
+        for offer in info['Exchanges'][exchange]['offers']:
+            if i != 0:
+                append_rest_of_offers(table, offer)
+            i = i + 1
+
+
+def append_first_line(table, type, symbol, info):
+    row = [type, symbol, get_value(info, 'Quantity'), get_value(info, 'Rate'), get_value(info, 'Percentage'),
+           get_value(info, 'Last_transaction'), "", get_value(info, 'Profit'), get_value(info, 'Profit_netto'),
+           get_value(info, 'Best_exchange'), "",
+           "", ""]
+    table.append(row)
+
+
+def print_portfolio(portfolio):
+    table = []
+    stocks = portfolio.get('stock')
+    us_stocks = stocks.get('US')
+    currencies = portfolio.get('currency')
+    crypto_currencies = portfolio.get('crypto_currency')
+
+    for us_stock in us_stocks:
+        append_first_line(table, "stock", us_stock, us_stocks[us_stock])
+
+    for currency in currencies:
+        append_first_line(table, "currency", currency, currencies[currency])
+
+    for crypto_currency in crypto_currencies:
+        append_row_for_best_offer(table, "crypto", crypto_currency, crypto_currencies[crypto_currency])
+
+    print(tabulate(table, headers=["Type", "Symbol", "Quantity", "Purchase Price", "Percentage to sell",
+                                   "Price of last transaction", "Exchange", "Profit", "Profit netto",
+                                   "Recomended Exchange", "Offer Price",
+                                   "Offer Quantity", "Arbitrage (buy in this exchange sell on other)"]))
 
 
 # Jeśli są dostępne informacje o kupnie/sprzedaży - patrzymy na kursy kupna i liczymy z którymi ofertami trzeba sparować zasób użytkownika, by wyprzedać całą posiadaną ilość (patrzymy wgłąb tabeli bids) (5pkt)
@@ -191,37 +260,6 @@ def exc_5(bit_bay, bitt_rex, market_stack, open_exchange, portfolio):
     with_best_sell = add_best_sell_offers(bit_bay, bitt_rex, market_stack, open_exchange, portfolio, False)
     with_profit = add_possible_profit(with_best_sell)
     with_recommended_selling_place = add_recommended_selling_place(with_profit)
-
-
-def get_value_of_none_if_missing(map, key):
-    try:
-        return map[key]
-    except:
-        return '-'
-
-def get_row_to_add_for_last_transaction(type, symbol, info):
-    return [type, symbol, get_value_of_none_if_missing(info, 'Quantity'), info['Rate'], info['Percentage'], info['Last_transaction'], info['Profit'], info['Profit_netto']]
-
-def print_portfolio(with_arbitrage):
-    table = []
-    stocks = portfolio.get('stock')
-    us_stocks = stocks.get('US')
-    currencies = portfolio.get('currency')
-    crypto_currencies = portfolio.get('crypto_currency')
-
-    for us_stock in us_stocks:
-        row = get_row_to_add_for_last_transaction("stock", us_stock, us_stocks[us_stock])
-        table.append(row)
-
-    for currency in currencies:
-        row = get_row_to_add_for_last_transaction("currency", currency, currencies[currency])
-        table.append(row)
-
-    for crypto_currency in crypto_currencies:
-        row = get_row_to_add_for_last_transaction("crypto", crypto_currency, crypto_currencies[crypto_currency])
-        table.append(row)
-
-    print(tabulate(table, headers=["Type", "Symbol", "Quantity", "Purchase Price", "Percentage to sell", "Price of last transaction", "Profit", "Profit netto"]))
 
 
 # Wykorzystać zadanie realizowane w ramach poprzedniej listy i do tabeli z zasobami dodać informację o możliwym arbitrażu.
