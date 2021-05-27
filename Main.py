@@ -198,4 +198,4 @@ portfolio = get_json_from_file("Data/MyInvestmentPortfolio.json") #exc 1
 settlement_currency = get_json_from_file("Data/SettlementCurrency.json")
 
 # exc_2(bit_bay, bitt_rex, market_stack, open_exchange, portfolio)
-bitt_rex.calculate_arbitrage(bit_bay, "BTC", "USD")
+bitt_rex.calculate_arbitrage(bit_bay, "BTC", "USD", "sell")
