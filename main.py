@@ -96,7 +96,6 @@ def calculate_arbitrage(buy_api, sell_api, market):
     if buy_orders is None or sell_orders is None:
         return {'abs': -math.inf, 'percent': -math.inf}
     symbol = market.split('-')[0]
-    currency = market.split('-')[1]
     to_Earn = 0
     to_Pay = 0
     while min(len(buy_orders), len(sell_orders)) > 0:
@@ -131,7 +130,7 @@ def calculate_arbitrage(buy_api, sell_api, market):
                 break
     # return profit
     if to_Earn != 0 and to_Pay != 0:
-        profit = round(to_Earn - to_Pay, 6)
+        profit = round(to_Earn - to_Pay, 5)
     else:
         profit = 0
     return {'abs': profit, 'percent': profit / to_Pay}
@@ -147,7 +146,7 @@ def best_arbitrage(resource_name, cryptocurrencies, resource_type='cryptocurrenc
         if resource_name == crypto['name']:
             continue
         name = crypto['name']
-        market = f'{resource_name}-{name}'
+        market = f'{name}-{resource_name}'
         for buy_api in buy_apis:
             for sell_api in sell_apis:
                 if sell_api == buy_api:
@@ -158,6 +157,12 @@ def best_arbitrage(resource_name, cryptocurrencies, resource_type='cryptocurrenc
                 profits.append(result)
     profits.sort(key=lambda p: p['profit']['abs'], reverse=True)
     return profits[0]
+
+
+def calculate_net(value):
+    if value < 0:
+        return round(value, 4)
+    return round(value * NET, 4)
 
 
 def investments(resources, depth=0.1):
@@ -180,18 +185,23 @@ def investments(resources, depth=0.1):
             profit_net += sale_profit['profit']['abs'] * NET
             depth_profit += depth_sale_profit['profit']['abs']
             depth_profit_net += depth_sale_profit['profit']['abs'] * NET
-            # to print
             avg_price_pln = convert_currency(resource['curr'], BASE_CURRENCY, resource['avg_price'])
+            # arbitrage_result
             if arbitrage_profit['profit']['abs'] != -math.inf:
-                arb_profit = f"{arbitrage_profit['profit']['abs']}{arbitrage_profit['market'].split('-')[0]}"
+                arb_profit = f"{arbitrage_profit['apis']}, {arbitrage_profit['market']}, "
+                if arbitrage_profit['profit']['abs'] != '---':
+                    arb_profit += f"{arbitrage_profit['profit']['abs']:.5f}{arbitrage_profit['market'].split('-')[1]}"
+                else:
+                    arb_profit += arbitrage_profit['profit']['abs']
             else:
-                arb_profit = 'BRAK'
+                arb_profit = '---, ---, ---'
+            # final result
             result = [resource['name'], resource['quantity'], f"{avg_price_pln}{BASE_CURRENCY}", sale_profit['api'],
                       f"{sale_profit['profit']['abs']}{BASE_CURRENCY}",
-                      f"{round(sale_profit['profit']['abs'] * NET, 4)}{BASE_CURRENCY}",
+                      f"{calculate_net(sale_profit['profit']['abs'])}{BASE_CURRENCY}",
                       f"{depth_sale_profit['profit']['abs']}{BASE_CURRENCY}",
-                      f"{round(depth_sale_profit['profit']['abs'] * NET, 4)}{BASE_CURRENCY}",
-                      f"{arbitrage_profit['apis']}, {arbitrage_profit['market']}, {arb_profit}"]
+                      f"{calculate_net(depth_sale_profit['profit']['abs'])}{BASE_CURRENCY}",
+                      f"{arb_profit}"]
             table.append(result)
     sum_line = ['Suma', '---', '---', '---', f"{round(profit, 4)}PLN", f"{round(profit_net, 4)}PLN",
                 f"{round(depth_profit)}PLN", f"{round(depth_profit_net)}PLN", '---']
