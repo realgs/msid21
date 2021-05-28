@@ -2,7 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 import yahoo_code
 
-LIMIT = 5
+LIMIT = 25
 BITBAY = 'BITBAY'
 BITTREX = 'BITTREX'
 NBP = 'NBP'
@@ -202,7 +202,7 @@ class Api:
 
 if __name__ == '__main__':
     api1 = Api()
-    print(api1.last_rate(STOOQ, 'WWL-PLN')['rate'])
+    # print(api1.last_rate(STOOQ, 'WWL-PLN')['rate'])
     # data1 = api1.last_rate(STOOQ, 'CDR-PLN')
     # print(data1['rate'])
     # data2 = api1.last_rate(YAHOO, 'TSLA-PLN')

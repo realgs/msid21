@@ -9,7 +9,7 @@ APIS = {'foreign_stocks': [api.YAHOO], 'polish_stocks': [api.STOOQ], 'cryptocurr
 VALUE_KEYS = ['name', 'quantity', 'avg_price', 'curr']
 CONFIG_FILE = 'config.json'
 BASE_CURRENCY = 'PLN'
-DEPTH = 15
+DEPTH = 25
 NET = 0.81
 API = api.Api()
 
@@ -61,7 +61,7 @@ def convert_currency(base, target, value):
 
 def calculate_sale_profit(sell_api, resource_name, quantity, price, currency):
     market = f'{resource_name}-{currency}'
-    orders = API.orders(sell_api, market)
+    orders = API.orders(sell_api, market, depth=DEPTH)
     to_Pay = quantity * price
     if orders is None:
         last_rate = API.last_rate(sell_api, market)
@@ -70,11 +70,15 @@ def calculate_sale_profit(sell_api, resource_name, quantity, price, currency):
         profit = (last_rate['rate'] - price) * quantity
     else:
         to_Earn = 0
+        sold_amount = 0
+        orders.sort(key=lambda o: o['rate'], reverse=True)
         while len(orders) > 0 and quantity > 0:
             order = orders.pop(0)
             if order['amount'] > quantity:
-                continue
-            sell_amount = order['amount']
+                sell_amount = quantity
+            else:
+                sell_amount = order['amount']
+            sold_amount += sell_amount
             to_Earn += sell_amount * order['rate'] * (1 - API.transaction_fee(sell_api))
             quantity -= sell_amount
         profit = to_Earn - to_Pay
@@ -90,7 +94,7 @@ def best_sale_profit(resource_type, resource_name, quantity, price, currency):
     return profits[0]
 
 
-def calculate_arbitrage(buy_api, sell_api, market):
+def calculate_arbitrage(buy_api, sell_api, market, quantity):
     buy_orders = API.orders(buy_api, market, 'buy', depth=DEPTH)
     sell_orders = API.orders(sell_api, market, 'sell', depth=DEPTH)
     if buy_orders is None or sell_orders is None:
@@ -118,6 +122,9 @@ def calculate_arbitrage(buy_api, sell_api, market):
         # calculate income and loss
         tmp_earn = sell_amount * sell_order['rate'] * (1 - API.transaction_fee(sell_api))
         tmp_pay = buy_amount * buy_order['rate'] * (1 + API.transaction_fee(buy_api))
+        if tmp_pay > quantity:
+            continue
+        quantity -= tmp_pay
         # calculate profit
         if to_Earn == 0 and to_Pay == 0:
             to_Earn = tmp_earn
@@ -136,7 +143,7 @@ def calculate_arbitrage(buy_api, sell_api, market):
     return {'abs': profit, 'percent': profit / to_Pay}
 
 
-def best_arbitrage(resource_name, cryptocurrencies, resource_type='cryptocurrencies'):
+def best_arbitrage(resource_name, resource_quantity, cryptocurrencies, resource_type='cryptocurrencies'):
     if resource_type != 'cryptocurrencies':
         return {'apis': '---', 'market': '---', 'profit': {'abs': '---', 'percent': '---'}}
     profits = []
@@ -153,7 +160,7 @@ def best_arbitrage(resource_name, cryptocurrencies, resource_type='cryptocurrenc
                     continue
                 result = {'apis': f'{buy_api}-{sell_api}',
                           'market': market,
-                          'profit': calculate_arbitrage(buy_api, sell_api, market)}
+                          'profit': calculate_arbitrage(buy_api, sell_api, market, resource_quantity)}
                 profits.append(result)
     profits.sort(key=lambda p: p['profit']['abs'], reverse=True)
     return profits[0]
@@ -179,7 +186,8 @@ def investments(resources, depth=0.1):
                                            resource['curr'])
             depth_sale_profit = best_sale_profit(resource_type, resource['name'], resource['quantity'] * depth,
                                                  resource['avg_price'], resource['curr'])
-            arbitrage_profit = best_arbitrage(resource['name'], resources[resource_type], resource_type=resource_type)
+            arbitrage_profit = best_arbitrage(resource['name'], resource['quantity'], resources[resource_type],
+                                              resource_type=resource_type)
             # sum
             profit += sale_profit['profit']['abs']
             profit_net += sale_profit['profit']['abs'] * NET
@@ -210,4 +218,5 @@ def investments(resources, depth=0.1):
 
 
 if __name__ == '__main__':
+    # print(calculate_sale_profit(api.BITTREX, 'BTC', 0.5224, 33485.90, 'USD')['abs'])
     investments(load_resources())
