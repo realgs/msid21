@@ -1,0 +1,59 @@
+{
+  "base currency": "PLN",
+  "assets": {
+    "cryptocurrencies": [
+      {
+        "buy history": [
+          {
+            "buy price": 135819.32,
+            "volume": 1.2
+          },
+          {
+            "buy price": 35819.32,
+            "volume": 0.45
+          },
+          {
+            "buy price": 67819.32,
+            "volume": 1.45
+          }
+        ],
+        "name": "BTC"
+      }
+    ],
+    "currencies": [
+      {
+        "buy history": [
+          {
+            "buy price": 4.4,
+            "volume": 1000
+          }
+        ],
+        "name": "EUR"
+      }
+    ],
+    "shares": [
+      {
+        "buy history": [
+          {
+            "buy price": 529.64,
+            "volume": 25.46
+          }
+        ],
+        "name": "IBM"
+      },
+      {
+        "buy history": [
+          {
+            "buy price": 75.98,
+            "volume": 1
+          },
+          {
+            "buy price": 70.98,
+            "volume": 10
+          }
+        ],
+        "name": "PKN.WAR"
+      }
+    ]
+  }
+}
