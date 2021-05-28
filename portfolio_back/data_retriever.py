@@ -52,7 +52,15 @@ class DataRetriever:
                            in self.forex_currencies[market]
                            if currency_to_sell['name'] in currency['pair'] and base_currency in currency['pair']]
 
-        return self.find_best_finnhub_price_for_currency(currency_to_sell, related_symbols)
+        best_offer = self.find_best_finnhub_price_for_currency(currency_to_sell, related_symbols)
+        best_offer_pair_name = next((currency['pair'] for market in self.forex_markets for currency
+                                     in self.forex_currencies[market]
+                                     if best_offer[2] in currency['symbol']), None)
+
+        best_offer_price = 1 / best_offer[
+            0] if best_offer_pair_name != f"{currency_to_sell['name']}/{base_currency}" else best_offer[0]
+
+        return best_offer_price, best_offer[1]
 
     def get_best_offer_for_cryptocurrency(self, currency_to_sell, base_currency, percentage=1, num_offers=50):
         related_symbols = [currency['symbol'] for market in self.crypto_markets for currency
@@ -76,7 +84,8 @@ class DataRetriever:
             transaction['name'] = symbol
             possible_currency_transactions.append(transaction)
         best_offers = [(self.get_current_price_summary(possible_currency_transaction)['c'],
-                        possible_currency_transaction['name'].split(':')[0]) for possible_currency_transaction
+                        possible_currency_transaction['name'].split(':')[0],
+                        possible_currency_transaction['name'].split(':')[1]) for possible_currency_transaction
                        in possible_currency_transactions]
         best_offers = list(filter(None, best_offers))
         return sorted(best_offers, key=lambda o: o[0], reverse=True)[0]
