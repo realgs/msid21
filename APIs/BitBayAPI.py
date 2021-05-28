@@ -30,29 +30,23 @@ class BitBayAPI(API):
 
     def find_best_sell_offer(self, crypto_curr, base_curr, quantity):
         orderbook_buy = self.get_orderbook(crypto_curr, base_curr, "buy")
-
         if orderbook_buy is None:
             return None
 
         self.__quick_sort_orderbook_by_rate(orderbook_buy)
         result = []
 
-        if quantity < float(orderbook_buy[0]['ca']):
-            map = {
-                'Quantity': orderbook_buy[0]['ca'],
-                'Rate': orderbook_buy[0]['ra']
-            }
-            return result.append(map)
-        else:
-            i = 0
-            while quantity >= 0:
+        i = 0
+        while quantity > 0 and i < len(orderbook_buy):
+            buy_offer_quantity = float(orderbook_buy[i]['ca'])
+            if quantity - buy_offer_quantity >= 0:
                 map = {
                     'Quantity': orderbook_buy[i]['ca'],
                     'Rate': orderbook_buy[i]['ra']
                 }
                 result.append(map)
-                quantity = quantity - float(orderbook_buy[i]['ca'])
-                i = i + 1
+                quantity = quantity - buy_offer_quantity
+            i = i + 1
         return result
 
     def get_markets_data(self):

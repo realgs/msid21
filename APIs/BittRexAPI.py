@@ -29,21 +29,19 @@ class BittRexAPI(API):
 
     def find_best_sell_offer(self, crypto_curr, base_curr, quantity):
         orderbook_buy = self.get_orderbook(crypto_curr, base_curr, "buy")['result']
-
         if orderbook_buy is None:
             return None
 
         self.__quick_sort_orderbook_by_rate(orderbook_buy)
         result = []
 
-        if quantity < float(orderbook_buy[0]['Quantity']):
-            return result.append(orderbook_buy[0])
-        else:
-            i = 0
-            while quantity >= 0:
+        i = 0
+        while quantity > 0 and i < len(orderbook_buy):
+            buy_offer_quantity = float(orderbook_buy[i]['Quantity'])
+            if quantity - buy_offer_quantity >= 0:
                 result.append(orderbook_buy[i])
-                quantity = quantity - float(orderbook_buy[i]['Quantity'])
-                i = i + 1
+                quantity = quantity - buy_offer_quantity
+            i = i + 1
         return result
 
     def get_markets_data(self):

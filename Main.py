@@ -108,7 +108,7 @@ def calculate_profit_with_best_offers(info, exchange):
         fees = APIS['Crypto'][exchange].get_fees(rate, quantity, info['Crypto_currency'])
         sell_rate_minus_fees += rate * quantity - fees
 
-    return quantity_to_sell * (sell_rate_minus_fees - buy_rate)
+    return sell_rate_minus_fees - quantity_to_sell*buy_rate
 
 
 def add_possible_profit(portfolio):  # Profit -> fees included in the calc, tax not included
@@ -137,8 +137,8 @@ def add_possible_profit(portfolio):  # Profit -> fees included in the calc, tax 
 
 
 def get_recommended_selling_place(exchanges):
-    best_exchange = None
-    best_profit = sys.float_info.min
+    best_exchange = list(exchanges.keys())[0]
+    best_profit = exchanges[best_exchange]['Profit']
     for exchange in exchanges:
         exchange_profit_netto = exchanges[exchange]['Profit_netto']
         if exchange_profit_netto > best_profit:
@@ -174,10 +174,6 @@ def add_arbitrage(portfolio):
                                                                                     'Base_currency'], "sell")
             portfolio['crypto_currency'][crypto_currency]['Exchanges'][exchange][
                 'Arbitrage'] = arbitrage_buy_on_my_sell_on_other
-            # {
-            #     'Sell_on': type(other_exchange),
-            #     'Profit': arbitrage_buy_on_my_sell_on_other
-            # }
     return portfolio
 
 
