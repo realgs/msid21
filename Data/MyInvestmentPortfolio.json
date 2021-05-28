@@ -1,11 +1,11 @@
 {
   "stock": {
      "US" : {
-      "AAPL" : {"Quantity": 5.2, "Rate": 126.795}
+
     }
   },
   "currency": {
-    "EUR-USD" : {"Quantity": 1000, "Rate": 1.195}
+
   },
   "crypto_currency" : {
     "BTC-USD" : {"Quantity": 0.48, "Rate": 52000.795}

@@ -136,17 +136,22 @@ def add_possible_profit(portfolio):  # Profit -> fees included in the calc, tax 
     return portfolio
 
 
+def get_recommended_selling_place(exchanges):
+    best_exchange = None
+    best_profit = sys.float_info.min
+    for exchange in exchanges:
+        exchange_profit_netto = exchanges[exchange]['Profit_netto']
+        if exchange_profit_netto > best_profit:
+            best_exchange = exchange
+            best_profit = exchange_profit_netto
+    return best_exchange
+
+
 def add_recommended_selling_place(portfolio):
     crypto_currencies = portfolio.get('crypto_currency')
-    bestExchange = None
-    bestProfit = sys.float_info.min
     for crypto_currency in crypto_currencies:
-        for exchange in portfolio['crypto_currency'][crypto_currency]['Exchanges']:
-            exchange_profit_netto = portfolio['crypto_currency'][crypto_currency]['Exchanges'][exchange]['Profit_netto']
-            if exchange_profit_netto > bestProfit:
-                bestExchange = exchange
-                bestProfit = exchange_profit_netto
-        portfolio['crypto_currency'][crypto_currency]['Best_exchange'] = bestExchange
+        portfolio['crypto_currency'][crypto_currency]['Best_exchange'] = get_recommended_selling_place(
+            portfolio['crypto_currency'][crypto_currency]['Exchanges'])
     return portfolio
 
 
@@ -190,7 +195,7 @@ def calculate_total_profit(portfolio):
         profit += currencies[currency]['Profit']
 
     for crypto_currency in crypto_currencies:
-        best_exchange = crypto_currencies[crypto_currency]['Best_exchange']
+        best_exchange = get_recommended_selling_place(portfolio['crypto_currency'][crypto_currency]['Exchanges'])
         profit += crypto_currencies[crypto_currency]['Exchanges'][best_exchange]['Profit']
 
     return profit
@@ -219,8 +224,7 @@ def append_rest_of_offers(table, info):
     table.append(row)
 
 
-def append_row_for_best_offer(table, type, symbol, info):
-    append_first_line(table, type, symbol, info)
+def append_row_for_best_offer(table, info):
     for exchange in info['Exchanges']:
         append_first_line_exchange(table, exchange, info['Exchanges'][exchange])
         i = 0
@@ -258,7 +262,8 @@ def print_portfolio(portfolio, withSummary):
         append_first_line(table, "currency", currency, currencies[currency])
 
     for crypto_currency in crypto_currencies:
-        append_row_for_best_offer(table, "crypto", crypto_currency, crypto_currencies[crypto_currency])
+        append_first_line(table, "crypto", crypto_currency, crypto_currencies[crypto_currency])
+        append_row_for_best_offer(table, crypto_currencies[crypto_currency])
 
     if withSummary:
         append_summary(table, portfolio)
@@ -294,6 +299,7 @@ def exc_5(bit_bay, bitt_rex, market_stack, open_exchange, portfolio):
     with_recommended_selling_place = add_recommended_selling_place(with_profit)
     print_portfolio(with_recommended_selling_place, True)
 
+
 # Wykorzystać zadanie realizowane w ramach poprzedniej listy i do tabeli z zasobami dodać informację o możliwym arbitrażu.
 def exc_6(bit_bay, bitt_rex, market_stack, open_exchange, portfolio):
     with_best_sell = add_best_sell_offers(bit_bay, bitt_rex, market_stack, open_exchange, portfolio, False)
@@ -310,5 +316,5 @@ open_exchange = APIS['Currency']['OpenExchangeRates']
 portfolio = get_json_from_file("Data/MyInvestmentPortfolio.json")  # exc 1
 settlement_currency = get_json_from_file("Data/SettlementCurrency.json")
 
-exc_3(bit_bay, bitt_rex, market_stack, open_exchange, portfolio)
-#test 4
+exc_4(bit_bay, bitt_rex, market_stack, open_exchange, portfolio)
+# test 4

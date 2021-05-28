@@ -1,5 +1,3 @@
-import requests
-
 from APIs.API import API
 
 
