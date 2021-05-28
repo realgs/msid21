@@ -45,7 +45,7 @@ class DataRetriever:
 
     def get_exchange_rate(self, currency_to_sell_symbol, base_currency_symbol):
         return float(get_current_exchange_rate(currency_to_sell_symbol, base_currency_symbol)[
-            'Realtime Currency Exchange Rate']['5. Exchange Rate'])
+                         'Realtime Currency Exchange Rate']['5. Exchange Rate'])
 
     def get_best_offer_for_national_currency(self, currency_to_sell, base_currency):
         related_symbols = [currency['symbol'] for market in self.forex_markets for currency
@@ -83,7 +83,8 @@ class DataRetriever:
 
     def check_orderbooks(self, currency_to_sell, base_currency, num_offers, percentage):
         bid_dict = get_bidlist(currency_to_sell['name'] + '-' + base_currency, num_offers)
-        volume = currency_to_sell['volume'] * percentage
+        sum_volume = sum(buy['volume'] for buy in currency_to_sell['buy history'])
+        volume = sum_volume * percentage
         best_offer = -1
         best_site = ''
         for site in bid_dict.keys():

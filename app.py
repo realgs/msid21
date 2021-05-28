@@ -58,7 +58,8 @@ def add_asset():
     percentage = session['percentage'] if 'percentage' in session.keys() else DEFAULT_PERCENTAGE
 
     if len(messages) == 0:
-        wallet.add_asset({'type': asset_type, 'name': asset_name, 'price': price, 'volume': volume})
+        wallet.add_asset({'type': asset_type, 'name': asset_name,
+                          'buy history': [{'buy price': price, 'volume': volume}]})
         session['base currency'] = wallet.base_currency
         session['cryptocurrencies'] = wallet.cryptocurrencies
         session['currencies'] = wallet.currencies
@@ -179,17 +180,10 @@ def save_portfolio_to_file():
 
     file_name, percentage, wallet = prepare_to_saving()
 
-    portfolio = wallet.get_complete_assets_dataframe(percentage)
+    portfolio = pandas.read_json(session['portfolio'])
 
     with open(file_name, 'w') as f:
         json.dump(portfolio.to_json(), f)
-
-    try:
-        portfolio = wallet.get_complete_assets_dataframe(percentage).set_index('name')
-        session['portfolio'] = portfolio.to_json()
-    except Exception:
-        messages.append('Connection error. Try again later')
-        portfolio = pandas.read_json(session['portfolio'])
 
     return render_template('index.html', portfolio=portfolio.to_html(), messages=messages)
 
@@ -212,12 +206,7 @@ def save_wallet_to_file():
     with open(file_name, 'w') as f:
         json.dump(wallet_dict, f)
 
-    try:
-        portfolio = wallet.get_complete_assets_dataframe(percentage).set_index('name')
-        session['portfolio'] = portfolio.to_json()
-    except Exception:
-        messages.append('Connection error. Try again later')
-        portfolio = pandas.read_json(session['portfolio'])
+    portfolio = pandas.read_json(session['portfolio'])
 
     return render_template('index.html', portfolio=portfolio.to_html(), messages=messages)
 
