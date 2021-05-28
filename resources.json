@@ -19,12 +19,23 @@
       "rate": 33827.6
     }
   ],
-  "polish_stock": [],
+  "polish_stock": [
+    {
+      "name": "PZU",
+      "quantity": 2.57,
+      "rate": 9.8415
+    },
+    {
+      "name": "CDR",
+      "quantity": 3.128,
+      "rate": 47.547
+    }
+  ],
   "foreign_stock": [
     {
       "name": "AAPL",
       "quantity": 1.5,
-      "rate": 33827.6
+      "rate": 125.28
     }
   ]
 }
