@@ -1,5 +1,4 @@
 import json
-import sys
 
 from tabulate import tabulate
 
@@ -43,13 +42,9 @@ def read_int_between_from_command(min, max):
 
 
 def add_best_sell_offers(bit_bay, bitt_rex, market_stack, open_exchange, portfolio, askForPercentage):
-    stocks = portfolio.get('stock')
-    us_stocks = stocks.get('US')
-    currencies = portfolio.get('currency')
-    crypto_currencies = portfolio.get('crypto_currency')
     percentage = 100
 
-    for us_stock in us_stocks:
+    for us_stock in portfolio.get('stock').get('US'):
         last_transaction = market_stack.get_last_transaction(us_stock)
         if askForPercentage:
             print(us_stock + " - What percentage would you like to sell?")
@@ -58,7 +53,7 @@ def add_best_sell_offers(bit_bay, bitt_rex, market_stack, open_exchange, portfol
         portfolio['stock']['US'][us_stock]['Last_transaction'] = last_transaction['last'] if (
                 last_transaction['last'] is not None) else last_transaction['open']
 
-    for currency in currencies:
+    for currency in portfolio.get('currency'):
         currency_pair = currency.split("-")
         last_course = open_exchange.get_latest_currency_pair(currency_pair[1], currency_pair[0])
         if askForPercentage:
@@ -68,6 +63,7 @@ def add_best_sell_offers(bit_bay, bitt_rex, market_stack, open_exchange, portfol
         portfolio['currency'][currency]['Last_transaction'] = last_course
         portfolio['currency'][currency]['Base_currency'] = currency_pair[0]
 
+    crypto_currencies = portfolio.get('crypto_currency')
     for crypto_currency in crypto_currencies:
         if askForPercentage:
             print(crypto_currency + " - What percentage would you like to sell?")
@@ -108,16 +104,15 @@ def calculate_profit_with_best_offers(info, exchange):
         fees = APIS['Crypto'][exchange].get_fees(rate, quantity, info['Crypto_currency'])
         sell_rate_minus_fees += rate * quantity - fees
 
-    return sell_rate_minus_fees - quantity_to_sell*buy_rate
+    return sell_rate_minus_fees - quantity_to_sell * buy_rate
 
 
 def add_possible_profit(portfolio):  # Profit -> fees included in the calc, tax not included
-    stocks = portfolio.get('stock')
-    us_stocks = stocks.get('US')
+    us_stocks = portfolio.get('stock').get('US')
     currencies = portfolio.get('currency')
     crypto_currencies = portfolio.get('crypto_currency')
 
-    for us_stock in us_stocks:
+    for us_stock in portfolio.get('stock').get('US'):
         profit = calculate_profit_with_last_transaction(us_stocks[us_stock])
         portfolio['stock']['US'][us_stock]['Profit'] = profit
         portfolio['stock']['US'][us_stock]['Profit_netto'] = profit * (1 - PROFIT_TAX)
@@ -178,8 +173,7 @@ def add_arbitrage(portfolio):
 
 
 def calculate_total_profit(portfolio):
-    stocks = portfolio.get('stock')
-    us_stocks = stocks.get('US')
+    us_stocks = portfolio.get('stock').get('US')
     currencies = portfolio.get('currency')
     crypto_currencies = portfolio.get('crypto_currency')
     profit = 0
@@ -240,7 +234,7 @@ def append_first_line(table, type, symbol, info):
 
 def append_summary(table, portfolio):
     profit = calculate_total_profit(portfolio)
-    row = ["TOTAL", "", "", "", "", "", "", profit, profit * 0.81, "", "", "", ""]
+    row = ["TOTAL", "", "", "", "", "", "", profit, profit * (1 - PROFIT_TAX), "", "", "", ""]
     table.append(row)
 
 
@@ -282,6 +276,7 @@ def exc_3(bit_bay, bitt_rex, market_stack, open_exchange, portfolio):
     print_portfolio(best_sell_map, False)
 
 
+# Dodaj zysk + zysk netto
 def exc_4(bit_bay, bitt_rex, market_stack, open_exchange, portfolio):
     with_best_sell = add_best_sell_offers(bit_bay, bitt_rex, market_stack, open_exchange, portfolio, False)
     with_profit = add_possible_profit(with_best_sell)
@@ -310,7 +305,5 @@ bitt_rex = APIS['Crypto']['BittRex']
 market_stack = APIS['US']['MarketStack']
 open_exchange = APIS['Currency']['OpenExchangeRates']
 portfolio = get_json_from_file("Data/MyInvestmentPortfolio.json")  # exc 1
-settlement_currency = get_json_from_file("Data/SettlementCurrency.json")
 
-exc_4(bit_bay, bitt_rex, market_stack, open_exchange, portfolio)
-# test 4
+exc_6(bit_bay, bitt_rex, market_stack, open_exchange, portfolio)

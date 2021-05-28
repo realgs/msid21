@@ -1,7 +1,7 @@
-from APIs.API import API
+from APIs.CryptoAPI import CryptoAPI
 
 
-class BittRexAPI(API):
+class BittRexAPI(CryptoAPI):
     BASEURL = 'https://api.bittrex.com/api/v1.1/public/'
     MARKETS_BASEURL = 'https://api.bittrex.com/v3/'
     VALID_CRYPTO_CURR = {'DOT', 'UNI', 'BSV', 'XRP', 'AAVE', 'XTZ', 'LTC', 'UNI', 'LINK', 'DOT', 'BSV', 'XTZ', 'GRT',
@@ -16,8 +16,8 @@ class BittRexAPI(API):
                        'BTC', 'USD', 'ETH', 'USDT', 'USDT', 'BTC', 'BTC', 'EUR', 'ETH', 'USD', 'USDT', 'BTC', 'BTC',
                        'USDT', 'EUR', 'EUR', 'USD', 'USDT', 'USDT', 'USD', 'EUR', 'EUR', 'EUR', 'BTC', 'BTC', 'BTC',
                        'BTC', 'ETH', 'USD', 'USD', 'USD', 'USDT', 'BTC'}
-    RATE = 'ra'
-    QUANTITY = 'ca'
+    RATE = 'Rate'
+    QUANTITY = 'Quantity'
     VALID_TYPE = {"buy", "sell", "both"}
     TAKER_FEE = 0.0035  # percentage
     TRANSFER_FEE = {
@@ -32,12 +32,12 @@ class BittRexAPI(API):
         if orderbook_buy is None:
             return None
 
-        self.__quick_sort_orderbook_by_rate(orderbook_buy)
+        super(BittRexAPI, self).quick_sort_orderbook_by_rate(orderbook_buy)
         result = []
 
         i = 0
         while quantity > 0 and i < len(orderbook_buy):
-            buy_offer_quantity = float(orderbook_buy[i]['Quantity'])
+            buy_offer_quantity = float(orderbook_buy[i][self.QUANTITY])
             if quantity - buy_offer_quantity >= 0:
                 result.append(orderbook_buy[i])
                 quantity = quantity - buy_offer_quantity
@@ -69,62 +69,4 @@ class BittRexAPI(API):
 
     def get_orderbook_sorted(self, crypto, base_curr, type):
         orderbook = self.get_orderbook(crypto, base_curr, type)
-        return self.__quick_sort_orderbook_by_rate(orderbook['result'])
-
-    def get_fees(self, price, amount, crypto_currency):
-        if crypto_currency in self.TRANSFER_FEE:
-            return price * amount * self.TAKER_FEE + self.TRANSFER_FEE[crypto_currency]
-        else:
-            raise Exception("Transfer fee not mapped for " + crypto_currency)
-
-    def calculate_arbitrage(self, other_market, crypto_currency, base_currency, buyOrSellOnBitBay):
-        if buyOrSellOnBitBay == "sell":  # buy on bittrex and sell on bitbay
-            buy_market = other_market
-            sell_market = self
-        else:
-            buy_market = self
-            sell_market = other_market
-
-        sell_offers_order_book = buy_market.get_orderbook_sorted(crypto_currency, base_currency, "sell")
-        buy_offers_order_book = sell_market.get_orderbook_sorted(crypto_currency, base_currency, "buy")
-        best_sell_offer = float(sell_offers_order_book[len(sell_offers_order_book) - 1][sell_market.RATE])
-        best_sell_offer_amount = float(sell_offers_order_book[len(sell_offers_order_book) - 1][sell_market.QUANTITY])
-        best_buy_offer = float(buy_offers_order_book[0][buy_market.RATE])
-        best_buy_offer_amount = float(buy_offers_order_book[0][buy_market.QUANTITY])
-
-        if best_buy_offer_amount < best_sell_offer_amount:  # if someone wants to buy less than i have to sell
-            fees_for_buying = buy_market.get_fees(best_sell_offer, best_buy_offer_amount, crypto_currency)
-            fees_for_selling = sell_market.get_fees(best_buy_offer, best_buy_offer_amount, crypto_currency)
-            return best_buy_offer * best_buy_offer_amount - best_sell_offer * best_buy_offer_amount - fees_for_buying - fees_for_selling
-        else:
-            missing_amount = best_buy_offer_amount
-            total = 0
-            i = len(sell_offers_order_book) - 1
-
-            while missing_amount >= 0:
-                fees_for_buying = buy_market.get_fees(best_sell_offer, best_buy_offer_amount, crypto_currency)
-                fees_for_selling = sell_market.get_fees(best_buy_offer, best_buy_offer_amount, crypto_currency)
-                total = total + best_buy_offer * best_buy_offer_amount - best_sell_offer * best_buy_offer_amount - fees_for_buying - fees_for_selling
-                missing_amount = missing_amount - best_sell_offer_amount
-                i = i - 1
-                best_sell_offer = float(sell_offers_order_book[i][sell_market.RATE])
-                best_sell_offer_amount = float(sell_offers_order_book[i][sell_market.QUANTITY])
-
-            return total
-
-    def __quick_sort_orderbook_by_rate(self, unsorted):
-        if len(unsorted) <= 1:
-            return unsorted
-
-        pivot = unsorted.pop()
-
-        lower = []
-        greater = []
-
-        for item in unsorted:
-            if float(item.get('Rate')) < float(pivot.get('Rate')):
-                lower.append(item)
-            else:
-                greater.append(item)
-
-        return self.__quick_sort_orderbook_by_rate(lower) + [pivot] + self.__quick_sort_orderbook_by_rate(greater)
+        return super(BittRexAPI, self).quick_sort_orderbook_by_rate(orderbook['result'])
