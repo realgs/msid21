@@ -17,7 +17,7 @@ import { ConfigurationComponent } from './configuration/configuration.component'
 import { CookieModule } from 'ngx-cookie';
 import {MatSelectModule} from '@angular/material/select';
 import { ArbitrationComponent } from './arbitration/arbitration.component';
-import { ProfitComponent } from './profit/profit.component';
+import { ValueAndProfitComponent } from './valueAndProfit/valueAndProfit.component';
 import { ResourcesComponent } from './resources/resources.component';
 
 @NgModule({
@@ -29,7 +29,7 @@ import { ResourcesComponent } from './resources/resources.component';
     AvailableApisComponent,
     ConfigurationComponent,
     ArbitrationComponent,
-    ProfitComponent,
+    ValueAndProfitComponent,
     ResourcesComponent,
   ],
   imports: [

@@ -11,7 +11,7 @@
             <tr *ngFor="let resource of resources">
                 <td>{{ resource.name }}</td>
                 <td>{{ resource.amount }}</td>
-                <td>{{ resource.meanPurchase }} {{ currency }}</td>
+                <td>{{ resource.meanPurchase | number : '1.0-2' }} {{ currency }}</td>
             </tr>
         </table>
     </div>
@@ -20,8 +20,10 @@
         <div class="header">Actions: </div>
 
         <div class="input-row">
-            <label for="selected">Resource: </label>
-            <mat-form-field id="selected" appearance="fill">
+            <div id="select-label">
+                <label for="selected">Resource: </label>
+            </div>
+            <mat-form-field id="selected">
                 <mat-select [formControl]="selectedResource">
                     <mat-option value="new">New</mat-option>
                     <mat-option *ngFor="let resource of resources" value="{{resource.name}}">{{ resource.name }}</mat-option>

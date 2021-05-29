@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { Api } from './models/api';
 import { ApiResult } from './models/apiResult';
 
 @Injectable({
@@ -36,6 +37,11 @@ export class PortfolioService {
 
   getResources(login: string): Observable<ApiResult> {
     let url = this.baseUrl + 'getResources?login=' + login;
+    return this.http.get<ApiResult>(url); 
+  }
+
+  getValue(login: string, part: number): Observable<ApiResult> {
+    let url = this.baseUrl + 'portfolioValue?login=' + login + "&part=" + part;
     return this.http.get<ApiResult>(url); 
   }
 

@@ -119,8 +119,8 @@ def start():
             return jsonify(ApiResult(False, 'amount and price must be number').__repr__())
 
         portfolio = loaded[login]
-        portfolio.addResource(name, amount, price)
-        portfolio.save()
+        if portfolio.addResource(name, amount, price):
+            portfolio.save()
 
         return jsonify(ApiResult(True, 'added').__repr__())
 

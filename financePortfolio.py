@@ -1,5 +1,6 @@
 from services.configurationService import readConfig, saveConfig
-from models.resource import Resource, ResourceValue, ResourceProfit, ResourceStats, ResourceArbitration
+from models.resource import ResourceVm, ResourceValue, ResourceProfit, ResourceStats, ResourceArbitration
+from models.resourceQueue import ResourceQueue
 from api import bitbay, bittrex
 from services.profitService import ProfitService
 
@@ -22,7 +23,7 @@ class Portfolio:
     def read(self):
         data = readConfig(self._owner+"_"+FILENAME)
         if data:
-            self._resources = {resource['name']: Resource.fromDict(resource) for resource in data['resources']}
+            self._resources = {resourceRepr['name']: ResourceQueue.fromJson(resourceRepr) for resourceRepr in data['resources']}
             self._baseValue = data['baseValue']
             self._countryProfitFee = data['countryProfitFee']
             return True
@@ -60,29 +61,29 @@ class Portfolio:
 
     @property
     def resources(self):
-        return [Resource(resource.name, resource.amount, resource.meanPurchase, self.baseValue) for _, resource in self._resources.items()]
+        return [ResourceVm(name, resourceQueue.amountLeft(), resourceQueue.meanPurchase(), self._baseValue) for name, resourceQueue in self._resources.items()]
 
     def addResource(self, name, amount, price):
-        if amount > 0:
-            price = max(price, 0)
-            resource = Resource(name, amount, price)
-            if resource.name in self._resources:
-                self._resources[resource.name].add(resource)
+        if amount > 0 and price > 0:
+            if name in self._resources:
+                self._resources[name].push(amount, price)
             else:
-                self._resources[resource.name] = resource
+                new = ResourceQueue(name, [])
+                new.push(amount, price)
+                self._resources[name] = new
+            return True
+        return False
 
     def removeResource(self, resourceName, amount):
-        amount = max(amount, 0)
-        if resourceName not in self._resources:
-            return False
-        resource = self._resources[resourceName]
-        if amount > resource.amount:
-            return False
-        if resource.amount == amount:
-            self._resources.pop(resourceName)
+        if amount >= 0 and resourceName in self._resources:
+            resourceQueue = self._resources[resourceName]
+            if not resourceQueue.tryPop(amount):
+                return False
+            if resourceQueue.isEmpty():
+                self._resources.pop(resourceName)
+            return True
         else:
-            resource.amount -= amount
-        return True
+            return False
 
     async def getStats(self, part=10):
         part = self._toValidPart(part)
@@ -116,14 +117,14 @@ class Portfolio:
     async def portfolioValue(self, part=10):
         part = self._toValidPart(part)
         valuesOfResources = []
-        for _, resource in self._resources.items():
-            buys = await self._getSortedOrders(resource.name)
-            name, fullAmount = resource.name, resource.amount / 100 * part
+        for resourceName, resourceQueue in self._resources.items():
+            buys = await self._getSortedOrders(resourceName)
+            fullAmount = resourceQueue.amountLeft() / 100 * part
             if not buys:
-                recommendedApi = await self.getRecommendedApiForResource(name)
-                valuesOfResources.append(ResourceValue(name, fullAmount, 0, 0, self._baseValue, part, recommendedApi))
+                recommendedApi = await self.getRecommendedApiForResource(resourceName)
+                valuesOfResources.append(ResourceValue(resourceName, fullAmount, 0, 0, self._baseValue, part, recommendedApi))
             else:
-                value = await self._calcValue(name, resource.amount, buys, part)
+                value = await self._calcValue(resourceName, fullAmount, buys, part)
                 valuesOfResources.append(value)
         return valuesOfResources
 
@@ -135,9 +136,10 @@ class Portfolio:
         for resourceValue in portfolioValue:
             fullValue, partValue = resourceValue.fullValue, resourceValue.partValue
             fullAmount, partAmount = resourceValue.fullAmount, resourceValue.fullAmount / 100 * part
-            meanPurchase = await self.cantorService.convertCurrencies(DEFAULT_VALUE, self._baseValue, self._resources[resourceValue.name].meanPurchase)
-            fullProfit = (fullValue - meanPurchase * fullAmount) * (1 - self._countryProfitFee)
-            partProfit = (partValue - meanPurchase * partAmount) * (1 - self._countryProfitFee)
+            meanPurchaseFull = await self.cantorService.convertCurrencies(DEFAULT_VALUE, self._baseValue, self._resources[resourceValue.name].meanPurchase())
+            meanPurchasePart = await self.cantorService.convertCurrencies(DEFAULT_VALUE, self._baseValue, self._resources[resourceValue.name].meanPurchase(part))
+            fullProfit = (fullValue - meanPurchaseFull * fullAmount) * (1 - self._countryProfitFee)
+            partProfit = (partValue - meanPurchasePart * partAmount) * (1 - self._countryProfitFee)
             profits.append(ResourceProfit(resourceValue.name, fullProfit, partProfit, fullAmount, part, self._baseValue))
         return profits
 
@@ -176,7 +178,7 @@ class Portfolio:
         return self._getPossibleProfits(allProfits, resourceName1, resourceName2)
 
     def _getPossibleProfits(self, allProfits, resourceName1, resourceName2):
-        amount = min(self._resources[resourceName1].amount, self._resources[resourceName2].amount)
+        amount = min(self._resources[resourceName1].amountLeft(), self._resources[resourceName2].amountLeft())
         bestArbitration = []
         for profit in allProfits:
             quantity = min(amount, profit['quantity'])

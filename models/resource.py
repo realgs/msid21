@@ -1,9 +1,7 @@
 class Resource:
-    def __init__(self, name, amount, meanPurchase, currency=None):
-        self.name = name
+    def __init__(self,  amount, meanPurchase):
         self.amount = amount
         self.meanPurchase = meanPurchase
-        self.currency = currency
 
     def add(self, resource):
         fullAmount = self.amount + resource.amount
@@ -13,7 +11,18 @@ class Resource:
 
     @classmethod
     def fromDict(cls, dataDict):
-        return cls(dataDict['name'], dataDict['amount'], dataDict['meanPurchase'])
+        return cls(dataDict['amount'], dataDict['meanPurchase'])
+
+    def __repr__(self):
+        return {'amount': self.amount, 'meanPurchase': self.meanPurchase}
+
+
+class ResourceVm:
+    def __init__(self, name, amount, meanPurchase, currency):
+        self.name = name
+        self.amount = amount
+        self.meanPurchase = meanPurchase
+        self.currency = currency
 
     def __repr__(self):
         return {'name': self.name, 'amount': self.amount, 'meanPurchase': self.meanPurchase, 'currency': self.currency}

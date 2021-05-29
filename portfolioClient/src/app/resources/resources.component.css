@@ -1,6 +1,11 @@
 th, td {
     width: 180px;
     text-align: center;
+    font-size: larger;
+}
+
+td {
+    border-top: 1px solid #00BD9D;
 }
 
 .content {
@@ -46,6 +51,10 @@ th, td {
 
 mat-form-field {
     font-size: medium;
+}
+
+#select-label{
+    margin-top: 18px;
 }
 
 .input-label {

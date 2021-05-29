@@ -5,7 +5,7 @@ import { AvailableApisComponent } from './available-apis/available-apis.componen
 import { ConfigurationComponent } from './configuration/configuration.component';
 import { LoginComponent } from './login/login.component';
 import { PortfolioComponent } from './portfolio/portfolio.component';
-import { ProfitComponent } from './profit/profit.component';
+import { ValueAndProfitComponent } from './valueAndProfit/valueAndProfit.component';
 import { ResourcesComponent } from './resources/resources.component';
 
 const routes: Routes = [
@@ -15,7 +15,7 @@ const routes: Routes = [
   {path: 'portfolio', component: PortfolioComponent},
   {path: 'configuration', component: ConfigurationComponent},
   {path: 'arbitrations', component: ArbitrationComponent},
-  {path: 'profit', component: ProfitComponent},
+  {path: 'profit', component: ValueAndProfitComponent},
   {path: 'resources', component: ResourcesComponent},
 ];
 
