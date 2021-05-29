@@ -2,7 +2,7 @@ from services.configurationService import readConfig, saveConfig
 from models.resource import ResourceVm, ResourceValue, ResourceProfit, ResourceStats, ResourceArbitration
 from models.resourceQueue import ResourceQueue
 from api import bitbay, bittrex
-from services.profitService import ProfitService
+from services.arbitrationService import ArbitrationService
 
 FILENAME = 'portfolio_data.json'
 API_LIST = [{'api': bitbay, 'type': 'crypto'}, {'api': bittrex, 'type': 'crypto'}]
@@ -110,7 +110,7 @@ class Portfolio:
                 print(f"Error - Portfolio - getStats: no profit for name: {name}")
                 profit = ResourceProfit(name, 0, 0, 0, 0, self._baseValue)
             allArbitration = await self.getAllArbitration(name)
-            stats.append(ResourceStats(value, profit, resource.meanPurchase, allArbitration))
+            stats.append(ResourceStats(value, profit, resource.meanPurchase(), allArbitration))
 
         return stats
 
@@ -197,7 +197,7 @@ class Portfolio:
                 for idx2 in range(idx1 + 1, len(API_LIST)):
                     api2 = API_LIST[idx2]
                     if api1['type'] == api2['type']:
-                        profitService = ProfitService(api1['api'], api2['api'])
+                        profitService = ArbitrationService(api1['api'], api2['api'])
                         commonMarkets = await profitService.commonMarkets
                         if commonMarkets:
                             self._apiCrossProfitServices.append(profitService)

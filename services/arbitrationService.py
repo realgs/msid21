@@ -1,13 +1,11 @@
-from _datetime import datetime
 import asyncio
-import time
 
 SUCCESS_KEY = 'success'
 ORDER_AMOUNT = 10
 ACCURACY = 0.00000000001
 
 
-class ProfitService:
+class ArbitrationService:
     def __init__(self, firstApi, secondApi):
         self.__firstApi = firstApi
         self.__secondApi = secondApi
