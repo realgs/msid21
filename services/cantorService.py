@@ -40,4 +40,4 @@ class NBPCantorService:
 
     def _setDateRetrieved(self, dateString):
         year, month, day = dateString.split(sep='-')
-        self.dateRetrieved = date(int(year),int(month),int(day))
+        self.dateRetrieved = date(int(year), int(month), int(day))

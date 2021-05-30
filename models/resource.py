@@ -57,11 +57,6 @@ class ResourceValue:
                 'full': {'amount': self.fullAmount, 'price': self.fullPrice, 'value': self.fullValue},
                 'part': {'procent': self.part, 'amount': self.partAmount, 'price': self.partPrice, 'value': self.partValue}}
 
-    def __str__(self):
-        return f"name: {self.name}, full amount: {self.fullAmount}, full price: {self.fullPrice}, " \
-               f"full value: {self.fullValue} {self.currency}, part: {self.part} %, " \
-               f"part price: {self.partPrice}, part value: {self.partValue}, recommended sell: {self.recommendedSell}"
-
 
 class ResourceProfit:
     def __init__(self, name, fullProfit, partProfit, amount, part, currency):
@@ -82,10 +77,6 @@ class ResourceProfit:
                 'full': {'profit': self.fullProfit, 'amount': self.fullAmount},
                 'part': {'procent': self.part, 'profit': self.partProfit, 'amount': self.partAmount}}
 
-    def __str__(self):
-        return f"name: {self.name}, full profit: {self.fullProfit}, full amount: {self.fullAmount}, part profit: " \
-               f"{self.partProfit}, part amount: {self.partAmount}, part: {self.part} %, currency: {self.currency}"
-
 
 class ResourceArbitration:
     def __init__(self, currency1, currency2, api1, api2, rate, profit, quantity):
@@ -100,10 +91,6 @@ class ResourceArbitration:
     def __repr__(self):
         return {'currency1': self.currency1, 'currency2': self.currency2, 'api1': self.api1, 'api2': self.api2,
                 'rate': self.rate, 'profit': self.profit, 'quantity': self.quantity}
-
-    def __str__(self):
-        return f"currency1: {self.currency1}, currency2: {self.currency2}, api1: {self.api1}, api2: {self.api2}, " \
-               f"rate: {self.rate}, profit: {self.profit}, quantity: {self.quantity}"
 
 
 class ResourceStats:
