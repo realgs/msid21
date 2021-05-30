@@ -2,11 +2,12 @@ from services.configurationService import readConfig, saveConfig
 from services.valueService import ValueService
 from models.resource import ResourceVm, ResourceValue, ResourceProfit, ResourceStats, ResourceArbitration
 from models.resourceQueue import ResourceQueue
-from api import bitbay, bittrex
+from api.bitbay import Bitbay
+from api.bittrex import Bittrex
 from services.arbitrationService import ArbitrationService
 
 FILENAME = 'portfolio_data.json'
-API_LIST = [{'api': bitbay, 'type': 'crypto'}, {'api': bittrex, 'type': 'crypto'}]
+API_LIST = [{'api': Bitbay(), 'type': 'crypto'}, {'api': Bittrex(), 'type': 'crypto'}]
 DEFAULT_VALUE = 'USD'
 SUCCESS_KEY = 'success'
 DEFAULT_COUNTRY_PROFIT_FEE = 0.19

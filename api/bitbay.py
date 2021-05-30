@@ -1,4 +1,5 @@
 from services.connectionService import getApiResponse
+from api.api import Api
 
 NAME = "Bitbay"
 TAKER_FEE = 0.001
@@ -17,49 +18,43 @@ STATUS_OK = "Ok"
 STATUS_KEY = "status"
 
 
-def getName():
-    return NAME
+class Bitbay(Api):
+    def __init__(self):
+        super().__init__(NAME, TAKER_FEE)
 
+    async def getTransferFee(self, currency):
+        if currency in WITHDRAWAL_FEES:
+            return WITHDRAWAL_FEES[currency]
+        return DEFAULT_TRANSFER_FEE
 
-def getTakerFee():
-    return TAKER_FEE
-
-
-async def getTransferFee(currency):
-    if currency in WITHDRAWAL_FEES:
-        return WITHDRAWAL_FEES[currency]
-    return DEFAULT_TRANSFER_FEE
-
-
-async def getBestOrders(cryptos, amount=None):
-    if amount:
-        apiResult = await getApiResponse(f"{API_BASE_URL}orderbook-limited/{cryptos[0]}-{cryptos[1]}/{amount}", STATUS_KEY, STATUS_OK)
-    else:
-        apiResult = await getApiResponse(f"{API_BASE_URL}orderbook-limited/{cryptos[0]}-{cryptos[1]}/100", STATUS_KEY, STATUS_OK)
-
-    if apiResult:
-        if apiResult['buy'] and apiResult['sell']:
-            buys = [{"price": float(b['ra']), 'quantity': float(b['ca'])} for b in reversed(apiResult['buy'])]
-            sells = [{"price": float(s['ra']), 'quantity': float(s['ca'])} for s in apiResult['sell']]
-            if not amount or len(buys) == amount and len(sells) == amount:
-                return {"success": True, "buys": buys, "sells": sells}
+    async def getBestOrders(self, cryptos, amount=None):
+        if amount:
+            apiResult = await getApiResponse(f"{API_BASE_URL}orderbook-limited/{cryptos[0]}-{cryptos[1]}/{amount}", STATUS_KEY, STATUS_OK)
         else:
-            return {"success": False, "cause": "There is not enough data"}
-    else:
-        return {"success": False, "cause": "Cannot retrieve data"}
+            apiResult = await getApiResponse(f"{API_BASE_URL}orderbook-limited/{cryptos[0]}-{cryptos[1]}/100", STATUS_KEY, STATUS_OK)
 
-
-async def getAvailableMarkets():
-    apiResult = await getApiResponse(f"{API_BASE_URL}stats", STATUS_KEY, STATUS_OK)
-
-    if apiResult and apiResult['status'] == 'Ok' and apiResult['items']:
-        markets = []
-        for marketKeys in apiResult['items']:
-            split = marketKeys.split('-')
-            if split and len(split) == 2:
-                markets.append({'currency1': split[0], 'currency2': split[1]})
+        if apiResult:
+            if apiResult['buy'] and apiResult['sell']:
+                buys = [{"price": float(b['ra']), 'quantity': float(b['ca'])} for b in reversed(apiResult['buy'])]
+                sells = [{"price": float(s['ra']), 'quantity': float(s['ca'])} for s in apiResult['sell']]
+                if not amount or len(buys) == amount and len(sells) == amount:
+                    return {"success": True, "buys": buys, "sells": sells}
             else:
-                print("Error, incorrect numer of lines")
-        return {"success": True, 'markets': markets}
-    else:
-        return {"success": False, "cause": "Cannot retrieve data"}
+                return {"success": False, "cause": "There is not enough data"}
+        else:
+            return {"success": False, "cause": "Cannot retrieve data"}
+
+    async def getAvailableMarkets(self):
+        apiResult = await getApiResponse(f"{API_BASE_URL}stats", STATUS_KEY, STATUS_OK)
+
+        if apiResult and apiResult['status'] == 'Ok' and apiResult['items']:
+            markets = []
+            for marketKeys in apiResult['items']:
+                split = marketKeys.split('-')
+                if split and len(split) == 2:
+                    markets.append({'currency1': split[0], 'currency2': split[1]})
+                else:
+                    print("Error, incorrect numer of lines")
+            return {"success": True, 'markets': markets}
+        else:
+            return {"success": False, "cause": "Cannot retrieve data"}
