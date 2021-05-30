@@ -107,25 +107,32 @@ class ResourceArbitration:
 
 
 class ResourceStats:
-    def __init__(self, resourceValue, resourceProfit, meanPurchase, arbitration):
+    def __init__(self, resourceValue, resourceProfit, meanPurchaseFull, meanPurchasePart):
         self.resourceValue = resourceValue
         self.resourceProfit = resourceProfit
-        self.meanPurchase = meanPurchase
-        self.arbitration = arbitration
+        self.meanPurchaseFull = meanPurchaseFull
+        self.meanPurchasePart = meanPurchasePart
         if resourceValue.part != resourceProfit.part or resourceValue.name != resourceProfit.name \
                 or resourceValue.currency != resourceProfit.currency:
             print("Error: ResourceStats - value and profit do not match")
 
     def __repr__(self):
         return {'name': self.resourceValue.name,
-                'meanPurchase': self.meanPurchase,
                 'recommendedSell': self.resourceValue.recommendedSell,
                 'currency': self.resourceValue.currency,
                 'value': {
-                    'full': {'amount': self.resourceValue.fullAmount, 'price': self.resourceValue.fullPrice,
-                             'value': self.resourceValue.fullValue, 'profit': self.resourceProfit.fullProfit},
+                    'full': {
+                        'amount': self.resourceValue.fullAmount,
+                        'meanPurchase': self.meanPurchaseFull,
+                        'price': self.resourceValue.fullPrice,
+                        'value': self.resourceValue.fullValue,
+                        'profit': self.resourceProfit.fullProfit
+                    },
                     'partPercent': self.resourceValue.part,
-                    'part': {'amount': self.resourceValue.partAmount, 'price': self.resourceValue.partPrice,
-                             'value': self.resourceValue.partValue, 'profit': self.resourceProfit.partProfit},
-                },
-                'arbitration': [arbitration.__repr__() for arbitration in self.arbitration]}
+                    'part': {
+                        'amount': self.resourceValue.partAmount,
+                        'meanPurchase': self.meanPurchasePart,
+                        'price': self.resourceValue.partPrice,
+                        'value': self.resourceValue.partValue,
+                        'profit': self.resourceProfit.partProfit},
+                }}

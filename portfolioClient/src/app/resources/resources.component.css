@@ -8,6 +8,10 @@ td {
     border-top: 1px solid #00BD9D;
 }
 
+.text{
+    font-size: larger;
+}
+
 .content {
     display: flex;
     justify-content: space-around;
