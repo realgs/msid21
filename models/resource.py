@@ -120,19 +120,18 @@ class ResourceStats:
         return {'name': self.resourceValue.name,
                 'recommendedSell': self.resourceValue.recommendedSell,
                 'currency': self.resourceValue.currency,
-                'value': {
-                    'full': {
-                        'amount': self.resourceValue.fullAmount,
-                        'meanPurchase': self.meanPurchaseFull,
-                        'price': self.resourceValue.fullPrice,
-                        'value': self.resourceValue.fullValue,
-                        'profit': self.resourceProfit.fullProfit
-                    },
-                    'partPercent': self.resourceValue.part,
-                    'part': {
-                        'amount': self.resourceValue.partAmount,
-                        'meanPurchase': self.meanPurchasePart,
-                        'price': self.resourceValue.partPrice,
-                        'value': self.resourceValue.partValue,
-                        'profit': self.resourceProfit.partProfit},
-                }}
+                'full': {
+                    'amount': self.resourceValue.fullAmount,
+                    'meanPurchase': self.meanPurchaseFull,
+                    'price': self.resourceValue.fullPrice,
+                    'value': self.resourceValue.fullValue,
+                    'profit': self.resourceProfit.fullProfit
+                },
+                'partPercent': self.resourceValue.part,
+                'part': {
+                    'amount': self.resourceValue.partAmount,
+                    'meanPurchase': self.meanPurchasePart,
+                    'price': self.resourceValue.partPrice,
+                    'value': self.resourceValue.partValue,
+                    'profit': self.resourceProfit.partProfit},
+                }

@@ -21,7 +21,7 @@ export class AppComponent implements OnInit {
     this.login = this.cookie.get('portfolioLogin');
     if (this.login){
       this.logged = true;
-      this.router.navigate(['portfolio']);
+      this.router.navigate(['resources']);
     }
   }
 
