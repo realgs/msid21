@@ -8,7 +8,7 @@
         </mat-select>
     </mat-form-field>
 
-    <button mat-raised-button class="green-button" [disabled]="status == 'pending'" (click)="search()">Search</button>
+    <button mat-raised-button class="green-button" [disabled]="status == 'pending'" (click)="search()">Refresh</button>
 
     <span *ngIf="status == 'prending'" class="pending message">Loading arbitrations</span>
     <span *ngIf="status == 'error'" class="error message">Could not load data</span>

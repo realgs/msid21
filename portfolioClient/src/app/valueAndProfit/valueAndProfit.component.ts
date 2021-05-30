@@ -13,6 +13,7 @@ export class ValueAndProfitComponent implements OnInit {
   newPart: number = 10;
   currency: string = 'USD';
   stats: any[] = [];
+  status: string = 'ok';
 
   constructor(private service: PortfolioService, private cookie: CookieService) { }
 
@@ -23,6 +24,7 @@ export class ValueAndProfitComponent implements OnInit {
 
   retriveData(): void {
     if (this.login){
+      this.status = 'pending';
       let part = this.newPart;
       if (part > 100){
         part = 100;
@@ -35,6 +37,9 @@ export class ValueAndProfitComponent implements OnInit {
             this.currency = this.stats[0].currency;
           }
           this.part = part;
+          this.status = 'ok';
+        } else {
+          this.status = 'error';
         }
       });
     }

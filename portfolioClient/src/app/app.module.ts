@@ -9,7 +9,6 @@ import { MatInputModule } from '@angular/material/input';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import {MatButtonModule} from '@angular/material/button';
 import { HttpClientModule } from '@angular/common/http';
-import { ResourceDetailsComponent } from './resource-details/resource-details.component';
 import { AvailableApisComponent } from './available-apis/available-apis.component';
 import { ConfigurationComponent } from './configuration/configuration.component';
 import { CookieModule } from 'ngx-cookie';
@@ -22,7 +21,6 @@ import { ResourcesComponent } from './resources/resources.component';
   declarations: [
     AppComponent,
     LoginComponent,
-    ResourceDetailsComponent,
     AvailableApisComponent,
     ConfigurationComponent,
     ArbitrationComponent,

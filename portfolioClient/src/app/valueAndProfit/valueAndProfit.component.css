@@ -52,3 +52,15 @@ td {
 .negative {
     color: #CC2900;
 }
+
+.message {
+    margin-left: 20px;
+}
+
+.pending {
+    color: #54DEFD;
+}
+
+.error {
+    color: #FF5C33;
+}

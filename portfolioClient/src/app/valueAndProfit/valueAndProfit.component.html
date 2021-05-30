@@ -2,7 +2,10 @@
     <div>
         <label for="newPart">Part Of Resources: </label>
         <input id="newPart" type="number" [(ngModel)]="newPart" />
-        <button mat-raised-button class="count-button" (click)="retriveData()">Refresh</button>
+        <button mat-raised-button class="count-button" [disabled]="status == 'pending'" (click)="retriveData()">Refresh</button>
+
+        <span *ngIf="status == 'pending'" class="pending message">Loading data</span>
+        <span *ngIf="status == 'error'" class="error message">Could not load data</span>
     </div>
     <div>Currency: {{ currency }}</div>
 </div>
