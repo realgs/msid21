@@ -82,15 +82,42 @@ class ArbitrationService:
         return quantity1, profit1, profit1/quantity1, quantity2, profit2, profit2/quantity2
 
     @staticmethod
-    def _printFullInfo(names, quantity, profit, currencies):
-        quantityFixed = "{:.6f}".format(quantity)
-        rate = profit / quantity
-        if profit > 0:
-            colorPrefix, colorSuffix = '\x1b[6;30;42m', '\x1b[0m'
-        else:
-            colorPrefix, colorSuffix = '\x1b[6;30;41m', '\x1b[0m'
-        print(f"{colorPrefix}{currencies[0]} -> {currencies[1]},\t\tRate: {rate}%,\t\tFull profit: {profit} "
-              f"{currencies[1]},\t\tBuy in {names[0]}, sell in {names[1]},\t\tQuantity: {quantityFixed} {currencies[1]}{colorSuffix}")
+    async def getAllArbitration(resourceName1, resourceAmount1, resourceName2, resourceAmount2, arbitrationServices):
+        allProfits = []
+        for profitService in arbitrationServices:
+            # data = await profitService.getPossibleArbitration({'currency1': resourceName1, 'currency2': resourceName2}, True)
+            data = await profitService.getPossibleArbitration({'currency1': resourceName1, 'currency2': resourceName2})
+            if data and len(data):
+                allProfits.append(data[0])
+        allProfits = sorted(allProfits, key=lambda data: data['rate'], reverse=True)
+        return ArbitrationService._getPossibleProfits(allProfits, resourceAmount1, resourceAmount2)
+
+    @staticmethod
+    def _getPossibleProfits(allProfits, resourceAmount1, resourceAmount2):
+        amount = min(resourceAmount1, resourceAmount2)
+        bestArbitration = []
+        for profit in allProfits:
+            quantity = min(amount, profit['quantity'])
+            profit['quantity'] = quantity
+            bestArbitration.append(profit)
+            amount -= quantity
+            if amount < 0:
+                break
+        return bestArbitration
+
+    @staticmethod
+    async def getCrossArbitrationServices(apiList):
+        crossArbitrationServices = []
+        for idx1 in range(0, len(apiList)):
+            api1 = apiList[idx1]
+            for idx2 in range(idx1 + 1, len(apiList)):
+                api2 = apiList[idx2]
+                if api1['type'] == api2['type']:
+                    profitService = ArbitrationService(api1['api'], api2['api'])
+                    commonMarkets = await profitService.commonMarkets
+                    if commonMarkets:
+                        crossArbitrationServices.append(profitService)
+        return crossArbitrationServices
 
     async def getPossibleArbitration(self, clientMarkets, onlyProfits=False):
         allMarkets = await self.commonMarkets
