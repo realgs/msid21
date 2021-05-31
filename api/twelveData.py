@@ -26,10 +26,10 @@ class TwelveData(Api):
                 self._availableMarkets = [marketData['symbol'] for marketData in apiResult['data']]
         return self._availableMarkets
 
-    async def getTransferFee(self, resource):
+    async def transferFee(self, resource):
         return DEFAULT_TRANSFER_FEE
 
-    async def getBestOrders(self, resources, amount=None):
+    async def orderbookOrTicker(self, resources, amount=None):
         symbol, currency = resources
         if symbol not in await self.availableMarkets:
             return {"success": False, "cause": f"Cannot retrieve data fot resource: {symbol}"}
@@ -37,11 +37,10 @@ class TwelveData(Api):
         apiResult = await getApiResponse(f"{API_BASE_URL}price?symbol={symbol}&format=json&outputsize=30", headers=self._headers)
         if apiResult is not None and (STATUS_KEY not in apiResult or apiResult[STATUS_KEY] != STATUS_ERR):
             price = await self.cantorService.convertCurrencies(BASE_VALUE, currency, float(apiResult['price']))
-            value = [{"price": price, 'quantity': 0}]
-            return {"success": True, "buys": value, "sells": value}
-        return {"success": False, "cause": f"Cannot retrieve data fot resource: {symbol} or to many calls for api {self.getName()}"}
+            return {"success": True, "ticker": {'price': price, 'quantity': 0}}
+        return {"success": False, "cause": f"Cannot retrieve data fot resource: {symbol} or to many calls for api {self.name()}"}
 
-    async def getAvailableMarkets(self):
+    async def available(self):
         data = await self.availableMarkets
         if data:
             markets = [{'currency1': market, 'currency2': BASE_VALUE} for market in data]

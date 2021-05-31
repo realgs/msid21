@@ -67,9 +67,9 @@ class Portfolio:
     async def availableApi(self):
         result = []
         for api in self.apiList:
-            markets = await api['api'].getAvailableMarkets()
+            markets = await api['api'].available()
             if markets['success']:
-                result.append({'name': api['api'].getName(), 'type': api['type'], 'markets': markets['markets']})
+                result.append({'name': api['api'].name(), 'type': api['type'], 'markets': markets['markets']})
         return result
 
     @property
@@ -155,7 +155,7 @@ class Portfolio:
 
     async def getRecommendedApiForResource(self, resourceName, orderApiData=None):
         if not orderApiData:
-            orderApiData = await self._valueService.getSortedOrders(resourceName)
+            orderApiData = await self._valueService.getSorted(resourceName)
         if len(orderApiData):
             return orderApiData[0]['apiName']
         return 'Not Found'

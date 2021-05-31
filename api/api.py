@@ -1,19 +1,10 @@
 class Api:
     def __init__(self, name, takerFee=0):
-        self.name = name
-        self.takerFee = takerFee
+        self._name = name
+        self._takerFee = takerFee
 
-    def getName(self):
-        return self.name
+    def name(self):
+        return self._name
 
-    def getTakerFee(self):
-        return self.takerFee
-
-    async def getTransferFee(self, resource):
-        raise NotImplemented
-
-    async def getBestOrders(self, resources, amount=None):
-        raise NotImplemented
-
-    async def getAvailableMarkets(self):
-        raise NotImplemented
+    def takerFee(self):
+        return self._takerFee

@@ -22,12 +22,12 @@ class Bitbay(Api):
     def __init__(self):
         super().__init__(NAME, TAKER_FEE)
 
-    async def getTransferFee(self, currency):
-        if currency in WITHDRAWAL_FEES:
-            return WITHDRAWAL_FEES[currency]
+    async def transferFee(self, resource):
+        if resource in WITHDRAWAL_FEES:
+            return WITHDRAWAL_FEES[resource]
         return DEFAULT_TRANSFER_FEE
 
-    async def getBestOrders(self, cryptos, amount=None):
+    async def orderbookOrTicker(self, cryptos, amount=None):
         if amount:
             apiResult = await getApiResponse(f"{API_BASE_URL}orderbook-limited/{cryptos[0]}-{cryptos[1]}/{amount}", STATUS_KEY, STATUS_OK)
         else:
@@ -38,13 +38,13 @@ class Bitbay(Api):
                 buys = [{"price": float(b['ra']), 'quantity': float(b['ca'])} for b in reversed(apiResult['buy'])]
                 sells = [{"price": float(s['ra']), 'quantity': float(s['ca'])} for s in apiResult['sell']]
                 if not amount or len(buys) == amount and len(sells) == amount:
-                    return {"success": True, "buys": buys, "sells": sells}
+                    return {"success": True, 'orderbook': {"buys": buys, "sells": sells}}
             else:
                 return {"success": False, "cause": "There is not enough data"}
         else:
             return {"success": False, "cause": "Cannot retrieve data"}
 
-    async def getAvailableMarkets(self):
+    async def available(self):
         apiResult = await getApiResponse(f"{API_BASE_URL}stats", STATUS_KEY, STATUS_OK)
 
         if apiResult and apiResult['status'] == 'Ok' and apiResult['items']:

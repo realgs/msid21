@@ -5,7 +5,7 @@ class ValueService:
         self.successKey = successKey
 
     async def getValue(self, resource, part=10):
-        buys = await self.getSortedOrders(resource.name)
+        buys = await self.getSorted(resource.name)
         fullAmount = resource.amountLeft()
         if not buys:
             return 0, 0
@@ -29,24 +29,28 @@ class ValueService:
                 break
         # We have more resources than api can offer
         if leftAmount > 0:
-            value += leftAmount * buys[-1]['order']['price']
+            value += leftAmount * buys[-1]['orderOrTicker']['price']
         return value
 
     @staticmethod
     def _getOrderData(buys, idx, leftAmount):
         orderData = buys[idx]
-        order = orderData['order']
+        order = orderData['orderOrTicker']
         quantity = min(leftAmount, float(order['quantity']))
         return order, quantity
 
-    async def getSortedOrders(self, resourceName):
-        allOrders = [(await api['api'].getBestOrders((resourceName, self.defaultCurrency)), api['api'].getTakerFee(),
-                      api['api'].getName()) for api in self.apiList]
-        buys = []
+    async def getSorted(self, resourceName):
+        allOrders = [(await api['api'].orderbookOrTicker((resourceName, self.defaultCurrency)), api['api'].takerFee(),
+                      api['api'].name()) for api in self.apiList]
+        result = []
 
-        for orders, fee, apiName in allOrders:
-            if orders[self.successKey]:
-                for order in orders['buys']:
-                    order['price'] = order['price'] * (1 - fee)
-                    buys.append({'order': order, 'apiName': apiName})
-        return sorted(buys, key=lambda buy: buy['order']['price'], reverse=True)
+        for orderOrTicker, fee, apiName in allOrders:
+            if orderOrTicker[self.successKey]:
+                if 'orderbook' in orderOrTicker:
+                    for order in orderOrTicker['orderbook']['buys']:
+                        order['price'] = order['price'] * (1 - fee)
+                        result.append({'orderOrTicker': order, 'apiName': apiName})
+                else:
+                    result.append({'orderOrTicker': orderOrTicker['ticker'], 'apiName': apiName})
+
+        return sorted(result, key=lambda res: res['orderOrTicker']['price'], reverse=True)

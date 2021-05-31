@@ -10,20 +10,19 @@ class Nbp(Api):
         super().__init__(NAME)
         self.cantorService = cantorService
 
-    async def getTransferFee(self, resource):
+    async def transferFee(self, resource):
         return DEFAULT_TRANSFER_FEE
 
-    async def getBestOrders(self, resources, amount=None):
+    async def orderbookOrTicker(self, resources, amount=None):
         currency1, currency2 = resources
         markets = await self.cantorService.getAvailableCurrency()
         if currency1 not in markets or currency2 not in markets:
             return {"success": False, "cause": f"Not supported resource: {currency1}, {currency2}"}
 
         result = await self.cantorService.convertCurrencies(currency1, currency2, 1)
-        value = [{"price": result, 'quantity': 0}]
-        return {"success": True, "buys": value, "sells": value}
+        return {"success": True, "ticker": {'price': result, 'quantity': 0}}
 
-    async def getAvailableMarkets(self):
+    async def available(self):
         data = sorted(await self.cantorService.getAvailableCurrency())
         if data:
             markets = [{'currency1': market, 'currency2': BASE_VALUE} for market in data]
