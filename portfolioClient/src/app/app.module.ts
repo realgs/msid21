@@ -16,6 +16,8 @@ import {MatSelectModule} from '@angular/material/select';
 import { ArbitrationComponent } from './arbitration/arbitration.component';
 import { ValueAndProfitComponent } from './valueAndProfit/valueAndProfit.component';
 import { ResourcesComponent } from './resources/resources.component';
+import {MatDialogModule} from '@angular/material/dialog';
+import { MarketsListComponent } from './markets-list/markets-list.component';
 
 @NgModule({
   declarations: [
@@ -26,6 +28,7 @@ import { ResourcesComponent } from './resources/resources.component';
     ArbitrationComponent,
     ValueAndProfitComponent,
     ResourcesComponent,
+    MarketsListComponent,
   ],
   imports: [
     BrowserModule,
@@ -36,6 +39,7 @@ import { ResourcesComponent } from './resources/resources.component';
     MatButtonModule,
     HttpClientModule,
     MatSelectModule,
+    MatDialogModule,
     ReactiveFormsModule,
     CookieModule.forRoot()
   ],

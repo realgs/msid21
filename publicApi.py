@@ -18,7 +18,7 @@ def start():
                "<ul>" \
                "<li>home: /</li>" \
                "<li>load data: /api/load?login=[login]</li>" \
-               "<li>available api: /api/available</li>" \
+               "<li>available api: /api/available?login=[login]</li>" \
                "<li>get configuration: /api/getConfiguration?login=[login]</li>" \
                "<li>set configuration: /api/setConfiguration?login=[login]&currency=[currency]&fee=[fee]</li>" \
                "<li>get resources: /api/getResources?login=[login]</li>" \
@@ -53,7 +53,15 @@ def start():
 
     @app.route('/api/available', methods=['GET'])
     async def availableApi():
-        result = ApiResult(True, '', Portfolio.availableApi())
+        error, login = _getArgs(request.args, ['login'])
+        if error:
+            return ApiResult(False, error)
+
+        if login not in loaded:
+            return jsonify(ApiResult(False, 'not loaded').__repr__())
+
+        portfolio = loaded[login]
+        result = ApiResult(True, '', await portfolio.availableApi())
         return jsonify(result.__repr__())
 
     @app.route('/api/getConfiguration', methods=['GET'])

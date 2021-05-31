@@ -7,3 +7,9 @@ li {
     margin: 20px 0;
     font-size: x-large;
 }
+
+.markets-details{
+    background-color: #00BD9D;
+    color: white;
+    margin-left: 20px;
+}

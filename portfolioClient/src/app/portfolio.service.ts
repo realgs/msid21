@@ -68,8 +68,8 @@ export class PortfolioService {
     return this.http.post<ApiResult>(url, '');
   }
 
-  availableApi(): Observable<ApiResult> {
-    const url = this.baseUrl + 'available';
+  availableApi(login: string): Observable<ApiResult> {
+    const url = this.baseUrl + 'available?login=' + login;
     return this.http.get<ApiResult>(url);
   }
 }

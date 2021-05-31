@@ -37,13 +37,7 @@ class TwelveData(Api):
         apiResult = await getApiResponse(f"{API_BASE_URL}stocks?exchange=NASDAQ&format=json", headers=self.headers)
         if STATUS_KEY not in apiResult or apiResult[STATUS_KEY] != STATUS_ERR:
             markets = []
-            # TEST
-            for marketKeys in apiResult['items']:
-                split = marketKeys.split('-')
-                if split and len(split) == 2:
-                    markets.append({'currency1': split[0], 'currency2': split[1]})
-                else:
-                    print("Error, incorrect numer of lines")
-            # TEST
+            for marketData in apiResult['data']:
+                markets.append({'currency1': marketData['symbol'], 'currency2': BASE_VALUE})
             return {"success": True, 'markets': markets}
         return {"success": False, "cause": "Cannot retrieve data"}

@@ -4,10 +4,10 @@ from models.resource import ResourceVm, ResourceValue, ResourceProfit, ResourceS
 from models.resourceQueue import ResourceQueue
 from api.bitbay import Bitbay
 from api.bittrex import Bittrex
+from api.twelveData import TwelveData
 from services.arbitrationService import ArbitrationService
 
 FILENAME = 'portfolio_data.json'
-API_LIST = [{'api': Bitbay(), 'type': 'crypto'}, {'api': Bittrex(), 'type': 'crypto'}]
 DEFAULT_VALUE = 'USD'
 SUCCESS_KEY = 'success'
 DEFAULT_COUNTRY_PROFIT_FEE = 0.19
@@ -19,9 +19,13 @@ class Portfolio:
         self._baseValue = DEFAULT_VALUE
         self.cantorService = cantorService
         self._resources = {}
+        self.apiList = [
+            {'api': Bitbay(), 'type': 'crypto'},
+            {'api': Bittrex(), 'type': 'crypto'},
+            {'api': TwelveData(cantorService), 'type': 'stocks american'}]
         self._countryProfitFee = DEFAULT_COUNTRY_PROFIT_FEE
         self._apiCrossProfitServices = None
-        self._valueService = ValueService(DEFAULT_VALUE, API_LIST.copy(), SUCCESS_KEY)
+        self._valueService = ValueService(DEFAULT_VALUE, self.apiList.copy(), SUCCESS_KEY)
 
     def read(self):
         data = readConfig(self._owner+"_"+FILENAME)
@@ -58,9 +62,13 @@ class Portfolio:
     def setBaseValue(self, currency):
         self._baseValue = currency
 
-    @staticmethod
-    def availableApi():
-        return [{'name': api['api'].getName(), 'type': api['type']} for api in API_LIST]
+    async def availableApi(self):
+        result = []
+        for api in self.apiList:
+            markets = await api['api'].getAvailableMarkets()
+            if markets['success']:
+                result.append({'name': api['api'].getName(), 'type': api['type'], 'markets': markets['markets']})
+        return result
 
     @property
     def resources(self):
@@ -163,7 +171,7 @@ class Portfolio:
 
     async def apiCrossProfitServices(self):
         if not self._apiCrossProfitServices:
-            self._apiCrossProfitServices = await ArbitrationService.getCrossArbitrationServices(API_LIST)
+            self._apiCrossProfitServices = await ArbitrationService.getCrossArbitrationServices(self.apiList)
         return self._apiCrossProfitServices
 
     def _getResourcesCrossProduct(self):
