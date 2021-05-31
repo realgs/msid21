@@ -1,10 +1,9 @@
 from api.api import Api
 from services.connectionService import getApiResponse
-import credentials
+from configurations import credentials
 
 NAME = "TwelveData"
-TAKER_FEE = 0  # Could not found information
-DEFAULT_TRANSFER_FEE = 0
+DEFAULT_TRANSFER_FEE = 0 # Could not found information
 API_BASE_URL = "https://twelve-data1.p.rapidapi.com/"
 BASE_VALUE = "USD"
 STATUS_KEY = 'status'
@@ -14,7 +13,7 @@ X_RAPIDAPI_HOST = 'twelve-data1.p.rapidapi.com'
 
 class TwelveData(Api):
     def __init__(self, cantorService):
-        super().__init__(NAME, TAKER_FEE)
+        super().__init__(NAME)
         self.cantorService = cantorService
         self._headers = {'x-rapidapi-key': credentials.X_RAPIDAPI_KEY, 'x-rapidapi-host': X_RAPIDAPI_HOST}
         self._availableMarkets = set()

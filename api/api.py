@@ -1,5 +1,5 @@
 class Api:
-    def __init__(self, name, takerFee):
+    def __init__(self, name, takerFee=0):
         self.name = name
         self.takerFee = takerFee
 

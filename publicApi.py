@@ -108,11 +108,11 @@ def start():
             return jsonify(ApiResult(False, 'not loaded').__repr__())
 
         portfolio = loaded[login]
-        resources = [resource.__repr__() for resource in portfolio.resources]
+        resources = [resource.__repr__() for resource in await portfolio.resources]
         return jsonify(ApiResult(True, '', resources).__repr__())
 
     @app.route('/api/addResource', methods=['POST'])
-    def addResource():
+    async def addResource():
         error, login, name, amount, price = _getArgs(request.args, ['login', 'name', 'amount', 'price'])
         if error:
             return ApiResult(False, error)
@@ -127,7 +127,7 @@ def start():
             return jsonify(ApiResult(False, 'amount and price must be number').__repr__())
 
         portfolio = loaded[login]
-        if portfolio.addResource(name, amount, price):
+        if await portfolio.addResource(name, amount, price):
             portfolio.save()
 
         return jsonify(ApiResult(True, 'added').__repr__())

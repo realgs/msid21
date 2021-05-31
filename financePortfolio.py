@@ -5,6 +5,7 @@ from models.resourceQueue import ResourceQueue
 from api.bitbay import Bitbay
 from api.bittrex import Bittrex
 from api.twelveData import TwelveData
+from api.nbp import Nbp
 from services.arbitrationService import ArbitrationService
 
 FILENAME = 'portfolio_data.json'
@@ -22,7 +23,8 @@ class Portfolio:
         self.apiList = [
             {'api': Bitbay(), 'type': 'crypto'},
             {'api': Bittrex(), 'type': 'crypto'},
-            {'api': TwelveData(cantorService), 'type': 'stocks american'}]
+            {'api': TwelveData(cantorService), 'type': 'stocks'},
+            {'api': Nbp(cantorService), 'type': 'currency'}]
         self._countryProfitFee = DEFAULT_COUNTRY_PROFIT_FEE
         self._apiCrossProfitServices = None
         self._valueService = ValueService(DEFAULT_VALUE, self.apiList.copy(), SUCCESS_KEY)
@@ -71,11 +73,12 @@ class Portfolio:
         return result
 
     @property
-    def resources(self):
-        return [ResourceVm(name, resourceQueue.amountLeft(), resourceQueue.meanPurchase(), self._baseValue) for name, resourceQueue in self._resources.items()]
+    async def resources(self):
+        return [ResourceVm(name, resourceQueue.amountLeft(), await self.cantorService.convertCurrencies(DEFAULT_VALUE, self._baseValue, resourceQueue.meanPurchase()), self._baseValue) for name, resourceQueue in self._resources.items()]
 
-    def addResource(self, name, amount, price):
+    async def addResource(self, name, amount, price):
         if amount > 0 and price > 0:
+            price = await self.cantorService.convertCurrencies(self._baseValue, DEFAULT_VALUE, price)
             if name in self._resources:
                 self._resources[name].push(amount, price)
             else:
@@ -115,7 +118,9 @@ class Portfolio:
             else:
                 print(f"Error - Portfolio - getStats: no profit for name: {name}")
                 profit = ResourceProfit(name, 0, 0, 0, 0, self._baseValue)
-            stats.append(ResourceStats(value, profit, resource.meanPurchase(), resource.meanPurchase(part)))
+            meanPurchase = await self.cantorService.convertCurrencies(DEFAULT_VALUE, self._baseValue, resource.meanPurchase())
+            meanPurchasePart = await self.cantorService.convertCurrencies(DEFAULT_VALUE, self._baseValue, resource.meanPurchase(part))
+            stats.append(ResourceStats(value, profit, meanPurchase, meanPurchasePart))
 
         return stats
 

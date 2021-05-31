@@ -6,10 +6,8 @@ URL = 'http://api.nbp.pl/api/exchangerates/tables/a/last/1/?format=json'
 
 class NBPCantorService:
     def __init__(self):
-        self.lock = None
         self.dateRetrieved = None
-        self.exchangeRates = []
-        self.sync = ""
+        self.exchangeRates = {'PLN': 1}
 
     async def convertCurrencies(self, sourceCurrency, destinationCurrency, amount):
         await self.retrieveData()
@@ -30,10 +28,13 @@ class NBPCantorService:
             print(f"Warning - NBPCantorService: cannot get exchange rate for value: {destinationCurrency}")
             return amount
 
+    async def getAvailableCurrency(self):
+        await self.retrieveData()
+        return [code for code in self.exchangeRates]
+
     def _findCurrencyExchangeMid(self, currency):
-        for exchangeData in self.exchangeRates:
-            if exchangeData['code'] == currency:
-                return exchangeData['mid']
+        if currency in self.exchangeRates:
+            return self.exchangeRates[currency]
         return None
 
     async def retrieveData(self):
@@ -42,7 +43,8 @@ class NBPCantorService:
             if apiResult and len(apiResult):
                 apiResult = apiResult[0]
                 self._setDateRetrieved(apiResult['effectiveDate'])
-                self.exchangeRates = apiResult['rates']
+                self.exchangeRates = {rate['code']: rate['mid'] for rate in apiResult['rates']}
+                self.exchangeRates['PLN'] = 1
             else:
                 print('Warning - NBPCantorService: cannot retrieve exchange rates')
 

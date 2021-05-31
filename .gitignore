@@ -16,4 +16,4 @@
 /.idea/msid21.iml
 /.idea/modules.xml
 /.idea/misc.xml
-/credentials.py
+/configurations/credentials.py
