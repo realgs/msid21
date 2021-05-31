@@ -8,3 +8,12 @@ class Api:
 
     def getTakerFee(self):
         return self.takerFee
+
+    async def getTransferFee(self, resource):
+        raise NotImplemented
+
+    async def getBestOrders(self, resources, amount=None):
+        raise NotImplemented
+
+    async def getAvailableMarkets(self):
+        raise NotImplemented
