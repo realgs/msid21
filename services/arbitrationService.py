@@ -82,19 +82,19 @@ class ArbitrationService:
         return -1, -1, -1, -1, -1, -1
 
     @staticmethod
-    async def getAllArbitration(resourceName1, resourceAmount1, resourceName2, resourceAmount2, arbitrationServices):
+    async def getAllArbitration(resourceName, resourceAmount, arbitrationServices):
         allProfits = []
         for profitService in arbitrationServices:
             # data = await profitService.getPossibleArbitration({'currency1': resourceName1, 'currency2': resourceName2}, True)
-            data = await profitService.getPossibleArbitration({'currency1': resourceName1, 'currency2': resourceName2})
-            if data and len(data):
-                allProfits.append(data[0])
+            resourceArbitration = await profitService.getPossibleArbitration(resourceName)
+            if resourceArbitration:
+                for arbitration in resourceArbitration:
+                    allProfits.append(arbitration)
         allProfits = sorted(allProfits, key=lambda data: data['rate'], reverse=True)
-        return ArbitrationService._getPossibleProfits(allProfits, resourceAmount1, resourceAmount2)
+        return ArbitrationService._getPossibleProfits(allProfits, resourceAmount)
 
     @staticmethod
-    def _getPossibleProfits(allProfits, resourceAmount1, resourceAmount2):
-        amount = min(resourceAmount1, resourceAmount2)
+    def _getPossibleProfits(allProfits, amount):
         bestArbitration = []
         for profit in allProfits:
             quantity = min(amount, profit['quantity'])
@@ -119,9 +119,9 @@ class ArbitrationService:
                         crossArbitrationServices.append(profitService)
         return crossArbitrationServices
 
-    async def getPossibleArbitration(self, clientMarkets, onlyProfits=False):
+    async def getPossibleArbitration(self, clientMarket, onlyProfits=False):
         allMarkets = await self.commonMarkets
-        markets = [markets for markets in allMarkets if markets['currency1'] == clientMarkets['currency1'] and markets['currency2'] == clientMarkets['currency2']]
+        markets = [markets for markets in allMarkets if markets['currency1'] == clientMarket]
 
         orders = await asyncio.gather(*[self._retrieveOrders(market) for market in markets])
         orders = [o for o in orders if o[2]['success'] and o[3]['success']]

@@ -163,14 +163,14 @@ class Portfolio:
         return 'Not Found'
 
     async def getAllArbitration(self, resource=None):
-        resourcePairs = self._getResourcesCrossProduct()
         if resource:
-            resourcePairs = [pair for pair in self._getResourcesCrossProduct() if pair[0] == resource or pair[1] == resource]
+            resources = [resource]
+        else:
+            resources = [name for name in self._resources]
         resourcesProfits = []
-        for pair in resourcePairs:
+        for resource in resources:
             services = await self.apiCrossProfitServices()
-            profits = await ArbitrationService.getAllArbitration(pair[0], self._resources[pair[0]].amountLeft(), pair[1],
-                                                                 self._resources[pair[1]].amountLeft(), services)
+            profits = await ArbitrationService.getAllArbitration(resource, self._resources[resource].amountLeft(), services)
             for profit in profits:
                 resourcesProfits.append(ResourceArbitration(
                     profit['currencies'][0], profit['currencies'][1], profit['names'][0], profit['names'][1], profit['rate'], profit['profit'], profit['quantity']))
@@ -180,15 +180,6 @@ class Portfolio:
         if not self._apiCrossProfitServices:
             self._apiCrossProfitServices = await ArbitrationService.getCrossArbitrationServices(self.apiList)
         return self._apiCrossProfitServices
-
-    def _getResourcesCrossProduct(self):
-        resourcePairs = []
-        resourcesList = [name for name in self._resources]
-        for resource1 in resourcesList:
-            for resource2 in resourcesList:
-                if resource1 != resource2:
-                    resourcePairs.append((resource1, resource2))
-        return resourcePairs
 
     @staticmethod
     def _toValidPart(part):

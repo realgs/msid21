@@ -1,3 +1,4 @@
+.gitignore
 main.py
 /configurations/
 /l5.txt
@@ -21,3 +22,4 @@ main.py
 /configurations/credentials.py
 *.css
 *.html
+l5.txt
