@@ -3,7 +3,6 @@ from services.connectionService import getApiResponse
 from configurations import credentials
 
 NAME = "TwelveData"
-DEFAULT_TRANSFER_FEE = 0 # Could not found information
 API_BASE_URL = "https://twelve-data1.p.rapidapi.com/"
 BASE_VALUE = "USD"
 STATUS_KEY = 'status'
@@ -25,9 +24,6 @@ class TwelveData(Api):
             if STATUS_KEY not in apiResult or apiResult[STATUS_KEY] != STATUS_ERR:
                 self._availableMarkets = [marketData['symbol'] for marketData in apiResult['data']]
         return self._availableMarkets
-
-    async def transferFee(self, resource):
-        return DEFAULT_TRANSFER_FEE
 
     async def orderbookOrTicker(self, resources, amount=None):
         symbol, currency = resources

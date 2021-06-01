@@ -38,8 +38,7 @@ class Portfolio:
             self._baseValue = data['baseValue']
             self._countryProfitFee = data['countryProfitFee']
             return True
-        else:
-            return False
+        return False
 
     def save(self):
         data = {'baseValue': self._baseValue, 'countryProfitFee': self._countryProfitFee,

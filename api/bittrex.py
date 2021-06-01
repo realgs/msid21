@@ -2,7 +2,6 @@ from services.connectionService import getApiResponse
 from api.api import Api
 
 NAME = "Bittrex"
-# https://www.cryptowisser.com/exchange/bittrex/#:~:text=Well%2C%20Bittrex%20is%20one%20of,flat%20trading%20fee%20of%200.20%25.
 TAKER_FEE = 0.002
 DEFAULT_TRANSFER_FEE = 1
 API_BASE_URL = "https://api.bittrex.com/api/v1.1/public/"

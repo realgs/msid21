@@ -3,7 +3,6 @@ from bs4 import BeautifulSoup
 import requests
 
 NAME = "WIG"
-DEFAULT_TRANSFER_FEE = 0
 URL = "https://www.bankier.pl/gielda/notowania/akcje"
 STATUS_OK = "Ok"
 STATUS_KEY = "status"
@@ -15,9 +14,6 @@ class Wig(Api):
         super().__init__(NAME)
         self._available = set()
         self._cantorService = cantorService
-
-    async def transferFee(self, resource):
-        return DEFAULT_TRANSFER_FEE
 
     async def orderbookOrTicker(self, resources, amount=None):
         resource, currency = resources

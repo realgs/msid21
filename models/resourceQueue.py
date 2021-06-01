@@ -32,8 +32,7 @@ class ResourceQueue:
         if self.isEmpty():
             return 0
         neededAmount = self.amountLeft() / 100 * part
-        restAmount = neededAmount
-        sumValue = 0
+        restAmount, sumValue = neededAmount, 0
         for res in self.resources:
             if res.amount <= restAmount:
                 sumValue += res.amount * res.meanPurchase

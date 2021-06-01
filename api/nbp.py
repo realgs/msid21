@@ -1,7 +1,6 @@
 from api.api import Api
 
 NAME = "NBP Web Api"
-DEFAULT_TRANSFER_FEE = 0
 BASE_VALUE = "PLN"
 
 
@@ -9,9 +8,6 @@ class Nbp(Api):
     def __init__(self, cantorService):
         super().__init__(NAME)
         self.cantorService = cantorService
-
-    async def transferFee(self, resource):
-        return DEFAULT_TRANSFER_FEE
 
     async def orderbookOrTicker(self, resources, amount=None):
         currency1, currency2 = resources

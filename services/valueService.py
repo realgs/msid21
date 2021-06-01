@@ -21,10 +21,8 @@ class ValueService:
         value = 0
         for idx in range(0, len(buys)):
             order, quantity = self._getOrderData(buys, idx, leftAmount)
-
             value += quantity * order['price']
             leftAmount -= quantity
-
             if leftAmount <= 0:
                 break
         # We have more resources than api can offer
@@ -40,10 +38,8 @@ class ValueService:
         return order, quantity
 
     async def getSorted(self, resourceName):
-        allOrders = [(await api['api'].orderbookOrTicker((resourceName, self.defaultCurrency)), api['api'].takerFee(),
-                      api['api'].name()) for api in self.apiList]
+        allOrders = [(await api['api'].orderbookOrTicker((resourceName, self.defaultCurrency)), api['api'].takerFee(), api['api'].name()) for api in self.apiList]
         result = []
-
         for orderOrTicker, fee, apiName in allOrders:
             if orderOrTicker[self.successKey]:
                 if 'orderbook' in orderOrTicker:
@@ -52,5 +48,4 @@ class ValueService:
                         result.append({'orderOrTicker': order, 'apiName': apiName})
                 else:
                     result.append({'orderOrTicker': orderOrTicker['ticker'], 'apiName': apiName})
-
         return sorted(result, key=lambda res: res['orderOrTicker']['price'], reverse=True)

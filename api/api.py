@@ -1,3 +1,6 @@
+DEFAULT_TRANSFER_FEE = 0
+
+
 class Api:
     def __init__(self, name, takerFee=0):
         self._name = name
@@ -8,3 +11,6 @@ class Api:
 
     def takerFee(self):
         return self._takerFee
+
+    async def transferFee(self, resource):
+        return DEFAULT_TRANSFER_FEE

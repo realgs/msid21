@@ -24,9 +24,8 @@ class NBPCantorService:
             exchangeRate = self._findCurrencyExchangeMid(destinationCurrency)
         if exchangeRate:
             return amount / exchangeRate
-        else:
-            print(f"Warning - NBPCantorService: cannot get exchange rate for value: {destinationCurrency}")
-            return amount
+        print(f"Warning - NBPCantorService: cannot get exchange rate for value: {destinationCurrency}")
+        return amount
 
     async def getAvailableCurrency(self):
         await self.retrieveData()
