@@ -25,7 +25,7 @@ class Portfolio:
             {'api': Bitbay(), 'type': 'cryptocurrency'},
             {'api': Bittrex(), 'type': 'cryptocurrency'},
             {'api': TwelveData(cantorService), 'type': 'stocks'},
-            {'api': Wig(), 'type': 'stocks'},
+            {'api': Wig(cantorService), 'type': 'stocks'},
             {'api': Nbp(cantorService), 'type': 'currency'}]
         self._countryProfitFee = DEFAULT_COUNTRY_PROFIT_FEE
         self._apiCrossProfitServices = None

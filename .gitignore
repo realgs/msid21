@@ -1,3 +1,4 @@
+main.py
 /configurations/
 /l5.txt
 /portfolioClient/*.*
@@ -7,6 +8,7 @@
 /portfolioClient/e2e/
 
 /portfolioClient/src/test.ts
+/portfolioClient/src/main.ts
 /portfolioClient/src/polyfills.ts
 /portfolioClient/src/favicon.ico
 /portfolioClient/src/environments/
@@ -18,3 +20,4 @@
 /.idea/misc.xml
 /configurations/credentials.py
 *.css
+*.html

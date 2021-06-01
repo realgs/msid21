@@ -11,9 +11,10 @@ BASE_VALUE = "PLN"
 
 
 class Wig(Api):
-    def __init__(self):
+    def __init__(self, cantorService):
         super().__init__(NAME)
         self._available = set()
+        self._cantorService = cantorService
 
     async def transferFee(self, resource):
         return DEFAULT_TRANSFER_FEE
@@ -27,8 +28,9 @@ class Wig(Api):
             for idx in range(1, len(foundTr)):
                 data = foundTr[idx].text.split()
                 if len(data) > 1 and data[0] == resource:
-                    price = data[1].replace(',', '.')
-                    return {"success": True, "ticker": {'price': float(price), 'quantity': 0}}
+                    price = float(data[1].replace(',', '.'))
+                    price = await self._cantorService.convertCurrencies(BASE_VALUE, currency, price)
+                    return {"success": True, "ticker": {'price': price, 'quantity': 0}}
         return {"success": False, "cause": f"Cannot retrieve data fot resource: {resource}"}
 
     @property
