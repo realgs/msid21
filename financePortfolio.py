@@ -5,6 +5,7 @@ from models.resourceQueue import ResourceQueue
 from api.bitbay import Bitbay
 from api.bittrex import Bittrex
 from api.twelveData import TwelveData
+from api.wig import Wig
 from api.nbp import Nbp
 from services.arbitrationService import ArbitrationService
 
@@ -21,9 +22,10 @@ class Portfolio:
         self.cantorService = cantorService
         self._resources = {}
         self.apiList = [
-            {'api': Bitbay(), 'type': 'crypto'},
-            {'api': Bittrex(), 'type': 'crypto'},
+            {'api': Bitbay(), 'type': 'cryptocurrency'},
+            {'api': Bittrex(), 'type': 'cryptocurrency'},
             {'api': TwelveData(cantorService), 'type': 'stocks'},
+            {'api': Wig(), 'type': 'stocks'},
             {'api': Nbp(cantorService), 'type': 'currency'}]
         self._countryProfitFee = DEFAULT_COUNTRY_PROFIT_FEE
         self._apiCrossProfitServices = None
