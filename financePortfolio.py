@@ -1,3 +1,4 @@
+import asyncio
 from services.configurationService import readConfig, saveConfig
 from services.valueService import ValueService
 from models.resource import ResourceVm, ResourceValue, ResourceProfit, ResourceStats, ResourceArbitration
@@ -128,8 +129,10 @@ class Portfolio:
     async def portfolioValue(self, part=10):
         part = self._toValidPart(part)
         valuesOfResources = []
+        values = await asyncio.gather(*[self._valueService.getValue(resourceQueue, part) for resourceName, resourceQueue in self._resources.items()])
         for resourceName, resourceQueue in self._resources.items():
-            fullValue, partValue = await self._valueService.getValue(resourceQueue, part)
+            x = next(value for value in values if value[0] == resourceName)
+            fullValue, partValue = next(value[1] for value in values if value[0] == resourceName)
             fullValue = await self.cantorService.convertCurrencies(DEFAULT_VALUE, self._baseValue, fullValue)
             partValue = await self.cantorService.convertCurrencies(DEFAULT_VALUE, self._baseValue, partValue)
             recommendedApi, fullAmount = await self.getRecommendedApiForResource(resourceName), resourceQueue.amountLeft()
@@ -173,7 +176,7 @@ class Portfolio:
             for profit in profits:
                 resourcesProfits.append(ResourceArbitration(
                     profit['currencies'][0], profit['currencies'][1], profit['names'][0], profit['names'][1], profit['rate'], profit['profit'], profit['quantity']))
-        return resourcesProfits
+        return sorted(resourcesProfits, key=lambda p: p.rate, reverse=True)
 
     async def apiCrossProfitServices(self):
         if not self._apiCrossProfitServices:

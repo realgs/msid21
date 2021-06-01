@@ -10,7 +10,7 @@ class ValueService:
         if not buys:
             return 0, 0
         else:
-            return await self._calcValue(fullAmount, buys, part)
+            return resource.name, await self._calcValue(fullAmount, buys, part)
 
     async def _calcValue(self, fullAmount, buys, part):
         partValue = self._calcValueForAmount(buys, fullAmount / 100 * part)
