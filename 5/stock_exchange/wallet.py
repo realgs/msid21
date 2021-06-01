@@ -1,8 +1,12 @@
-from stock_exchange.utils import *
+from decimal import Decimal
+from stock_exchange.arbitrage_checker import *
+from datetime import date, timedelta
 import copy
 TAX_RATE = 19
 
+
 class Wallet:
+    arbitrage_checker = ArbitrageChecker()
 
     def __init__(self, assets, base_currency):
         self._assets = assets
@@ -23,13 +27,13 @@ class Wallet:
         if depth < 0 or depth > 100:
             return "Wrong depth!"
 
-        print("  {:<18s} {:<14s} {:<18s} {:<11s} {:<14s} {:<18s}{:<14s}{:<18s}".
+        print("  {:<18s} {:<14s} {:<18s} {:<11s} {:<14s} {:<18s} {:<s}{:<s}{:<32s}".
               format("STOCK EX. ACRONYM", "NAME", "QUANTITY", "PRICE({})".
                      format(self._base_currency), "VALUE({})".format(self._base_currency),
                      "NET VALUE({})".format(self._base_currency),
-                     "" if depth == 100 else " VALUE {}%".format(depth),
-                     "" if depth == 100 else " NET VALUE {}%".format(depth)))
-        print('-' * (132 if depth != 100 else 100))
+                     "" if depth == 100 else "<:14s".format(" VALUE {}%".format(depth)),
+                     "" if depth == 100 else "<:18s".format(" NET VALUE {}%".format(depth), "ARBITRAGE")))
+        print('-' * (164 if depth != 100 else 132))
 
         previous_total = 0
         current_total = 0
@@ -49,6 +53,7 @@ class Wallet:
             current_total += trade_info[0]
 
             taxes_due = Wallet._compute_taxes(trade_info[0], previous_value, TAX_RATE)
+            arbitrages = self._check_all_arbitrages()
 
             if depth != 100:
                 current_subvalue = copied_wallet._compute_gain(asset["name"])[0]
@@ -56,19 +61,43 @@ class Wallet:
                 subtaxes_due = Wallet._compute_taxes(current_subvalue, depth / 100 * previous_value, TAX_RATE)
                 total_subtaxes += subtaxes_due
 
-            print("|{:<18s}|{:<14s}|{:<18.6f}|{:<11.2f}|{:<14.2f}|{:<18.2f}|{:<14s}{:18s}".
-                  format(trade_info[1], asset["name"], float(asset["quantity"]), previous_value, trade_info[0],
-                         trade_info[0] - taxes_due, "" if depth == 100 else "{:<13f}|".format(current_subvalue),
-                         "" if depth == 100 else str("{:<17f}|".format(current_subvalue - subtaxes_due))))
+            print("|{:<18s}|{:<14s}|{:<18.6f}|{:<11.2f}|{:<14.2f}|{:<18.2f}|{:<s}{:s}{:<32s}|".
+                  format(trade_info[1], asset["name"], float(asset["quantity"]), previous_value, trade_info[0], trade_info[0] - taxes_due,
+                         "" if depth == 100 else "{:<13f}|".format(current_subvalue),
+                         "" if depth == 100 else str("{:<17f}|".format(current_subvalue - subtaxes_due)),
+                         "\n".join("{} {} +{} {}".format(arbitrage[0], arbitrage[1], '%.2E' % Decimal(arbitrage[2]), asset["name"]) for arbitrage in arbitrages if arbitrage[3] == asset["name"])))
 
         total_taxes = Wallet._compute_taxes(current_total, previous_total, TAX_RATE)
 
-        print('-' * (132 if depth != 100 else 100))
+        print('-' * (164 if depth != 100 else 132))
         print(' ' * 53, end='')
         print("|{:<11.2f}|{:<14.2f}|{:<18.2f}|{:<14s}{:<18s}".format(previous_total, current_total, current_total - total_taxes,
             "" if depth == 100 else "{:<13f}|".format(current_subtotal), "" if depth == 100 else "{:<17f}|".format(current_subtotal - total_subtaxes)))
         print(' ' * 53, end='')
         print('-' * (47 if depth == 100 else 79))
+
+    def _check_all_arbitrages(self):
+        crypto_assets = []
+        cryptocurrencies = []
+        arbitrages = []
+
+        for asset in self._assets:
+            if asset["type"] == "crypto":
+                crypto_assets.append(asset)
+                cryptocurrencies.append(asset["name"])
+
+        for asset in crypto_assets:
+            for cryptocurrency in cryptocurrencies:
+                if asset["stock"] == "BIT" and cryptocurrency != asset["name"]:
+                    arbitrages.append(("BB-BITT", "{}{}".format(cryptocurrency, asset["name"]), Wallet.arbitrage_checker.bitbay_bittrex_arbitrage(asset["name"], cryptocurrency, float(asset["quantity"]))[1], asset["name"]))
+                elif cryptocurrency != asset["name"]:
+                    arbitrages.append(("BITT-BB", "{}{}".format(cryptocurrency, asset["name"]), Wallet.arbitrage_checker.bittrex_bitbay_arbitrage(asset["name"], cryptocurrency, float(asset["quantity"]))[1], asset["name"]))
+
+        for arbitrage in arbitrages:
+            if arbitrage[2] == 0:
+                arbitrages.remove(arbitrage)
+
+        return arbitrages
 
     def _compute_gain(self, name):
         offers = self._find_best_offers(name)
@@ -199,6 +228,13 @@ class Wallet:
         return [("CEX", asset["quantity"], convert_rate)]
 
     def _trade_other(self, asset):
+        alpha_vantage_result = self._alpha_vantage_stocks(asset)
+        #eod_data_result = self.eod_data_stocks(asset)
+
+        #return alpha_vantage_result if alpha_vantage_result[0][2] > eod_data_result[0][2] else eod_data_result
+        return alpha_vantage_result
+
+    def _alpha_vantage_stocks(self, asset):
         response = connect("{}function=TIME_SERIES_INTRADAY&symbol={}&interval=1min&outputsize=1&apikey={}".
                            format(alpha_vantage, asset["name"], open("alpha_vantage.txt").read()))
 
@@ -209,3 +245,11 @@ class Wallet:
 
         return [("ALV", float(asset["quantity"]),
                  float(response["Time Series (1min)"][date]["1. open"]) * convert_currency("USD", self._base_currency))]
+
+    def eod_data_stocks(self, asset):
+        key = open("eod.txt").read()
+        today = date.today()
+        yesterday = today - timedelta(days=5)
+        response = connect("{}eod/{}.{}?from={}&to={}&api_token={}&period=d&fmt=json".format(eod_data, asset["name"], "US", yesterday, today, key))
+        value = response[len(response) - 1]["adjusted_close"]
+        return [("EOD", float(asset["quantity"]), value * convert_currency("USD", self._base_currency))]

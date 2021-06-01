@@ -7,6 +7,7 @@ class CurrencyExchanger:
         if base_currency == target_currency:
             return amount
 
+        #TODO REAL CURRENCIES
         response = connect("https://api.exchangerate.host/convert?from={0}&to={1}&amount={2}".format(base_currency, target_currency, amount))
         return response['result']
 

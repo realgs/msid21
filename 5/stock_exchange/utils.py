@@ -7,6 +7,7 @@ bitbay = "https://api.bitbay.net/rest/trading/"
 bitbay_fee = 0.4
 exchange_rate = "https://api.exchangerate.host/convert?"
 alpha_vantage = "https://www.alphavantage.co/query?"
+eod_data = "https://eodhistoricaldata.com/api/"
 
 
 def connect(url):

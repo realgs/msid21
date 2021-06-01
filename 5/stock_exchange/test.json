@@ -1,10 +1,12 @@
 {
- "base_currency": "PLN",
+ "base_currency": "USD",
  "assets": [
- 	{ "name": "BTC", "quantity": "1.3", "avg_value": "132770.62", "type": "crypto"},
- 	{ "name": "LTC", "quantity": "2.4", "avg_value": "736.48", "type": "crypto"},
- 	{ "name": "EUR", "quantity": "1200.56", "avg_value": "4.28", "type": "currency"},
- 	{ "name": "Ford Fiesta", "quantity": "1", "avg_value": "42000", "type": "other"},
- 	{ "name": "AAPL", "quantity": "12.36", "avg_value": "446.74", "type": "other"}
+ 	{ "name": "BTC", "quantity": "1.3", "avg_value": "36028.62", "type": "crypto", "stock":  "BIT"},
+ 	{ "name": "LTC", "quantity": "2.4", "avg_value": "158.94", "type": "crypto", "stock":  "BTR"},
+	{ "name": "ETH", "quantity":  "4.15", "avg_value":  "2591.12", "type":  "crypto", "stock":  "BIT"},
+ 	{ "name": "EUR", "quantity": "1200.56", "avg_value": "1.21", "type": "currency"},
+ 	{ "name": "TSLA", "quantity": "12.36", "avg_value": "624.00", "type": "other"},
+	{ "name": "AAPL", "quantity": "65.61", "avg_value":  "125.37", "type":  "other"},
+	{ "name": "CDR", "quantity": "102.31", "avg_value":  "43.67", "type":  "other"}
 	   ]
 }
