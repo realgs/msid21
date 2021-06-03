@@ -1,0 +1,17 @@
+from stock.utils import *
+
+
+class CurrencyExchanger:
+    @staticmethod
+    def convert(base_currency, target_currency, amount):
+        if base_currency == target_currency:
+            return amount
+
+        #TODO REAL CURRENCIES
+        response = connect("https://api.exchangerate.host/convert?from={0}&to={1}&amount={2}".format(base_currency, target_currency, amount))
+        return response['result']
+
+    @staticmethod
+    def currency_access_key():
+        file = open("data/credentials.txt", "r")
+        return file.readline()
