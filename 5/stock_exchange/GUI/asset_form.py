@@ -21,7 +21,7 @@ class GUI:
         self._root.title("Wallet")
         self._root.geometry("530x400")
         self._root.configure(bg="#2a9d8f")
-        self._root.iconbitmap("Images/icon.ico")
+        self._root.iconbitmap("../Images/icon.ico")
         self._root.resizable(False, False)
 
     def _create_labels(self):

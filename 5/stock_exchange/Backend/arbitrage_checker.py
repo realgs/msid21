@@ -1,4 +1,4 @@
-from stock_exchange.utils import *
+from stock_exchange.Backend.utils import *
 import re
 
 
@@ -12,7 +12,7 @@ class ArbitrageChecker:
 
         self._bitbay_withdrawal_fees = {}
 
-        for line in open("bitbay_withdrawal.txt").readlines():
+        for line in open("../Resources/bitbay_withdrawal.txt").readlines():
                 splitted = re.split("\\s+", line)
                 self._bitbay_withdrawal_fees[splitted[0]] = splitted[1]
 

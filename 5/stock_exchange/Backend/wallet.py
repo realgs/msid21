@@ -1,5 +1,5 @@
 from decimal import Decimal
-from stock_exchange.arbitrage_checker import *
+from stock_exchange.Backend.arbitrage_checker import *
 from datetime import date, timedelta
 import copy
 TAX_RATE = 19
@@ -31,8 +31,8 @@ class Wallet:
               format("STOCK EX. ACRONYM", "NAME", "QUANTITY", "PRICE({})".
                      format(self._base_currency), "VALUE({})".format(self._base_currency),
                      "NET VALUE({})".format(self._base_currency),
-                     "" if depth == 100 else "<:14s".format(" VALUE {}%".format(depth)),
-                     "" if depth == 100 else "<:18s".format(" NET VALUE {}%".format(depth), "ARBITRAGE")))
+                     "" if depth == 100 else "{:<14s}".format(" VALUE {}%".format(depth)),
+                     "" if depth == 100 else "{:<18s}".format(" NET VALUE {}%".format(depth)), "ARBITRAGE"))
         print('-' * (164 if depth != 100 else 132))
 
         previous_total = 0
@@ -212,7 +212,8 @@ class Wallet:
 
     def _trade_alpha_vantage(self, asset):
         response = connect("{}function=CURRENCY_EXCHANGE_RATE&from_currency={}&to_currency={}&apikey={}".format
-                           (alpha_vantage, asset["name"], self._base_currency, open("alpha_vantage.txt").read()))
+                           (alpha_vantage, asset["name"], self._base_currency, open(
+                               "../Resources/alpha_vantage.txt").read()))
 
         if "Error Message" in response or "Note" in response:
             return [("ALV", float(asset["quantity"]), float(asset["avg_value"]))]
@@ -229,14 +230,13 @@ class Wallet:
 
     def _trade_other(self, asset):
         alpha_vantage_result = self._alpha_vantage_stocks(asset)
-        #eod_data_result = self.eod_data_stocks(asset)
+        eod_data_result = self.eod_data_stocks(asset)
 
-        #return alpha_vantage_result if alpha_vantage_result[0][2] > eod_data_result[0][2] else eod_data_result
-        return alpha_vantage_result
+        return alpha_vantage_result if alpha_vantage_result[0][2] > eod_data_result[0][2] else eod_data_result
 
     def _alpha_vantage_stocks(self, asset):
         response = connect("{}function=TIME_SERIES_INTRADAY&symbol={}&interval=1min&outputsize=1&apikey={}".
-                           format(alpha_vantage, asset["name"], open("alpha_vantage.txt").read()))
+                           format(alpha_vantage, asset["name"], open("../Resources/alpha_vantage.txt").read()))
 
         if "Error Message" in response or "Note" in response:
             return [("ALV", float(asset["quantity"]), float(asset["avg_value"]))]
@@ -247,9 +247,13 @@ class Wallet:
                  float(response["Time Series (1min)"][date]["1. open"]) * convert_currency("USD", self._base_currency))]
 
     def eod_data_stocks(self, asset):
-        key = open("eod.txt").read()
+        key = open("../Resources/eod.txt").read()
         today = date.today()
         yesterday = today - timedelta(days=5)
         response = connect("{}eod/{}.{}?from={}&to={}&api_token={}&period=d&fmt=json".format(eod_data, asset["name"], "US", yesterday, today, key))
+
+        if not response:
+            return [("EOD", float(asset["quantity"]), float(asset["avg_value"]))]
+
         value = response[len(response) - 1]["adjusted_close"]
         return [("EOD", float(asset["quantity"]), value * convert_currency("USD", self._base_currency))]
