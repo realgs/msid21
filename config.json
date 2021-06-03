@@ -35,14 +35,8 @@
     ],
     "cryptocurrencies": [
         {
-            "name": "BTC",
-            "quantity": 0.5224,
-            "avg_price": 33485.90,
-            "curr": "USD"
-        },
-        {
             "name": "DOGE",
-            "quantity": 1500.50,
+            "quantity": 1500.5,
             "avg_price": 0.3,
             "curr": "USD"
         },
@@ -56,6 +50,12 @@
             "name": "ETH",
             "quantity": 5.43,
             "avg_price": 2751.86,
+            "curr": "USD"
+        },
+        {
+            "name": "BTC",
+            "quantity": 0.62,
+            "avg_price": 38120.2,
             "curr": "USD"
         }
     ],

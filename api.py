@@ -1,6 +1,8 @@
 import requests
 from bs4 import BeautifulSoup
 import yahoo_code
+import quandl
+
 
 LIMIT = 25
 BITBAY = 'BITBAY'
@@ -8,6 +10,7 @@ BITTREX = 'BITTREX'
 NBP = 'NBP'
 YAHOO = 'YAHOO'
 STOOQ = 'STOOQ'
+QUANDL = 'QUANDL'
 URL = {BITBAY: {'orders': 'https://api.bitbay.net/rest/trading/orderbook/',
                 'suffix': '', 'separator': '-', 'markets': 'https://api.bitbay.net/rest/trading/ticker'},
        BITTREX: {'orders': 'https://api.bittrex.com/v3/markets/',
@@ -76,6 +79,8 @@ class Api:
             return self.__get_yahoo_rate(market)
         elif api == STOOQ:
             return self.__get_stooq_rate(market)
+        elif api == QUANDL:
+            return self.__get_quandl_rate(market)
         else:
             return None
 
@@ -114,6 +119,16 @@ class Api:
         data = self.__data_request(url).text
         parser = BeautifulSoup(data, 'html.parser')
         rate = float(parser.find(id="t1").find('td').find('span').text)
+        if currency != 'PLN':
+            rate2 = 1 / self.__get_nbp_rate(f'{currency}-PLN')['rate']
+            rate *= rate2
+        return {'rate': rate, 'amount': None}
+
+    def __get_quandl_rate(self, market):
+        stock = market.split('-')[0]
+        currency = market.split('-')[1]
+        data = quandl.get(f'{stock}/WIG20TR')
+        rate = data.get(len(data) - 1).split()[4]
         if currency != 'PLN':
             rate2 = 1 / self.__get_nbp_rate(f'{currency}-PLN')['rate']
             rate *= rate2
@@ -202,7 +217,7 @@ class Api:
 
 if __name__ == '__main__':
     api1 = Api()
-    # print(api1.last_rate(STOOQ, 'WWL-PLN')['rate'])
+    print(api1.last_rate(QUANDL, 'KGH-PLN')['rate'])
     # data1 = api1.last_rate(STOOQ, 'CDR-PLN')
     # print(data1['rate'])
     # data2 = api1.last_rate(YAHOO, 'TSLA-PLN')

@@ -1,7 +1,9 @@
 import json
 import api
+import gui
 from tabulate import tabulate
 import math
+import threading
 
 TYPE_KEYS = ['foreign_stocks', 'polish_stocks', 'cryptocurrencies', 'currencies']
 APIS = {'foreign_stocks': [api.YAHOO], 'polish_stocks': [api.STOOQ], 'cryptocurrencies': [api.BITTREX, api.BITBAY],
@@ -12,6 +14,10 @@ BASE_CURRENCY = 'PLN'
 DEPTH = 25
 NET = 0.81
 API = api.Api()
+
+gui = gui.Gui()
+current_portfolio = None
+wallet = False
 
 
 def load_resources():
@@ -43,7 +49,8 @@ def update_resources(resource_type, name, quantity, avg_price, curr):
         if resource[VALUE_KEYS[0]] == name:
             old_resources[resource_type].remove(resource)
             break
-    old_resources[resource_type].append(new_resource)
+    if new_resource['quantity'] > 0:
+        old_resources[resource_type].append(new_resource)
     save_resources(old_resources)
 
 
@@ -172,10 +179,10 @@ def calculate_net(value):
     return round(value * NET, 4)
 
 
-def investments(resources, depth=0.1):
+def portfolio(resources, depth=0.1):
     depth_percent = f'{depth * 100}%'
-    table = [['Nazwa', 'Ilosc', 'Cena', 'Giełda', 'Zysk', 'Zysk netto', f'Zysk {depth_percent}',
-              f'Zysk {depth_percent} netto', 'Arbitraz']]
+    table = [['Nazwa', 'Ilosc', 'Cena', 'Giełda', 'Zysk', 'Zysk netto', f'Zysk z {depth_percent}',
+              f'Zysk z {depth_percent} netto', 'Arbitraz']]
     profit = 0
     profit_net = 0
     depth_profit = 0
@@ -214,9 +221,95 @@ def investments(resources, depth=0.1):
     sum_line = ['Suma', '---', '---', '---', f"{round(profit, 4)}PLN", f"{round(profit_net, 4)}PLN",
                 f"{round(depth_profit)}PLN", f"{round(depth_profit_net)}PLN", '---']
     table.append(sum_line)
-    print(tabulate(table))
+    return tabulate(table)
+
+
+def add_to_wallet():
+    resource_type = gui.resource_type.get()
+    name = gui.resource.get()
+    currency = gui.currency.get()
+    try:
+        quantity = float(gui.quantity.get())
+        if quantity < 0:
+            raise ValueError
+        avg_price = float(gui.price.get())
+        if avg_price < 0:
+            raise ValueError
+        update_resources(resource_type, name, quantity, avg_price, currency)
+        show_wallet()
+    except ValueError:
+        gui.throw_error('Error', 'Dane na temat zasobu są niepoprawne')
+
+
+def show_wallet():
+    global wallet
+    wallet = True
+    resources = load_resources()
+    gui.text.delete(1.0, 'end')
+    count = 1.0
+    for t in TYPE_KEYS:
+        gui.text.insert(count, f'{t}: \n\n')
+        count += 1
+        for resource in resources[t]:
+            line = ''
+            for key in VALUE_KEYS:
+                line += f'{key}: {resource[key]}\t\t'
+            gui.text.insert(count, f'{line}\n')
+            count += 1
+        gui.text.insert(count, '\n')
+
+
+def create_portfolio_thread():
+    thread = threading.Thread(target=print_portfolio)
+    thread.daemon = True
+    thread.start()
+
+
+def show_portfolio():
+    global wallet
+    wallet = False
+    gui.text.delete(1.0, 'end')
+    gui.text.insert(1.0, current_portfolio)
+
+
+def print_portfolio():
+    global current_portfolio
+    gui.text.delete(1.0, 'end')
+    gui.button_update['state'] = 'disable'
+    gui.button_show_portfolio['state'] = 'disable'
+    try:
+        percent = float(gui.percent.get()) / 100
+        if not(0 < percent < 1):
+            raise ValueError
+    except ValueError:
+        gui.throw_error('Error', 'Podana wartość procentowa nie jest poprawna')
+        percent = 0.1
+    gui.text.insert(1.0, 'Czekaj, trwa odświeżanie portfolio')
+    try:
+        current_portfolio = portfolio(load_resources(), depth=percent)
+    except Exception as e:
+        print(e.args)
+        current_portfolio = 'Portfolio nie mogło zostać zainicjalizowane'
+    if not wallet:
+        show_portfolio()
+    print(current_portfolio)
+    gui.button_update['state'] = 'normal'
+    gui.button_show_portfolio['state'] = 'normal'
+
+
+def initialize_gui():
+    gui.set_combobox_values(gui.resource_type, TYPE_KEYS, 2)
+    gui.set_combobox_values(gui.currency, ('PLN', 'USD', 'EUR'), 1)
+    gui.set_entry_value(gui.percent, 10)
+    create_portfolio_thread()
+    gui.set_button_command(gui.button_add, add_to_wallet)
+    gui.set_button_command(gui.button_update, create_portfolio_thread)
+    gui.set_button_command(gui.button_show_portfolio, show_portfolio)
+    gui.set_button_command(gui.button_show_wallet, show_wallet)
+    gui.mainloop()
 
 
 if __name__ == '__main__':
+    initialize_gui()
     # print(calculate_sale_profit(api.BITTREX, 'BTC', 0.5224, 33485.90, 'USD')['abs'])
-    investments(load_resources())
+    # print(portfolio(load_resources()))
