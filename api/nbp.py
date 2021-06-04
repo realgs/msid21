@@ -1,4 +1,4 @@
-from api.api import Api
+from api.api import Api, TYPE_CURRENCY
 
 NAME = "NBP Web Api"
 BASE_VALUE = "PLN"
@@ -6,7 +6,7 @@ BASE_VALUE = "PLN"
 
 class Nbp(Api):
     def __init__(self, cantorService):
-        super().__init__(NAME)
+        super().__init__(NAME, TYPE_CURRENCY)
         self.cantorService = cantorService
 
     async def orderbookOrTicker(self, resources, amount=None):

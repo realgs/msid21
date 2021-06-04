@@ -112,8 +112,8 @@ class ArbitrationService:
             api1 = apiList[idx1]
             for idx2 in range(idx1 + 1, len(apiList)):
                 api2 = apiList[idx2]
-                if api1['type'] == api2['type']:
-                    profitService = ArbitrationService(api1['api'], api2['api'])
+                if api1.type() == api2.type():
+                    profitService = ArbitrationService(api1, api2)
                     commonMarkets = await profitService.commonMarkets
                     if commonMarkets:
                         crossArbitrationServices.append(profitService)

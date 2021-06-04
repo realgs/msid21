@@ -1,5 +1,5 @@
 from services.connectionService import getApiResponse
-from api.api import Api
+from api.api import Api, TYPE_CRYPTO
 
 NAME = "Bittrex"
 TAKER_FEE = 0.002
@@ -11,7 +11,7 @@ SUCCESS_VALUE = True
 
 class Bittrex(Api):
     def __init__(self):
-        super(Bittrex, self).__init__(NAME, TAKER_FEE)
+        super(Bittrex, self).__init__(NAME, TYPE_CRYPTO, TAKER_FEE)
         self._transferFees = {}
 
     async def transferFee(self, currency):

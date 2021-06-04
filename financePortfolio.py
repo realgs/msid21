@@ -3,11 +3,6 @@ from services.configurationService import readConfig, saveConfig
 from services.valueService import ValueService
 from models.resource import ResourceVm, ResourceValue, ResourceProfit, ResourceStats, ResourceArbitration
 from models.resourceQueue import ResourceQueue
-from api.bitbay import Bitbay
-from api.bittrex import Bittrex
-from api.twelveData import TwelveData
-from api.wig import Wig
-from api.nbp import Nbp
 from services.arbitrationService import ArbitrationService
 
 FILENAME = 'portfolio_data.json'
@@ -17,20 +12,15 @@ DEFAULT_COUNTRY_PROFIT_FEE = 0.19
 
 
 class Portfolio:
-    def __init__(self, owner, cantorService):
+    def __init__(self, owner, cantorService, apiList):
         self._owner = owner
         self._baseValue = DEFAULT_VALUE
         self.cantorService = cantorService
         self._resources = {}
-        self.apiList = [
-            {'api': Bitbay(), 'type': 'cryptocurrency'},
-            {'api': Bittrex(), 'type': 'cryptocurrency'},
-            {'api': TwelveData(cantorService), 'type': 'stocks'},
-            {'api': Wig(cantorService), 'type': 'stocks'},
-            {'api': Nbp(cantorService), 'type': 'currency'}]
+        self._apiList = apiList
         self._countryProfitFee = DEFAULT_COUNTRY_PROFIT_FEE
         self._apiCrossProfitServices = None
-        self._valueService = ValueService(DEFAULT_VALUE, self.apiList.copy(), SUCCESS_KEY)
+        self._valueService = ValueService(DEFAULT_VALUE, self._apiList.copy(), SUCCESS_KEY)
 
     def read(self):
         data = readConfig(self._owner+"_"+FILENAME)
@@ -68,10 +58,10 @@ class Portfolio:
 
     async def availableApi(self):
         result = []
-        for api in self.apiList:
-            markets = await api['api'].available()
+        for api in self._apiList:
+            markets = await api.available()
             if markets['success']:
-                result.append({'name': api['api'].name(), 'type': api['type'], 'markets': markets['markets']})
+                result.append({'name': api.name(), 'type': api.type(), 'markets': markets['markets']})
         return result
 
     @property
@@ -131,7 +121,6 @@ class Portfolio:
         valuesOfResources = []
         values = await asyncio.gather(*[self._valueService.getValue(resourceQueue, part) for resourceName, resourceQueue in self._resources.items()])
         for resourceName, resourceQueue in self._resources.items():
-            x = next(value for value in values if value[0] == resourceName)
             fullValue, partValue = next(value[1] for value in values if value[0] == resourceName)
             fullValue = await self.cantorService.convertCurrencies(DEFAULT_VALUE, self._baseValue, fullValue)
             partValue = await self.cantorService.convertCurrencies(DEFAULT_VALUE, self._baseValue, partValue)
@@ -180,7 +169,7 @@ class Portfolio:
 
     async def apiCrossProfitServices(self):
         if not self._apiCrossProfitServices:
-            self._apiCrossProfitServices = await ArbitrationService.getCrossArbitrationServices(self.apiList)
+            self._apiCrossProfitServices = await ArbitrationService.getCrossArbitrationServices(self._apiList)
         return self._apiCrossProfitServices
 
     @staticmethod

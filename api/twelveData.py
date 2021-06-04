@@ -1,4 +1,4 @@
-from api.api import Api
+from api.api import Api, TYPE_STOCKS
 from services.connectionService import getApiResponse
 from configurations import credentials
 
@@ -12,7 +12,7 @@ X_RAPIDAPI_HOST = 'twelve-data1.p.rapidapi.com'
 
 class TwelveData(Api):
     def __init__(self, cantorService):
-        super().__init__(NAME)
+        super().__init__(NAME, TYPE_STOCKS)
         self.cantorService = cantorService
         self._headers = {'x-rapidapi-key': credentials.X_RAPIDAPI_KEY, 'x-rapidapi-host': X_RAPIDAPI_HOST}
         self._availableMarkets = set()

@@ -1,6 +1,11 @@
 import flask
 from flask import request, jsonify
 from flask_cors import CORS
+from api.bitbay import Bitbay
+from api.bittrex import Bittrex
+from api.nbp import Nbp
+from api.twelveData import TwelveData
+from api.wig import Wig
 from financePortfolio import Portfolio
 from services.cantorService import NBPCantorService
 from models.apiResult import ApiResult
@@ -11,6 +16,8 @@ def start():
     CORS(app)
     app.config['DEBUG'] = True
     loaded = {}
+    cantorService = NBPCantorService()
+    apiList = [Bitbay(), Bittrex(), TwelveData(cantorService), Wig(cantorService), Nbp(cantorService)]
 
     @app.route('/', methods=['GET'])
     def home():
@@ -38,7 +45,7 @@ def start():
         if error:
             return jsonify(ApiResult(False, error).__repr__())
 
-        portfolio = Portfolio(login, NBPCantorService())
+        portfolio = Portfolio(login, NBPCantorService(), apiList)
         if portfolio.read():
             result = ApiResult(True, 'loaded')
         elif portfolio.save():

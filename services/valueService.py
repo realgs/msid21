@@ -38,7 +38,7 @@ class ValueService:
         return order, quantity
 
     async def getSorted(self, resourceName):
-        allOrders = [(await api['api'].orderbookOrTicker((resourceName, self.defaultCurrency)), api['api'].takerFee(), api['api'].name()) for api in self.apiList]
+        allOrders = [(await api.orderbookOrTicker((resourceName, self.defaultCurrency)), api.takerFee(), api.name()) for api in self.apiList]
         result = []
         for orderOrTicker, fee, apiName in allOrders:
             if orderOrTicker[self.successKey]:

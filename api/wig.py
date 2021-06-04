@@ -1,4 +1,4 @@
-from api.api import Api
+from api.api import Api, TYPE_STOCKS
 from bs4 import BeautifulSoup
 import requests
 
@@ -11,7 +11,7 @@ BASE_VALUE = "PLN"
 
 class Wig(Api):
     def __init__(self, cantorService):
-        super().__init__(NAME)
+        super().__init__(NAME, TYPE_STOCKS)
         self._available = set()
         self._cantorService = cantorService
 

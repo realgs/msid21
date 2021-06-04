@@ -1,5 +1,5 @@
 from services.connectionService import getApiResponse
-from api.api import Api
+from api.api import Api, TYPE_CRYPTO
 
 NAME = "Bitbay"
 TAKER_FEE = 0.001
@@ -18,7 +18,7 @@ STATUS_KEY = "status"
 
 class Bitbay(Api):
     def __init__(self):
-        super().__init__(NAME, TAKER_FEE)
+        super().__init__(NAME, TYPE_CRYPTO, TAKER_FEE)
 
     async def transferFee(self, resource):
         if resource in WITHDRAWAL_FEES:
