@@ -81,90 +81,216 @@ def last_value_stooq(currency):
     return offer
 
 
-def wallet_table():
-    wallet = {'name': [], 'quantity': [], 'price': [], 'value': []}
-    foreign = Wallet.get_foreign_stock()['name']
-    polish = Wallet.get_polish_stock()['name']
-    currency = Wallet.get_currencies()['name']
-    cryptocurrencies = Wallet.get_cryptocurrencies()['name']
+def wallet_table(u_input):
+    if not u_input:
+        wallet = {'name': [], 'quantity': [], 'price': [], 'value': []}
+        foreign = Wallet.get_foreign_stock()['name']
+        polish = Wallet.get_polish_stock()['name']
+        currency = Wallet.get_currencies()['name']
+        cryptocurrencies = Wallet.get_cryptocurrencies()['name']
 
-    for i in range(len(foreign)):
-        wallet['name'].append(foreign[i])
-        wallet['quantity'].append(Wallet.get_foreign_stock()['volume'][i])
-        my_price = Wallet.get_foreign_stock()['price'][i] * Wallet.get_foreign_stock()['volume'][i]
-        price = 0
-        new_price = 0
-        j = 0
-        while price < my_price:
-            price = deep_search_marketstack(foreign[i])['bid_price'][j] * Wallet.get_foreign_stock()['volume'][i]
-            new_price = deep_search_marketstack(foreign[i])['bid_price'][j]
-            j += 1
-            if j == len(deep_search_marketstack(foreign[i])):
-                break
-        if price == 0:
-            new_price = deep_search_marketstack(foreign[i])['bid_price'][0]
+        for i in range(len(foreign)):
+            wallet['name'].append(foreign[i])
+            quantity = Wallet.get_foreign_stock()['volume'][i]
+            wallet['quantity'].append(quantity)
+            my_price = Wallet.get_foreign_stock()['price'][i] * Wallet.get_foreign_stock()['volume'][i]
+            price = 0
+            new_price = 0
+            j = 0
+            while price < my_price:
+                price = deep_search_marketstack(foreign[i])['bid_price'][j] * Wallet.get_foreign_stock()['volume'][i]
+                new_price = deep_search_marketstack(foreign[i])['bid_price'][j]
+                j += 1
+                if j == len(deep_search_marketstack(foreign[i])):
+                    break
+            if price == 0:
+                new_price = deep_search_marketstack(foreign[i])['bid_price'][0]
 
-        wallet['price'].append(new_price)
-        value = wallet['price'][i] * wallet['quantity'][i]
-        wallet['value'].append(value)
+            wallet['price'].append(new_price)
+            value = round(new_price * quantity, 3)
+            wallet['value'].append(value)
 
-    for i in range(len(polish)):
-        wallet['name'].append(polish[i])
-        quantity = Wallet.get_polish_stock()['volume'][i]
-        wallet['quantity'].append(quantity)
-        price = last_value_stooq(polish[i])['bid_price'][0]
-        wallet['price'].append(price)
-        value = price * quantity
-        wallet['value'].append(value)
+        for i in range(len(polish)):
+            wallet['name'].append(polish[i])
+            quantity = Wallet.get_polish_stock()['volume'][i]
+            wallet['quantity'].append(quantity)
+            price = last_value_stooq(polish[i])['bid_price'][0]
+            wallet['price'].append(price)
+            value = round(price * quantity, 3)
+            wallet['value'].append(value)
 
-    for i in range(len(currency)):
-        wallet['name'].append(currency[i])
-        quantity = Wallet.get_currencies()['volume'][i]
-        wallet['quantity'].append(quantity)
-        price = last_value_nbp(currency[i])['bid_price'][0]
-        wallet['price'].append(price)
-        value = price * quantity
-        wallet['value'].append(value)
+        for i in range(len(currency)):
+            wallet['name'].append(currency[i])
+            quantity = Wallet.get_currencies()['volume'][i]
+            wallet['quantity'].append(quantity)
+            price = last_value_nbp(currency[i])['bid_price'][0]
+            wallet['price'].append(price)
+            value = round(price * quantity, 3)
+            wallet['value'].append(value)
 
-    for i in range(len(cryptocurrencies)):
-        wallet['name'].append(cryptocurrencies[i])
-        wallet['quantity'].append(Wallet.get_cryptocurrencies()['volume'][i])
-        my_price = Wallet.get_cryptocurrencies()['price'][i] * Wallet.get_cryptocurrencies()['volume'][i]
-        price = 0
-        new_price = 0
-        j = 0
-        while price < my_price:
-            price = deep_search_bitbay(cryptocurrencies[i])['bid_price'][j] * Wallet.get_cryptocurrencies()['volume'][i]
-            new_price = deep_search_bitbay(cryptocurrencies[i])['bid_price'][j]
-            j += 1
-            if j == len(deep_search_bitbay(cryptocurrencies[i])):
-                break
-        if price == 0:
-            new_price = deep_search_bitbay(cryptocurrencies[i])['bid_price'][0]
+        for i in range(len(cryptocurrencies)):
+            wallet['name'].append(cryptocurrencies[i])
+            quantity = Wallet.get_cryptocurrencies()['volume'][i]
+            wallet['quantity'].append(quantity)
+            my_price = Wallet.get_cryptocurrencies()['price'][i] * Wallet.get_cryptocurrencies()['volume'][i]
+            price = 0
+            new_price = 0
+            j = 0
+            while price < my_price:
+                price = deep_search_bitbay(cryptocurrencies[i])['bid_price'][j] * \
+                        Wallet.get_cryptocurrencies()['volume'][i]
+                new_price = deep_search_bitbay(cryptocurrencies[i])['bid_price'][j]
+                j += 1
+                if j == len(deep_search_bitbay(cryptocurrencies[i])):
+                    break
+            if price == 0:
+                new_price = deep_search_bitbay(cryptocurrencies[i])['bid_price'][0]
 
-        wallet['price'].append(new_price)
-        value = wallet['price'][i] * wallet['quantity'][i]
-        wallet['value'].append(value)
+            wallet['price'].append(new_price)
+            value = round(new_price * quantity, 3)
+            wallet['value'].append(value)
 
-    return wallet
+            return wallet, None
+    else:
+        percentage = input("What percentage of resources do you want to sell? ")
+        wallet = {'name': [], 'quantity': [], 'price': [], 'value': [], f'{percentage}%': []}
+        foreign = Wallet.get_foreign_stock()['name']
+        polish = Wallet.get_polish_stock()['name']
+        currency = Wallet.get_currencies()['name']
+        cryptocurrencies = Wallet.get_cryptocurrencies()['name']
+
+        for i in range(len(foreign)):
+            wallet['name'].append(foreign[i])
+            quantity = Wallet.get_foreign_stock()['volume'][i]
+            per_quantity = Wallet.get_foreign_stock()['volume'][i] * int(percentage) / 100
+            wallet['quantity'].append(quantity)
+            my_price = Wallet.get_foreign_stock()['price'][i] * Wallet.get_foreign_stock()['volume'][i]
+            percentage_my_price = Wallet.get_foreign_stock()['price'][i] * Wallet.get_foreign_stock()['volume'][i] * \
+                                  int(percentage) / 100
+            price = 0
+            percentage_price = 0
+            new_price = 0
+            percentage_new_price = 0
+            j = 0
+            while price < my_price:
+                price = deep_search_marketstack(foreign[i])['bid_price'][j] * Wallet.get_foreign_stock()['volume'][i]
+                new_price = deep_search_marketstack(foreign[i])['bid_price'][j]
+                j += 1
+                if j == len(deep_search_marketstack(foreign[i])):
+                    break
+            if price == 0:
+                new_price = deep_search_marketstack(foreign[i])['bid_price'][0]
+            j = 0
+            while percentage_price < percentage_my_price:
+                percentage_price = deep_search_marketstack(foreign[i])['bid_price'][j] * per_quantity
+                percentage_new_price = deep_search_marketstack(foreign[i])['bid_price'][j]
+                j += 1
+                if j == len(deep_search_marketstack(foreign[i])):
+                    break
+            if percentage_price == 0:
+                percentage_new_price = deep_search_marketstack(foreign[i])['bid_price'][0]
+
+            wallet['price'].append(new_price)
+            value = round(new_price * quantity, 3)
+            percentage_value = round(percentage_new_price * per_quantity, 3)
+            wallet['value'].append(value)
+            wallet[f'{percentage}%'].append(percentage_value)
+
+        for i in range(len(polish)):
+            wallet['name'].append(polish[i])
+            quantity = Wallet.get_polish_stock()['volume'][i]
+            per_quantity = Wallet.get_polish_stock()['volume'][i] * int(percentage) / 100
+            wallet['quantity'].append(quantity)
+            price = last_value_stooq(polish[i])['bid_price'][0]
+            wallet['price'].append(price)
+            value = round(price * quantity, 3)
+            percentage_value = round(price * per_quantity, 3)
+            wallet['value'].append(value)
+            wallet[f'{percentage}%'].append(percentage_value)
+
+        for i in range(len(currency)):
+            wallet['name'].append(currency[i])
+            quantity = Wallet.get_currencies()['volume'][i]
+            per_quantity = Wallet.get_polish_stock()['volume'][i] * int(percentage) / 100
+            wallet['quantity'].append(quantity)
+            price = last_value_nbp(currency[i])['bid_price'][0]
+            wallet['price'].append(price)
+            value = round(price * quantity, 3)
+            percentage_value = round(price * per_quantity, 3)
+            wallet['value'].append(value)
+            wallet[f'{percentage}%'].append(percentage_value)
+
+        for i in range(len(cryptocurrencies)):
+            wallet['name'].append(cryptocurrencies[i])
+            quantity = Wallet.get_cryptocurrencies()['volume'][i]
+            per_quantity = Wallet.get_foreign_stock()['volume'][i] * int(percentage) / 100
+            wallet['quantity'].append(quantity)
+            percentage_my_price = Wallet.get_foreign_stock()['price'][i] * Wallet.get_foreign_stock()['volume'][i] * \
+                                  int(percentage) / 100
+            my_price = Wallet.get_cryptocurrencies()['price'][i] * Wallet.get_cryptocurrencies()['volume'][i]
+            price = 0
+            percentage_price = 0
+            new_price = 0
+            percentage_new_price = 0
+            j = 0
+            while price < my_price:
+                price = deep_search_bitbay(cryptocurrencies[i])['bid_price'][j] * \
+                        Wallet.get_cryptocurrencies()['volume'][i]
+                new_price = deep_search_bitbay(cryptocurrencies[i])['bid_price'][j]
+                j += 1
+                if j == len(deep_search_bitbay(cryptocurrencies[i])):
+                    break
+            if price == 0:
+                new_price = deep_search_bitbay(cryptocurrencies[i])['bid_price'][0]
+            j = 0
+            while percentage_price < percentage_my_price:
+                percentage_price = deep_search_marketstack(foreign[i])['bid_price'][j] * per_quantity
+                percentage_new_price = deep_search_marketstack(foreign[i])['bid_price'][j]
+                j += 1
+                if j == len(deep_search_marketstack(foreign[i])):
+                    break
+            if percentage_price == 0:
+                percentage_new_price = deep_search_marketstack(foreign[i])['bid_price'][0]
+
+            wallet['price'].append(new_price)
+            value = round(new_price * quantity, 3)
+            wallet['value'].append(value)
+            percentage_value = round(percentage_new_price * per_quantity, 3)
+            wallet[f'{percentage}%'].append(percentage_value)
+
+            return wallet, percentage
 
 
-def print_wallet(wallet):
-    headers = []
-    rows = []
-    for i in wallet:
-        headers.append(i)
-    print(headers[0] + " | " + str(headers[1]) + " | " + str(headers[2]) + " | " + str(headers[3]))
-    print("_______________________________")
-    for i in range(0, len(wallet['name'])):
-        rows.append(wallet['name'][i])
-        rows.append(wallet['quantity'][i])
-        rows.append(wallet['price'][i])
-        rows.append(wallet['value'][i])
-        print(rows[0] + " | " + str(rows[1]) + " | " + str(rows[2]) + " | " + str(rows[3]))
+def print_wallet(data, input):
+    wallet = data[0]
+    percentage = data[1]
+    if not input:
+        headers = []
         rows = []
-
-
-
-
-
+        for i in wallet:
+            headers.append(i)
+        print(headers[0] + " | " + str(headers[1]) + " | " + str(headers[2]) + " | " + str(headers[3]))
+        print("_______________________________")
+        for i in range(0, len(wallet['name'])):
+            rows.append(wallet['name'][i])
+            rows.append(wallet['quantity'][i])
+            rows.append(wallet['price'][i])
+            rows.append(wallet['value'][i])
+            print(rows[0] + " | " + str(rows[1]) + " | " + str(rows[2]) + " | " + str(rows[3]))
+            rows = []
+    else:
+        headers = []
+        rows = []
+        for i in wallet:
+            headers.append(i)
+        print(headers[0] + " | " + str(headers[1]) + " | " + str(headers[2]) + " | " + str(headers[3]) + " | " + str(
+            headers[4]))
+        print("__________________________________________")
+        for i in range(0, len(wallet['name'])):
+            rows.append(wallet['name'][i])
+            rows.append(wallet['quantity'][i])
+            rows.append(wallet['price'][i])
+            rows.append(wallet['value'][i])
+            rows.append(wallet[f'{percentage}%'][i])
+            print(rows[0] + " | " + str(rows[1]) + " | " + str(rows[2]) + " | " + str(rows[3]) + " | " + str(rows[4]))
+            rows = []
