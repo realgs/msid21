@@ -1,0 +1,17 @@
+{
+    "wallet": [
+        {
+            "symbol": "BTC",
+            "volume": 0.05,
+            "price": 35906.50,
+            "base": "USD"
+        },
+        {
+            "symbol": "ETH",
+            "volume": 1.0,
+            "price": 2575.79,
+            "base": "USD"
+        }
+    ]
+    
+}

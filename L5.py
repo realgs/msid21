@@ -1,3 +1,5 @@
+from json import JSONDecodeError
+
 import requests
 import json
 import time
@@ -6,6 +8,9 @@ import time
 BASE_CURRENCY = "USD"
 ORDERS_COUNT = 30
 DEFAULT_API_PATH = "api_data.json"
+
+# Wallet path
+DEFAULT_CONFIG_PATH = "config.json"
 
 # Decides when two volumes are considered equal
 ARBITRAGE_EQUAL_PRECISION = 1.0E-9
@@ -300,16 +305,31 @@ def save_api_data(file_path=DEFAULT_API_PATH):
         return False
 
 
+# Read user resources, if successful return list
+def read_config(file_path=DEFAULT_CONFIG_PATH):
+    try:
+        with open(file_path, "r") as file:
+            data = json.load(file)["wallet"]
+            return data
+    except (FileNotFoundError, IOError, OSError, JSONDecodeError):
+        return None
+
 def main():
-    if not read_api_data_from_file():
-        print("Critical error, failed to read {0}".format(DEFAULT_API_PATH))
+    #if not read_api_data_from_file():
+    #    print("Critical error, failed to read {0}".format(DEFAULT_API_PATH))
+    #    return
+    #if update_bittrex_fees():
+    #    if not save_api_data():
+    #        print("Failed to save updated bittrex fees")
+    #else:
+    #    print("Failed to update bittrex fees")
+    #lab_4()
+    wallet = read_config()
+    if wallet is None:
+        print("Unable to read config file {0}".format(DEFAULT_CONFIG_PATH))
         return
-    if update_bittrex_fees():
-        if not save_api_data():
-            print("Failed to save updated bittrex fees")
-    else:
-        print("Failed to update bittrex fees")
-    lab_4()
+
+
 
 
 if __name__ == "__main__":
