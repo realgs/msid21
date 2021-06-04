@@ -1,0 +1,53 @@
+{
+  "resources": 
+  {
+    "foreign stock": 
+    [
+      {
+        "name": "MSFT",
+        "volume": 50,
+        "price": 250.93,
+        "currency": "USD"
+      },
+      {
+        "name": "AMZN",
+        "volume": 30,
+        "price": 3268.56,
+        "currency": "USD"
+      }
+    ],
+    "polish stock": 
+    [
+      {
+        "name": "PGE",
+        "volume": 5,
+        "price": 10.24,
+        "currency": "PLN"
+      }
+    ],
+    "currencies": 
+    [
+      {
+        "name": "EUR",
+        "volume": 3000,
+        "price": 1.219,
+        "currency": "USD"
+      }
+    ],
+    "cryptocurrencies": 
+    [
+      {
+        "name": "BTC",
+        "volume": 0.8,
+        "price": 38003.34,
+        "currency": "USD"
+      },
+      {
+        "name": "ETH",
+        "volume": 10,
+        "price": 2515.54,
+        "currency": "USD"
+      }
+    ]
+  }
+}
