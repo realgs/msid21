@@ -14,7 +14,7 @@ def change(base, baseAmmount, default):
         try:
             pln_usd = (NBPjson[0]['rates'][1]['mid'])
             pln_eur = (NBPjson[0]['rates'][7]['mid'])
-            usd_eur = pln_eur/pln_usd
+            usd_eur = pln_usd/pln_eur
 
         except:
             return None

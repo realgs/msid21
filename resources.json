@@ -1,0 +1,44 @@
+[
+  {
+    "symbol": "AAPL",
+    "market": "USA",
+    "averagePrice": 130,
+    "ammount": 10,
+    "currency": "USD"
+  },
+  {
+    "symbol": "TSLA",
+    "market": "USA",
+    "averagePrice": 485,
+    "ammount": 15,
+    "currency": "USD"
+  },
+  {
+    "symbol": "BTC",
+    "market": "Crypto",
+    "averagePrice": 35000,
+    "ammount": 0.25,
+    "currency": "USD"
+  },
+  {
+    "symbol": "LTC",
+    "market": "Crypto",
+    "averagePrice": 1215,
+    "ammount": 30,
+    "currency": "USD"
+  },
+  {
+    "symbol": "CLNPHARMA",
+    "market": "PL",
+    "averagePrice": 50,
+    "ammount": 120,
+    "currency": "PLN"
+  },
+    {
+    "symbol": "PKNORLEN",
+    "market": "PL",
+    "averagePrice": 60,
+    "ammount": 250,
+    "currency": "PLN"
+  }
+]

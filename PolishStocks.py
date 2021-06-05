@@ -68,3 +68,10 @@ def value(resource, ammount, baseCurrency):
         if ( len(data) > 1 and data[0] == resource ):
             value = float(data[1].replace(',', '.')) * ammount
             return CurrencyChange.change('PLN', value, baseCurrency)
+
+def name():
+    return 'Bankier'
+
+def buy(resource, ammount, baseCurrency):
+    return value(resource, ammount, baseCurrency)
+

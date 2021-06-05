@@ -29,3 +29,30 @@ def value(resource, ammount, baseCurrency):
 
 
         return CurrencyChange.change('USD', value*(1-BITTREX_TAKER_FEE), baseCurrency)
+
+def name():
+    return 'BitTrex'
+
+def buy(resource, ammount, baseCurrency):
+
+    bittrexDownload = requests.get(BITTREX_ORDER_URL_PREFIX + resource + '-USD' + BITTREX_ORDER_URL_POSTFIX)
+    if (bittrexDownload.status_code == 200):
+
+        bittrexJson = bittrexDownload.json()
+        value = 0
+        depth = 0
+
+        try:
+            while (ammount > 0):
+                if ( ammount >= float(bittrexJson['ask'][depth]['quantity'])):
+                    ammount -= float(bittrexJson['ask'][depth]['quantity'])
+                    value += float(bittrexJson['ask'][depth]['quantity']) * float(bittrexJson['ask'][depth]['rate'])
+                    depth += 1
+                else:
+                    value += ammount * float(bittrexJson['ask'][depth]['rate'])
+                    ammount = 0
+        except:
+            return None
+
+
+        return CurrencyChange.change('USD', value*(1-BITTREX_TAKER_FEE), baseCurrency)
