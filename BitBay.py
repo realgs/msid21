@@ -1,55 +1,55 @@
 import requests
-
 import CurrencyChange
+
+DEFAULT_DEPTH = 15
 
 BITBAY_ORDER_URL_PREFIX = 'https://bitbay.net/API/Public/'
 BITBAY_ORDER_URL_POSTFIX = '/orderbook.json'
 BITBAY_TAKER_FEE = 0.0042
 
-def value(resource, ammount, baseCurrency):
+class BitBay():
+    def __init__(self):
+        self.name = 'BitBay'
 
-    bitbayDownload = requests.get(BITBAY_ORDER_URL_PREFIX + resource + 'USD' + BITBAY_ORDER_URL_POSTFIX)
-    if (bitbayDownload.status_code == 200):
+    def getName(self):
+        return self.name
 
-        bitbayJson = bitbayDownload.json()
-        value = 0
-        depth = 0
-
+    def getResourceBidAskTable(self, resource):
         try:
-            while (ammount > 0):
-                if ( ammount >= bitbayJson['bids'][depth][1]):
-                    ammount -= bitbayJson['bids'][depth][1]
-                    value += bitbayJson['bids'][depth][1] * bitbayJson['bids'][depth][0]
-                    depth += 1
-                else:
-                    value += ammount * bitbayJson['bids'][depth][0]
-                    ammount = 0
+            result = {'bid':[], 'ask':[]}
+            bitbayDownload = requests.get(BITBAY_ORDER_URL_PREFIX + resource + 'USD' + BITBAY_ORDER_URL_POSTFIX)
+
+            if (bitbayDownload.status_code == 200):
+                bitbayJson = bitbayDownload.json()
+
+            for depth in range(DEFAULT_DEPTH):
+                result['bid'].append([float(bitbayJson['bids'][depth][0]), bitbayJson['bids'][depth][1]])
+                result['ask'].append([float(bitbayJson['asks'][depth][0]), bitbayJson['asks'][depth][1]])
+
+            return result
+
         except:
             return None
 
-        return CurrencyChange.change('USD', value*(1-BITBAY_TAKER_FEE), baseCurrency)
 
-def name():
-    return 'Bitbay'
+    def sell(self, resource, ammount, baseCurrency='USD'):
+        table = self.getResourceBidAskTable(resource)
 
-def buy(resource, ammount, baseCurrency):
-    bitbayDownload = requests.get(BITBAY_ORDER_URL_PREFIX + resource + 'USD' + BITBAY_ORDER_URL_POSTFIX)
-    if (bitbayDownload.status_code == 200):
-
-        bitbayJson = bitbayDownload.json()
-        value = 0
         depth = 0
+        value = 0
+        while ( ammount > 0):
+            if ( table['bid'][depth][1] >= ammount ):
+                value += ammount * table['bid'][depth][0]
+                ammount = 0
+            else:
+                value += table['bid'][depth][0] * table['bid'][depth][1]
+                ammount -= table['bid'][depth][1]
+            depth += 1
 
-        try:
-            while (ammount > 0):
-                if (ammount >= bitbayJson['ask'][depth][1]):
-                    ammount -= bitbayJson['ask'][depth][1]
-                    value += bitbayJson['ask'][depth][1] * bitbayJson['ask'][depth][0]
-                    depth += 1
-                else:
-                    value += ammount * bitbayJson['ask'][depth][0]
-                    ammount = 0
-        except:
-            return None
+        value *= (1-BITBAY_TAKER_FEE)
 
-        return CurrencyChange.change('USD', value * (1 - BITBAY_TAKER_FEE), baseCurrency)
+        return round( CurrencyChange.change('USD', value, baseCurrency), 2)
+
+    def lastMaxPrice(self, resource, baseCurrency='USD'):
+        data = self.getResourceBidAskTable(resource)
+        return round(CurrencyChange.change('USD', data['bid'][0][0], baseCurrency), 2)

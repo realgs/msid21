@@ -2,57 +2,55 @@ import requests
 
 import CurrencyChange
 
+DEFAULT_DEPTH = 15
+
 BITTREX_ORDER_URL_PREFIX = 'https://api.bittrex.com/v3/markets/'
 BITTREX_ORDER_URL_POSTFIX = '/orderbook'
 BITTREX_TAKER_FEE = 0.0035
 
-def value(resource, ammount, baseCurrency):
+class BitTrex():
+    def __init__(self):
+        self.name = 'BitTrex'
 
-    bittrexDownload = requests.get(BITTREX_ORDER_URL_PREFIX + resource + '-USD' + BITTREX_ORDER_URL_POSTFIX)
-    if (bittrexDownload.status_code == 200):
+    def getName(self):
+        return self.name
 
-        bittrexJson = bittrexDownload.json()
-        value = 0
-        depth = 0
-
+    def getResourceBidAskTable(self, resource):
         try:
-            while (ammount > 0):
-                if ( ammount >= float(bittrexJson['bid'][depth]['quantity'])):
-                    ammount -= float(bittrexJson['bid'][depth]['quantity'])
-                    value += float(bittrexJson['bid'][depth]['quantity']) * float(bittrexJson['bid'][depth]['rate'])
-                    depth += 1
-                else:
-                    value += ammount * float(bittrexJson['bid'][depth]['rate'])
-                    ammount = 0
+            result = {'bid': [], 'ask': []}
+
+            bittrexDownload = requests.get(BITTREX_ORDER_URL_PREFIX + resource + '-USD' + BITTREX_ORDER_URL_POSTFIX)
+
+            if (bittrexDownload.status_code == 200):
+                bittrexJson = bittrexDownload.json()
+
+            for depth in range(DEFAULT_DEPTH):
+                result['bid'].append([float(bittrexJson['bid'][depth]['rate']), float(bittrexJson['bid'][depth]['quantity'])])
+                result['ask'].append([float(bittrexJson['ask'][depth]['rate']), float(bittrexJson['ask'][depth]['quantity'])])
+
+            return result
+
         except:
             return None
 
+    def sell(self, resource, ammount, baseCurrency='USD'):
+        table = self.getResourceBidAskTable(resource)
 
-        return CurrencyChange.change('USD', value*(1-BITTREX_TAKER_FEE), baseCurrency)
-
-def name():
-    return 'BitTrex'
-
-def buy(resource, ammount, baseCurrency):
-
-    bittrexDownload = requests.get(BITTREX_ORDER_URL_PREFIX + resource + '-USD' + BITTREX_ORDER_URL_POSTFIX)
-    if (bittrexDownload.status_code == 200):
-
-        bittrexJson = bittrexDownload.json()
-        value = 0
         depth = 0
+        value = 0
+        while (ammount > 0):
+            if (table['bid'][depth][1] >= ammount):
+                value += ammount * table['bid'][depth][0]
+                ammount = 0
+            else:
+                value += table['bid'][depth][0] * table['bid'][depth][1]
+                ammount -= table['bid'][depth][1]
+            depth += 1
 
-        try:
-            while (ammount > 0):
-                if ( ammount >= float(bittrexJson['ask'][depth]['quantity'])):
-                    ammount -= float(bittrexJson['ask'][depth]['quantity'])
-                    value += float(bittrexJson['ask'][depth]['quantity']) * float(bittrexJson['ask'][depth]['rate'])
-                    depth += 1
-                else:
-                    value += ammount * float(bittrexJson['ask'][depth]['rate'])
-                    ammount = 0
-        except:
-            return None
+        value *= (1-BITTREX_TAKER_FEE)
 
+        return round(CurrencyChange.change('USD', value, baseCurrency), 2)
 
-        return CurrencyChange.change('USD', value*(1-BITTREX_TAKER_FEE), baseCurrency)
+    def lastMaxPrice(self, resource, baseCurrency='USD'):
+        data = self.getResourceBidAskTable(resource)
+        return round(CurrencyChange.change('USD', data['bid'][0][0], baseCurrency), 2)

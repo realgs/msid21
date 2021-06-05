@@ -52,26 +52,62 @@ PLN_STOCKS = ['06MAGNA', '08OCTAVA', '11BIT', '3RGAMES', '4FUNMEDIA', 'ABPL', 'A
 import CurrencyChange
 
 BANKIER_URL_PREFIX = "https://www.bankier.pl/gielda/notowania/akcje"
+DEFAULT_DEPTH = 10
+DEFAULT_AMMOUNT = 9999
 
-def value(resource, ammount, baseCurrency):
+class Bankier():
+    def __init__(self):
+        self.name = 'Bankier'
+        self.bidAskTable = self.downloadBidAskTable()
 
-    resource = str.upper(resource)
-    if (not PLN_STOCKS.__contains__(resource)):
-        return None
+    def getName(self):
+        return self.name
 
-    stooqDownload = requests.get(BANKIER_URL_PREFIX).text
 
-    soup = BeautifulSoup(stooqDownload, "html.parser")
-    tr = soup.find_all('tr')
-    for element in range(len(tr)):
-        data = tr[element].text.split()
-        if ( len(data) > 1 and data[0] == resource ):
-            value = float(data[1].replace(',', '.')) * ammount
-            return CurrencyChange.change('PLN', value, baseCurrency)
+    def downloadBidAskTable(self):
+        try:
+            result = {'bid':{}, 'ask':{}}
+            stooqDownload = requests.get(BANKIER_URL_PREFIX).text
 
-def name():
-    return 'Bankier'
+            soup = BeautifulSoup(stooqDownload, "html.parser")
+            tr = soup.find_all('tr')
+            for element in range(1, len(tr)):
+                data = tr[element].text.split()
+                if (len(data) > 1):
+                    result['bid'][data[0]] = []
+                    result['ask'][data[0]] = []
+                    for i in range(DEFAULT_DEPTH):
+                        result['bid'][data[0]].append( [float(data[1].replace(',', '.')), DEFAULT_AMMOUNT] )
+                        result['ask'][data[0]].append( [float(data[1].replace(',', '.')), DEFAULT_AMMOUNT] )
 
-def buy(resource, ammount, baseCurrency):
-    return value(resource, ammount, baseCurrency)
+            return result
 
+        except:
+            return None
+
+    def getResourceBidAskTable(self, resource):
+        resource = str.upper(resource)
+        if (not PLN_STOCKS.__contains__(resource)):
+            return None
+        else:
+            return {'bid': self.bidAskTable['bid'][resource], 'ask': self.bidAskTable['ask'][resource]}
+
+
+    def sell(self, resource, ammount, baseCurrency='PLN'):
+        table = self.getResourceBidAskTable(resource)
+        depth = 0
+        value = 0
+        while ( ammount > 0):
+            if ( table['bid'][depth][1] >= ammount ):
+                value += ammount * table['bid'][depth][0]
+                ammount = 0
+            else:
+                value += table['bid'][depth][0] * table['bid'][depth][1]
+                ammount -= table['bid'][depth][1]
+            depth += 1
+
+        return round( CurrencyChange.change('PLN', value, baseCurrency), 2)
+
+    def lastMaxPrice(self, resource, baseCurrency='PLN'):
+        data = self.getResourceBidAskTable(resource)
+        return round(CurrencyChange.change('PLN', data['bid'][0][0], baseCurrency), 2
