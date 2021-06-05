@@ -1,0 +1,9 @@
+{
+BITBAY: {'orders': 'https://api.bitbay.net/rest/trading/orderbook/',
+                'suffix': '', 'separator': '-', 'markets': 'https://api.bitbay.net/rest/trading/ticker'},
+       BITTREX: {'orders': 'https://api.bittrex.com/v3/markets/',
+                 'suffix': '/orderbook', 'separator': '-', 'markets': 'https://api.bittrex.com/v3/markets'},
+       NBP: {'orders': None, 'markets': 'http://api.nbp.pl/api/exchangerates/rates/c/', 'suffix': '/?format=json'},
+       YAHOO: {'orders': None, 'markets':  'https://apidojo-yahoo-finance-v1.p.rapidapi.com/stock/v2/get-summary'},
+       STOOQ: {'orders': None, 'markets': 'https://stooq.pl'}
+       }
