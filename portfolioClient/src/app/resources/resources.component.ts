@@ -29,14 +29,14 @@ export class ResourcesComponent implements OnInit {
     if (this.login) {
       this.service.getResources(this.login)
       .subscribe(apiResult => {
-        if (apiResult.success && apiResult.data.length){
+        if (apiResult.success){
           const retrieved: Resource[] = [];
-          for (let i = 0; i < apiResult.data.length; i++){
-            const res = apiResult.data[i];
+          for (let i = 0; i < apiResult.data.resources.length; i++){
+            const res = apiResult.data.resources[i];
             retrieved.push({name: res.name, amount: res.amount, meanPurchase: res.meanPurchase});
           }
           this.resources = retrieved;
-          this.currency = apiResult.data[0].currency;
+          this.currency = apiResult.data.currency;
         }
       })
     }

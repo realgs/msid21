@@ -1,6 +1,6 @@
 DEFAULT_TRANSFER_FEE = 0
 TYPE_CRYPTO = 'cryptocurrency'
-TYPE_STOCKS = 'cryptocurrency'
+TYPE_STOCKS = 'stocks'
 TYPE_CURRENCY = 'currency'
 
 

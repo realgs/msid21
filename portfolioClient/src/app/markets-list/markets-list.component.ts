@@ -11,7 +11,6 @@ export class MarketsListComponent implements OnInit {
   apiName: string = '';
 
   constructor(@Inject(MAT_DIALOG_DATA) public data: any) { 
-    console.log(data);
     this.markets = data['markets'];
     this.apiName = data['apiName']
   }

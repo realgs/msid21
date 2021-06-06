@@ -18,24 +18,22 @@ class Resource:
 
 
 class ResourceVm:
-    def __init__(self, name, amount, meanPurchase, currency):
+    def __init__(self, name, amount, meanPurchase):
         self.name = name
         self.amount = amount
         self.meanPurchase = meanPurchase
-        self.currency = currency
 
     def __repr__(self):
-        return {'name': self.name, 'amount': self.amount, 'meanPurchase': self.meanPurchase, 'currency': self.currency}
+        return {'name': self.name, 'amount': self.amount, 'meanPurchase': self.meanPurchase}
 
 
 class ResourceValue:
-    def __init__(self, name, fullAmount, fullValue, partValue, currency, part, recommendedSell):
+    def __init__(self, name, fullAmount, fullValue, partValue, part, recommendedSell):
         self.name = name
         self.fullAmount = fullAmount
         self.fullValue = fullValue
         self.partValue = partValue
         self.part = part
-        self.currency = currency
         self.recommendedSell = recommendedSell
 
     @property
@@ -52,19 +50,17 @@ class ResourceValue:
 
     def __repr__(self):
         return {'name': self.name,
-                'currency': self.currency,
                 'recommendedSell': self.recommendedSell,
                 'full': {'amount': self.fullAmount, 'price': self.fullPrice, 'value': self.fullValue},
                 'part': {'procent': self.part, 'amount': self.partAmount, 'price': self.partPrice, 'value': self.partValue}}
 
 
 class ResourceProfit:
-    def __init__(self, name, fullProfit, partProfit, amount, part, currency):
+    def __init__(self, name, fullProfit, partProfit, amount, part):
         self.name = name
         self.fullProfit = fullProfit
         self.partProfit = partProfit
         self.part = part
-        self.currency = currency
         self.fullAmount = amount
 
     @property
@@ -73,7 +69,6 @@ class ResourceProfit:
 
     def __repr__(self):
         return {'name': self.name,
-                'currency': self.currency,
                 'full': {'profit': self.fullProfit, 'amount': self.fullAmount},
                 'part': {'procent': self.part, 'profit': self.partProfit, 'amount': self.partAmount}}
 
@@ -99,14 +94,16 @@ class ResourceStats:
         self.resourceProfit = resourceProfit
         self.meanPurchaseFull = meanPurchaseFull
         self.meanPurchasePart = meanPurchasePart
-        if resourceValue.part != resourceProfit.part or resourceValue.name != resourceProfit.name \
-                or resourceValue.currency != resourceProfit.currency:
+        if resourceValue.part != resourceProfit.part or resourceValue.name != resourceProfit.name:
             print("Error: ResourceStats - value and profit do not match")
+
+    @property
+    def name(self):
+        return self.resourceValue.name
 
     def __repr__(self):
         return {'name': self.resourceValue.name,
                 'recommendedSell': self.resourceValue.recommendedSell,
-                'currency': self.resourceValue.currency,
                 'full': {
                     'amount': self.resourceValue.fullAmount,
                     'meanPurchase': self.meanPurchaseFull,

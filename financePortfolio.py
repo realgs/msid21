@@ -61,12 +61,14 @@ class Portfolio:
         for api in self._apiList:
             markets = await api.available()
             if markets['success']:
-                result.append({'name': api.name(), 'type': api.type(), 'markets': markets['markets']})
+                markets = sorted(markets['markets'], key=lambda m: (m['currency1'], m['currency2']))
+                result.append({'name': api.name(), 'type': api.type(), 'markets': markets})
         return result
 
     @property
     async def resources(self):
-        return [ResourceVm(name, resourceQueue.amountLeft(), await self.cantorService.convertCurrencies(DEFAULT_VALUE, self._baseValue, resourceQueue.meanPurchase()), self._baseValue) for name, resourceQueue in self._resources.items()]
+        result = [ResourceVm(name, resourceQueue.amountLeft(), await self.cantorService.convertCurrencies(DEFAULT_VALUE, self._baseValue, resourceQueue.meanPurchase())) for name, resourceQueue in self._resources.items()]
+        return sorted(result, key=lambda res: res.name), self._baseValue
 
     async def addResource(self, name, amount, price):
         if amount > 0 and price > 0:
@@ -93,8 +95,8 @@ class Portfolio:
 
     async def getStats(self, part=10):
         part, stats = self._toValidPart(part), []
-        portfolioValue = await self.portfolioValue(part)
-        profits = await self.getProfit(part, portfolioValue)
+        portfolioValue, _ = await self.portfolioValue(part)
+        profits, _ = await self.getProfit(part, portfolioValue)
         nameToValue = {value.name: value for value in portfolioValue}
         nameToProfit = {profit.name: profit for profit in profits}
 
@@ -104,17 +106,17 @@ class Portfolio:
                 value = nameToValue[name]
             else:
                 print(f"Error - Portfolio - getStats: no value for name: {name}")
-                value = ResourceValue(name, 0, 0, 0, self._baseValue, 0, 0)
+                value = ResourceValue(name, 0, 0, 0, 0, 0)
             if name in nameToProfit:
                 profit = nameToProfit[name]
             else:
                 print(f"Error - Portfolio - getStats: no profit for name: {name}")
-                profit = ResourceProfit(name, 0, 0, 0, 0, self._baseValue)
+                profit = ResourceProfit(name, 0, 0, 0, 0)
             meanPurchase = await self.cantorService.convertCurrencies(DEFAULT_VALUE, self._baseValue, resource.meanPurchase())
             meanPurchasePart = await self.cantorService.convertCurrencies(DEFAULT_VALUE, self._baseValue, resource.meanPurchase(part))
             stats.append(ResourceStats(value, profit, meanPurchase, meanPurchasePart))
 
-        return stats
+        return sorted(stats, key=lambda s: s.name), self._baseValue
 
     async def portfolioValue(self, part=10):
         part = self._toValidPart(part)
@@ -126,13 +128,13 @@ class Portfolio:
             partValue = await self.cantorService.convertCurrencies(DEFAULT_VALUE, self._baseValue, partValue)
             recommendedApi, fullAmount = await self.getRecommendedApiForResource(resourceName), resourceQueue.amountLeft()
 
-            valuesOfResources.append(ResourceValue(resourceName, fullAmount, fullValue, partValue, self._baseValue, part, recommendedApi))
-        return valuesOfResources
+            valuesOfResources.append(ResourceValue(resourceName, fullAmount, fullValue, partValue, part, recommendedApi))
+        return sorted(valuesOfResources, key=lambda val: val.name), self._baseValue
 
     async def getProfit(self, part=10, portfolioValue=None):
         part = self._toValidPart(part)
         if not portfolioValue:
-            portfolioValue = await self.portfolioValue(part)
+            portfolioValue, _ = await self.portfolioValue(part)
         profits = []
         for resourceValue in portfolioValue:
             fullValue, partValue = resourceValue.fullValue, resourceValue.partValue
@@ -143,8 +145,8 @@ class Portfolio:
 
             fullProfit = (fullValue - meanPurchaseFull * fullAmount) * (1 - self._countryProfitFee)
             partProfit = (partValue - meanPurchasePart * partAmount) * (1 - self._countryProfitFee)
-            profits.append(ResourceProfit(resourceValue.name, fullProfit, partProfit, fullAmount, part, self._baseValue))
-        return profits
+            profits.append(ResourceProfit(resourceValue.name, fullProfit, partProfit, fullAmount, part))
+        return profits, self._baseValue
 
     async def getRecommendedApiForResource(self, resourceName, orderApiData=None):
         if not orderApiData:

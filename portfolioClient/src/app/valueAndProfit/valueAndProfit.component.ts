@@ -32,10 +32,8 @@ export class ValueAndProfitComponent implements OnInit {
       this.service.getStats(this.login, part)
       .subscribe(apiResult => {
         if (apiResult.success){
-          this.stats = apiResult.data;
-          if (this.stats.length){
-            this.currency = this.stats[0].currency;
-          }
+          this.stats = apiResult.data.stats;
+          this.currency = apiResult.data.currency;
           this.part = part;
           this.status = 'ok';
         } else {

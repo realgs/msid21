@@ -32,9 +32,6 @@ def start():
                "<li>add resource: /api/addResource?login=[login]&name=[name]&amount=[amount]&meanPurchase=[meanPurchase]</li>" \
                "<li>remove resource: /api/removeResource?login=[login]&name=[name]&amount=[amount]</li>" \
                "<li>stats: /api/stats?login=[login]&part=[part]</li>" \
-               "<li>portfolio value: /api/portfolioValue?login=[login]&part=[part]</li>" \
-               "<li>portfolio profit: /api/profit?login=[login]&part=[part]</li>" \
-               "<li>recommended api for resource: /api/recommended?login=[login]&resource=[resource]</li>" \
                "<li>all arbitration: /api/profit?arbitration=[login]</li>" \
                "<li>arbitration for resource: /api/profit?arbitration=[login]&resource=[resource]</li>" \
                "</ul>"
@@ -115,8 +112,9 @@ def start():
             return jsonify(ApiResult(False, 'not loaded').__repr__())
 
         portfolio = loaded[login]
-        resources = [resource.__repr__() for resource in await portfolio.resources]
-        return jsonify(ApiResult(True, '', resources).__repr__())
+        resources, currency = await portfolio.resources
+        resources = [resource.__repr__() for resource in resources]
+        return jsonify(ApiResult(True, '', {'resources': resources, 'currency': currency}).__repr__())
 
     @app.route('/api/addResource', methods=['POST'])
     async def addResource():
@@ -170,54 +168,10 @@ def start():
             return jsonify(ApiResult(False, 'not loaded').__repr__())
 
         portfolio = loaded[login]
-        clientStats = [stat.__repr__() for stat in await portfolio.getStats(part)]
+        allStats, currency = await portfolio.getStats(part)
+        clientStats = [stat.__repr__() for stat in allStats]
 
-        result = ApiResult(True, '', clientStats)
-        return jsonify(result.__repr__())
-
-    @app.route('/api/portfolioValue', methods=['GET'])
-    async def value():
-        error, login, part = _getArgsWithPart(request.args)
-        if error:
-            return jsonify(ApiResult(False, error).__repr__())
-
-        if login not in loaded:
-            return jsonify(ApiResult(False, 'not loaded').__repr__())
-
-        portfolio = loaded[login]
-        portfolioValue = [resourceValue.__repr__() for resourceValue in await portfolio.portfolioValue(part)]
-
-        result = ApiResult(True, '', portfolioValue)
-        return jsonify(result.__repr__())
-
-    @app.route('/api/profit', methods=['GET'])
-    async def profit():
-        error, login, part = _getArgsWithPart(request.args)
-        if error:
-            return jsonify(ApiResult(False, error).__repr__())
-
-        if login not in loaded:
-            return jsonify(ApiResult(False, 'not loaded').__repr__())
-
-        portfolio = loaded[login]
-        profits = [resourceProfit.__repr__() for resourceProfit in await portfolio.getProfit(part)]
-
-        return jsonify(ApiResult(True, '', profits).__repr__())
-
-    @app.route('/api/recommended', methods=['GET'])
-    async def recommended():
-        error, login, resource = _getArgs(request.args, ['login', 'resource'])
-
-        if error:
-            return jsonify(ApiResult(False, error).__repr__())
-
-        if login not in loaded:
-            return jsonify(ApiResult(False, 'not loaded').__repr__())
-
-        portfolio = loaded[login]
-        recommendedApi = await portfolio.getRecommendedApiForResource(resource)
-
-        result = ApiResult(True, '', recommendedApi)
+        result = ApiResult(True, '', {'stats': clientStats, 'currency': currency})
         return jsonify(result.__repr__())
 
     @app.route('/api/arbitration', methods=['GET'])
@@ -262,7 +216,7 @@ def _getArgsWithPart(args):
 
     if not part.isdigit():
         error = 'part should be digit'
-    part = int(part)
+    part = float(part)
 
     return error, login, part
 

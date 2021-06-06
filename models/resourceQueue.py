@@ -39,6 +39,7 @@ class ResourceQueue:
                 restAmount -= res.amount
             else:
                 sumValue += restAmount * res.meanPurchase
+                break
         return sumValue / neededAmount
 
     def isEmpty(self):
@@ -48,7 +49,7 @@ class ResourceQueue:
         if amount > self.amountLeft():
             return False
         fullValue = 0
-        while amount > 0:
+        while amount > 0 and self.resources:
             if amount >= self.resources[0].amount:
                 resource = self.resources.pop()
                 fullValue += resource.amount * resource.meanPurchase
