@@ -58,23 +58,19 @@ class Bitbay(Api):
     def __init__(self):
         pass
 
-    def getData(self, url: str):
-        pass
-
-    def connect(self):
-        pass
-
-    def getField(self, json, i, action):
-        pass
-
-    def getOrdersNumber(self, json):
-        pass
-
-    def getTicker(self):
-        pass
-
     def buyCrypto(self, crypto, rate, volume):
         pass
+
+    def getSellRate(self, crypto):
+        response = requests.get(API.format(crypto, "USD"))
+        if(response.status_code == 200):
+            offers = response.json()["bids"]
+            if(len(offers) > 0):
+                return float(offers[0][0])
+            else:
+                return -1
+        else:
+            return -1
 
     def sellCrypto(self, crypto, rate, volume):
         response = requests.get(API.format(crypto, "USD"))

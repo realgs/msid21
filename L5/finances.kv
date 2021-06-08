@@ -1,19 +1,33 @@
 <MainView>
     cols: 1
-    GridLayout:
-        cols: 1
-        rows: 2
+    StackLayout:
+        height: 700
         Label:
-            text: "Hi"
+            text: "Resources"
             size_hint: 1, .1
-        ScrollView:
-            do_scroll_x: False
-            do_scroll_y: True
-            StackLayout:
-                id: resources
-                canvas.before:
-                    Color:
-                        rgba: 180/255, 180/255, 180/255, 0.15
-                    Rectangle:
-                        pos: self.pos
-                        size: self.size
+        GridLayout:
+            id: resources
+            cols: 1
+            size_hint: 1, .8
+            height: 450
+            size_hint_y: None
+            canvas.before:
+                Color:
+                    rgba: 180/255, 180/255, 180/255, 0.15
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+        GridLayout:
+            size_hint: 1, .1
+            size_hint_min_y: 50
+            rows: 1
+            Button:
+                text: "Add resources"
+            Button:
+                text: "Evaluate wallet"
+                on_press: root.evaluateWallet()
+            TextInput:
+                id: wallet_percentage
+            Label:
+                id: wallet_value
+                text: ""

@@ -19,20 +19,16 @@ class Bittrex(Api):
         for item in l:
             BITTREX_FEES[item['Currency']] = item['TxFee']
 
-    def getData(self, url: str):
-        pass
-
-    def connect(self):
-        pass
-
-    def getField(self, json, i, action):
-        pass
-
-    def getOrdersNumber(self, json):
-        pass
-
-    def getTicker(self):
-        pass
+    def getSellRate(self, crypto):
+        response = requests.get(API.format("USD", crypto))
+        if (response.status_code == 200):
+            offers = response.json()["result"]["buy"]
+            if (len(offers) > 0):
+                return float(offers[0]["Rate"])
+            else:
+                return -1
+        else:
+            return -1
 
     def sellCrypto(self, crypto, rate, volume):
         response = requests.get(API.format("USD", crypto))
@@ -47,6 +43,6 @@ class Bittrex(Api):
                 sum += offers[index]["Quantity"]
                 index += 1
                 pass
-            return sumValue - sellValue
+            return sellValue
         else:
             return None

@@ -5,49 +5,42 @@
       "type": "crypto",
       "name": "BTC",
       "volume": 0.1,
-      "base_currency": "USD",
-      "price": 32000.00
+      "price": 33000.00
     },
     {
       "type": "crypto",
       "name": "LTC",
       "volume": 3.1,
-      "base_currency": "USD",
-      "price": 147.59
+      "price": 151.59
     },
     {
       "type": "stock",
-      "name": "BTC",
-      "volume": 0.1,
-      "base_currency": "USD",
-      "price": 32000.00
+      "name": "TSLA",
+      "volume": 13,
+      "price": 605.66
     },
     {
       "type": "stock",
-      "name": "BTC",
-      "volume": 0.1,
-      "base_currency": "USD",
-      "price": 32000.00
+      "name": "NOK",
+      "volume": 146,
+      "price": 5.57
     },
     {
-      "type": "stock",
-      "name": "BTC",
-      "volume": 0.1,
-      "base_currency": "USD",
-      "price": 32000.00
+      "type": "pl_stock",
+      "name": "ALE",
+      "volume": 122,
+      "price": 13.72
     },
     {
-      "type": "stock",
-      "name": "BTC",
-      "volume": 0.1,
-      "base_currency": "USD",
-      "price": 32000.00
+      "type": "pl_stock",
+      "name": "PZU",
+      "volume": 200,
+      "price": 8.37
     },
     {
       "type": "currency",
       "name": "USD",
       "volume": 10000,
-      "base_currency": "USD",
       "price": 1
     }
   ]
