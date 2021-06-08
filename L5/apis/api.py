@@ -1,8 +1,6 @@
-from apis.api import Api
+import requests
 
-API = "https://bitbay.net/API/Public/{}{}/orderbook.json"
-
-class Bitbay(Api):
+class Api():
     def getData(self, url: str):
         pass
 
@@ -16,7 +14,4 @@ class Bitbay(Api):
         pass
 
     def getTicker(self):
-        pass
-
-    def sellCrypto(self, crypto):
         pass
