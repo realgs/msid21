@@ -1,0 +1,54 @@
+{
+  "base": "USD",
+  "resources": [
+    {
+      "type": "crypto",
+      "name": "BTC",
+      "volume": 0.1,
+      "base_currency": "USD",
+      "price": 32000.00
+    },
+    {
+      "type": "crypto",
+      "name": "LTC",
+      "volume": 3.1,
+      "base_currency": "USD",
+      "price": 147.59
+    },
+    {
+      "type": "stock",
+      "name": "BTC",
+      "volume": 0.1,
+      "base_currency": "USD",
+      "price": 32000.00
+    },
+    {
+      "type": "stock",
+      "name": "BTC",
+      "volume": 0.1,
+      "base_currency": "USD",
+      "price": 32000.00
+    },
+    {
+      "type": "stock",
+      "name": "BTC",
+      "volume": 0.1,
+      "base_currency": "USD",
+      "price": 32000.00
+    },
+    {
+      "type": "stock",
+      "name": "BTC",
+      "volume": 0.1,
+      "base_currency": "USD",
+      "price": 32000.00
+    },
+    {
+      "type": "currency",
+      "name": "USD",
+      "volume": 10000,
+      "base_currency": "USD",
+      "price": 1
+    }
+  ]
+}
