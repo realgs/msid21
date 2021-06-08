@@ -1,0 +1,19 @@
+<MainView>
+    cols: 1
+    GridLayout:
+        cols: 1
+        rows: 2
+        Label:
+            text: "Hi"
+            size_hint: 1, .1
+        ScrollView:
+            do_scroll_x: False
+            do_scroll_y: True
+            StackLayout:
+                id: resources
+                canvas.before:
+                    Color:
+                        rgba: 180/255, 180/255, 180/255, 0.15
+                    Rectangle:
+                        pos: self.pos
+                        size: self.size

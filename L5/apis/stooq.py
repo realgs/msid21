@@ -1,6 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 from apis.api import Api
+from apis import nbp
 
 class Stooq(Api):
 
@@ -33,4 +34,5 @@ class Stooq(Api):
         results = soup.find(id=id)
 
         price = results.prettify().__str__().split(">")[1].split("<")[0].split()[0]
-        print(float(price))
+        print(nbp.calculate("USD", float(price)))
+        print(price)
