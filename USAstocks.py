@@ -7,12 +7,16 @@ DEFAULT_AMMOUNT = 9999
 class Yahoo():
     def __init__(self):
         self.name = 'Yahoo'
+        self.resourcesTables = {}
 
     def getName(self):
         return self.name
 
 
-    def getResourceBidAskTable(self, resource):
+    def getResourceBidAskTable(self, resource, new=False):
+        if ( self.resourcesTables.keys().__contains__(resource) and not new ):
+            return self.resourcesTables[resource]
+
         try:
             result = {'bid':[], 'ask':[]}
             stock = yf.Ticker(resource)
@@ -21,6 +25,7 @@ class Yahoo():
                 result['bid'].append([float(stock.info['bid']), DEFAULT_AMMOUNT])
                 result['ask'].append([float(stock.info['ask']), DEFAULT_AMMOUNT])
 
+            self.resourcesTables[resource] = result
             return result
 
         except:
@@ -41,6 +46,7 @@ class Yahoo():
             depth += 1
 
         return round( CurrencyChange.change('USD', value, baseCurrency), 2)
+
 
     def lastMaxPrice(self, resource, baseCurrency='USD'):
         data = self.getResourceBidAskTable(resource)

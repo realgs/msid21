@@ -110,4 +110,4 @@ class Bankier():
 
     def lastMaxPrice(self, resource, baseCurrency='PLN'):
         data = self.getResourceBidAskTable(resource)
-        return round(CurrencyChange.change('PLN', data['bid'][0][0], baseCurrency), 2
+        return round(CurrencyChange.change('PLN', data['bid'][0][0], baseCurrency), 2)

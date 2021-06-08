@@ -10,11 +10,15 @@ BITBAY_TAKER_FEE = 0.0042
 class BitBay():
     def __init__(self):
         self.name = 'BitBay'
+        self.resourcesTables = {}
 
     def getName(self):
         return self.name
 
-    def getResourceBidAskTable(self, resource):
+    def getResourceBidAskTable(self, resource, new=False):
+        if ( self.resourcesTables.keys().__contains__(resource) and not new ):
+            return self.resourcesTables[resource]
+
         try:
             result = {'bid':[], 'ask':[]}
             bitbayDownload = requests.get(BITBAY_ORDER_URL_PREFIX + resource + 'USD' + BITBAY_ORDER_URL_POSTFIX)
@@ -26,6 +30,7 @@ class BitBay():
                 result['bid'].append([float(bitbayJson['bids'][depth][0]), bitbayJson['bids'][depth][1]])
                 result['ask'].append([float(bitbayJson['asks'][depth][0]), bitbayJson['asks'][depth][1]])
 
+            self.resourcesTables[resource] = result
             return result
 
         except:

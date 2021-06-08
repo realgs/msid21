@@ -1,5 +1,3 @@
-import requests
-
 import CurrencyChange
 
 DEFAULT_DEPTH = 15
@@ -11,11 +9,15 @@ BITTREX_TAKER_FEE = 0.0035
 class BitTrex():
     def __init__(self):
         self.name = 'BitTrex'
+        self.resourcesTables = {}
 
     def getName(self):
         return self.name
 
-    def getResourceBidAskTable(self, resource):
+    def getResourceBidAskTable(self, resource, new=False):
+        if (self.resourcesTables.keys().__contains__(resource) and not new):
+            return self.resourcesTables[resource]
+
         try:
             result = {'bid': [], 'ask': []}
 
@@ -28,6 +30,7 @@ class BitTrex():
                 result['bid'].append([float(bittrexJson['bid'][depth]['rate']), float(bittrexJson['bid'][depth]['quantity'])])
                 result['ask'].append([float(bittrexJson['ask'][depth]['rate']), float(bittrexJson['ask'][depth]['quantity'])])
 
+            self.resourcesTables[resource] = result
             return result
 
         except:

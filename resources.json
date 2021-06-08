@@ -2,7 +2,7 @@
   {
     "symbol": "AAPL",
     "market": "USA",
-    "averagePrice": 130,
+    "averagePrice": 100,
     "ammount": 10,
     "currency": "USD"
   },
@@ -17,14 +17,14 @@
     "symbol": "BTC",
     "market": "Crypto",
     "averagePrice": 35000,
-    "ammount": 0.25,
+    "ammount": 0.1,
     "currency": "USD"
   },
   {
     "symbol": "LTC",
     "market": "Crypto",
-    "averagePrice": 1215,
-    "ammount": 30,
+    "averagePrice": 150,
+    "ammount": 10,
     "currency": "USD"
   },
   {
@@ -40,5 +40,12 @@
     "averagePrice": 60,
     "ammount": 250,
     "currency": "PLN"
+  },
+    {
+    "symbol": "GBP-CHF",
+    "market": "Curr",
+    "averagePrice": 1,
+    "ammount": 1000,
+    "currency": "GBP"
   }
 ]
