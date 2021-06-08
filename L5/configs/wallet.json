@@ -1,0 +1,58 @@
+[
+    {
+        "type": "us_stock",
+        "symbol": "AAPL",
+        "price": 110,
+        "quantity": 10,
+        "base": "USD"
+    },
+    {
+        "type": "us_stock",
+        "symbol": "TSLA",
+        "price": 420,
+        "quantity": 5,
+        "base": "USD"
+    },
+    {
+        "type": "pl_stock",
+        "symbol": "KGH",
+        "price": 200,
+        "quantity": 20,
+        "base": "PLN"
+    },
+    {
+        "type": "pl_stock",
+        "symbol": "PZU",
+        "price": 38,
+        "quantity": 100,
+        "base": "PLN"
+    },
+    {
+        "type": "crypto",
+        "symbol": "BTC",
+        "price": 36300,
+        "quantity": 0.002,
+        "base": "USD"
+    },
+    {
+        "type": "crypto",
+        "symbol": "ETH",
+        "price": 2410,
+        "quantity": 0.5,
+        "base": "USD"
+    },
+    {
+        "type": "currency",
+        "symbol": "EUR",
+        "price": 4.5,
+        "quantity": 200,
+        "base": "PLN"
+    },
+    {
+        "type": "currency",
+        "symbol": "USD",
+        "price": 3.5,
+        "quantity": 5500,
+        "base": "PLN"
+    }
+]
