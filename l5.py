@@ -50,7 +50,7 @@ def getExchangeRateToPLN(currency):
     return rateTo
 
 
-def getExchangeRateFromPLNToUSD(currency):
+def getExchangeRateFromPLNToUSD(currency='USD'):
     rates = getRates()
     rateTo = getExchangeRateToPLN('USD')
     rateFrom = 1
@@ -124,6 +124,7 @@ class Wallet:
 
     def sellStocks(self, percentOfSell=DEFAULT_PERCENT):
         soldStocks = {}
+        exchangeRate = getExchangeRateFromPLNToUSD()
         for stock in self.__polishStocks:
             soldStocks[stock] = []
             stockData = getEodData(stock)
@@ -132,7 +133,7 @@ class Wallet:
                 profit = ((self.__polishStocks[stock]['quantity'] * percentOfSell) / 100 * self.__polishStocks[stock][
                     'price'])
                 soldStocks[stock].append(
-                    {'stock': stock, 'quantity': volumen, 'price': self.__polishStocks[stock]['price'],
+                    {'stock': stock, 'quantity': volumen, 'price': self.__polishStocks[stock]['price'] * exchangeRate,
                      'profit': profit, 'profit netto': profit * 0.81})
             else:
                 for offer in stockData:
@@ -144,8 +145,8 @@ class Wallet:
                     if profit > 0:
                         volumen -= transactionVolumen
                         soldStocks[stock].append(
-                            {'stock': stock, 'quantity': transactionVolumen, 'price': offer['close'], 'profit': profit,
-                             'profit netto': profit * 0.81})
+                            {'stock': stock, 'quantity': transactionVolumen, 'price': offer['close'] * exchangeRate, 'profit': profit * exchangeRate,
+                             'profit netto': (profit * 0.81) * exchangeRate})
         for foreignStock in self.__foreignStocks:
             stockData = getEodData(foreignStock)
             soldStocks[foreignStock] = []
