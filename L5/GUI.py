@@ -6,9 +6,23 @@ from apis.yahoo import *
 from apis.stooq import *
 from apis.bitbay import *
 from apis.bittrex import *
+from kivy.uix.screenmanager import ScreenManager, Screen, FadeTransition
 import json
 
-class MainView(GridLayout):
+class AddResourcePanel(Screen):
+    def __init__(self, **kwargs):
+        super(AddResourcePanel, self).__init__(**kwargs)
+
+    def addResource(self):
+        item = {}
+        item["type"] = str(self.ids.resource_type_input.text)
+        item["name"] = str(self.ids.resource_name_input.text)
+        item["volume"] = float(self.ids.resource_volume_input.text)
+        item["price"] = float(self.ids.resource_price_input.text)
+        print(item)
+        self.manager.get_screen('MainView').showWallet()
+
+class MainView(Screen):
 
     def __init__(self, **kwargs):
         super(MainView, self).__init__(**kwargs)
@@ -31,6 +45,7 @@ class MainView(GridLayout):
         pass
 
     def showWallet(self):
+        self.value = 0.0
         self.stooq = Stooq()
         self.yahoo = Yahoo()
         self.bitbay = Bitbay()
@@ -44,6 +59,7 @@ class MainView(GridLayout):
                                                            + "  " + item["name"] + "  " + str(item["volume"]) + "  "
                                                            + str(item["price"]) + "; sell price now: " + append + "; profit: " +
                                                            str(sellVal) + "; reccomended: " + self.reccomended)))
+            self.value += sellVal
             print("a")
         pass
 
@@ -66,17 +82,21 @@ class MainView(GridLayout):
             return str(float(resource["price"]) * float(resource["volume"]))
 
     def evaluateWallet(self):
-        val = 0
-        if self.ids.wallet_percentage.text == "":
+        val = self.value
+        print(self.value)
+
+        if self.ids.wallet_percentage.text == "" or not str(self.ids.wallet_percentage.text).isnumeric():
             percentage = 1
         else:
             percentage = float(self.ids.wallet_percentage.text) / 100.0
-        for asset in self.wallet["resources"]:
-            val += asset["price"] * asset["volume"]
         val = round(val * percentage, 2)
         self.ids.wallet_value.text = str(val)
 
 
 class FinancesApp(App):
     def build(self):
-        return MainView()
+        sm = ScreenManager(transition = FadeTransition())
+        sm.add_widget(MainView(name = 'MainView'))
+        sm.add_widget(AddResourcePanel(name = 'AddResourcePanel'))
+        sm.current = 'MainView'
+        return sm

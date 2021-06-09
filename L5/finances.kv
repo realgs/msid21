@@ -1,14 +1,63 @@
+<AddResourcePanel>
+    GridLayout:
+        cols: 1
+        rows: 2
+        AnchorLayout:
+            anchor_x: 'right'
+            anchor_y: 'bottom'
+            size_hint: .1, .05
+            Label:
+                size_hint: .9, 1
+            Button:
+                size_hint: .1, 1
+                text: 'Close'
+                on_press: root.manager.current = 'MainView'
+        AnchorLayout:
+            size_hint: .4, .4
+            anchor_x: 'center'
+            anchor_y: 'center'
+            GridLayout:
+                cols: 1
+                BoxLayout:
+                    orientation: 'horizontal'
+                    Label:
+                        text: 'Resource type:'
+                    TextInput:
+                        id: resource_type_input
+                BoxLayout:
+                    orientation: 'horizontal'
+                    Label:
+                        text: 'Resource name:'
+                    TextInput:
+                        id: resource_name_input
+                BoxLayout:
+                    orientation: 'horizontal'
+                    Label:
+                        text: 'Resource volume:'
+                    TextInput:
+                        id: resource_volume_input
+                BoxLayout:
+                    orientation: 'horizontal'
+                    Label:
+                        text: 'Resource price: '
+                    TextInput:
+                        id: resource_price_input
+                Button:
+                    text: 'Submit'
+                    on_press: root.addResource()
+
+
 <MainView>
-    cols: 1
-    StackLayout:
-        height: 700
+    GridLayout:
+        cols: 1
         Label:
             text: "Resources"
             size_hint: 1, .1
-        GridLayout:
+        BoxLayout:
+            orientation: 'vertical'
             id: resources
             cols: 1
-            size_hint: 1, .8
+            size_hint: 1, .9
             height: 450
             size_hint_y: None
             canvas.before:
@@ -17,17 +66,27 @@
                 Rectangle:
                     pos: self.pos
                     size: self.size
-        GridLayout:
-            size_hint: 1, .1
-            size_hint_min_y: 50
-            rows: 1
-            Button:
-                text: "Add resources"
-            Button:
-                text: "Evaluate wallet"
-                on_press: root.evaluateWallet()
-            TextInput:
-                id: wallet_percentage
-            Label:
-                id: wallet_value
-                text: ""
+        AnchorLayout:
+            anchor_y: 'bottom'
+            anchor_x: 'center'
+            size_hint: 1, .05
+            GridLayout:
+                size_hint: 1, 1
+                size_hint_min_y: 50
+                rows: 1
+                Button:
+                    text: "Add resources"
+                    on_press: root.manager.current = 'AddResourcePanel'
+                Button:
+                    text: "Evaluate wallet"
+                    on_press: root.evaluateWallet()
+                TextInput:
+                    font_size: 16
+                    hint_text: 'Podaj wartość w procentach'
+                    id: wallet_percentage
+                    background_color: 180/255, 180/255, 180/255, 0.3
+                    cursor_color: 1, 1, 1, 1
+                    foreground_color: 1, 1, 1, 1
+                Label:
+                    id: wallet_value
+                    text: ""
