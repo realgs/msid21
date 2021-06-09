@@ -19,7 +19,11 @@ class AddResourcePanel(Screen):
         item["name"] = str(self.ids.resource_name_input.text)
         item["volume"] = float(self.ids.resource_volume_input.text)
         item["price"] = float(self.ids.resource_price_input.text)
-        print(item)
+        with open("wallet.json", "r+") as file:
+            data = json.load(file)
+            data["resources"].append(item)
+            file.seek(0)
+            json.dump(data, file, indent=4)
         self.manager.get_screen('MainView').showWallet()
 
 class MainView(Screen):
@@ -54,11 +58,14 @@ class MainView(Screen):
         self.wallet = json.load(file)
         for item in self.wallet["resources"]:
             append = self.checkProfit(item)
+            reccomended = ""
+            if item["type"] == "crypto":
+                reccomended = "; reccomended: " + self.reccomended
             sellVal = round(float(item["price"]) * float(item["volume"]) - float(append), 2)
             self.ids.resources.add_widget(Label(text = str(item["type"]
                                                            + "  " + item["name"] + "  " + str(item["volume"]) + "  "
                                                            + str(item["price"]) + "; sell price now: " + append + "; profit: " +
-                                                           str(sellVal) + "; reccomended: " + self.reccomended)))
+                                                           str(sellVal) + reccomended)))
             self.value += sellVal
             print("a")
         pass
