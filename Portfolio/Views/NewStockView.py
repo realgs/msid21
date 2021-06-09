@@ -3,23 +3,25 @@ from Views.View import View
 
 
 class NewStockView(View):
-    def setup(self, backView):
+    def setup(self):
         super().setup()
+        self.serviceInput = QComboBox()
+        self.stockInput = QLineEdit()
+        self.amountInput = QDoubleSpinBox()
+        self.priceInput = QDoubleSpinBox()
 
         formLayout = QFormLayout()
-        formLayout.addRow(QLabel("Service"), QComboBox())
-        formLayout.addRow(QLabel("Stock"), QLineEdit())
-        formLayout.addRow(QLabel("Amount"), QDoubleSpinBox())
-        formLayout.addRow(QLabel("Price"), QDoubleSpinBox())
-        
+        formLayout.addRow("Service", self.serviceInput)
+        formLayout.addRow("Stock", self.stockInput)
+        formLayout.addRow("Amount", self.amountInput)
+        formLayout.addRow("Price", self.priceInput)
 
-        cancelButton = QPushButton('Cancel')
-        cancelButton.clicked.connect(lambda: backView.show())
-        confirmButton = QPushButton('Confirm')
+        self.cancelButton = QPushButton('Cancel')
+        self.confirmButton = QPushButton('Confirm')
 
         buttonsBar = QHBoxLayout()
-        buttonsBar.addWidget(cancelButton)
-        buttonsBar.addWidget(confirmButton)
+        buttonsBar.addWidget(self.cancelButton)
+        buttonsBar.addWidget(self.confirmButton)
 
         mainLayout = QVBoxLayout()
         mainLayout.addLayout(formLayout)

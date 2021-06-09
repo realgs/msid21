@@ -3,25 +3,40 @@ from Views.View import View
 
 
 class PortfolioView(View):
-    def setup(self, addView):
+    def setup(self):
         super().setup()
-        table = QTableWidget(1, 6)
-        table.resizeColumnsToContents()
-        table.resizeRowsToContents()
-        self.table = table
+        self.table = QTableWidget(1, 6)
+        self.table.resizeColumnsToContents()
+        self.table.resizeRowsToContents()
 
-        loadButton = QPushButton('Load')
-        saveButton = QPushButton('Save')
-        addButton = QPushButton('Add')
-        addButton.clicked.connect(lambda: addView.show())
+        self.loadButton = QPushButton('Load')
+
+        self.saveButton = QPushButton('Save')
+
+        self.addButton = QPushButton('Add')
 
         buttonsBar = QHBoxLayout()
-        buttonsBar.addWidget(loadButton)
-        buttonsBar.addWidget(saveButton)
-        buttonsBar.addWidget(addButton)
+        buttonsBar.addWidget(self.loadButton)
+        buttonsBar.addWidget(self.saveButton)
+        buttonsBar.addWidget(self.addButton)
 
         mainLayout = QVBoxLayout()
         mainLayout.addWidget(self.table)
         mainLayout.addLayout(buttonsBar)
+
         self.widget.setLayout(mainLayout)
 
+    def updateTable(self, tableData):
+        columnsCount = len(tableData.headers)
+        rowsCount = len(tableData.rows)
+
+        self.table.setColumnCount(columnsCount)
+        self.table.setRowCount(rowsCount)
+        self.table.setHorizontalHeaderLabels(tableData.headers)
+
+        for i in range(len(tableData.rows)):
+            valuesCount = len(tableData.rows[i].values)
+            for j in range(min(columnsCount, valuesCount)):
+                self.setItem(i, j, QTableWidgetItem(
+                    tableData.rows[i].values[j]
+                ))
