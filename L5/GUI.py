@@ -10,6 +10,7 @@ from apis.bittrex import *
 from kivy.uix.screenmanager import ScreenManager, Screen, FadeTransition
 from kivy.uix.button import Button
 from kivy.uix.popup import Popup
+from kivy.core.window import Window
 import json
 
 class AddResourcePanel(Screen):
@@ -34,6 +35,7 @@ class MainView(Screen):
     def __init__(self, **kwargs):
         super(MainView, self).__init__(**kwargs)
         file = open("wallet.json")
+        self.percentage = 1
         self.reccomended = "bitbay"
         self.wallet = json.load(file)
         self.value = 0.0
@@ -124,14 +126,25 @@ class MainView(Screen):
         self.wallet = json.load(file)
         for item in self.wallet["resources"]:
             append = self.checkProfit(item, 0.81)
+            tempItem = item
+            tempItem["volume"] = self.percentage * item["volume"]
+            print(tempItem["volume"])
+            sellPrice = self.checkProfit(tempItem, 0.81)
             reccomended = ""
             if item["type"] == "crypto":
                 reccomended = "; reccomended: " + self.reccomended
             sellVal = round(float(append) - float(item["price"]) * float(item["volume"]), 2)
-            self.ids.resources.add_widget(Label(text = str(item["type"]
-                                                           + "  " + item["name"] + "  " + str(item["volume"]) + "  "
-                                                           + str(item["price"]) + "; sell price now: " + str(append) + "; profit: " +
-                                                           str(sellVal) + reccomended)))
+            layout = GridLayout(rows = 1)
+            layout.add_widget(Label(text = str(item["type"])))
+            layout.add_widget(Label(text=str(item["name"])))
+            layout.add_widget(Label(text=str(round(item["volume"], 2))))
+            layout.add_widget(Label(text=str(item["price"])))
+            layout.add_widget(Label(text="sell price now: " + str(append)))
+            layout.add_widget(Label(text="sell %: " + str(sellPrice)))
+            layout.add_widget(Label(text="profit: " + str(sellVal)))
+            layout.add_widget(Label(text=reccomended))
+            self.ids.resources.add_widget(layout)
+
             self.value += append
 
     def checkProfit(self, resource, percentage):
@@ -158,6 +171,7 @@ class MainView(Screen):
             percentage = 1
         else:
             percentage = float(self.ids.wallet_percentage.text) / 100.0
+        self.percentage = percentage
 
         tempResources = self.wallet["resources"]
 
@@ -175,10 +189,13 @@ class MainView(Screen):
 
         self.ids.wallet_value.text = str(round(val, 2))
 
+        self.showWallet()
+
 
 
 class FinancesApp(App):
     def build(self):
+        Window.size = (1500, 600)
         sm = ScreenManager(transition = FadeTransition())
         sm.add_widget(MainView(name = 'MainView'))
         sm.add_widget(AddResourcePanel(name = 'AddResourcePanel'))
