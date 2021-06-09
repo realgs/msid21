@@ -1,0 +1,24 @@
+{
+  "baseCurrency": "USD",
+  "wallet": {
+    "BITBAY": {
+      "BTC": [
+        { "amount": 0.052, "rate": 36808.73 },
+        { "amount": 0.087, "rate": 35412.1256 }
+      ],
+      "ETH": [
+        { "amount": 3.0, "rate": 2423.45 },
+        { "amount": 5.31246, "rate": 2370.01 },
+        { "amount": 1.4748, "rate": 2542.424 },
+        { "amount": 2.4353, "rate": 2670.51 },
+        { "amount": 6.7854, "rate": 2542.244 }
+      ]
+    },
+    "BITTREX": {
+      "BTC": [
+        { "amount": 0.03266667, "rate": 34326.42 },
+        { "amount": 0.01, "rate": 33116.11 }
+      ]
+    }
+  }
+}
