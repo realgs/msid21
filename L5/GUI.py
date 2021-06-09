@@ -1,7 +1,6 @@
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.gridlayout import GridLayout
-from kivy.uix.stacklayout import StackLayout
 from kivy.uix.label import Label
 from apis.yahoo import *
 from apis.stooq import *
@@ -100,7 +99,6 @@ class MainView(Screen):
                     j += 1
                 i += 1
             if inplus:
-                print("inplus")
                 string += "Can be arbitrated: " + str(amountToBeArbitrated)
                 string += "; Profit: " + str(diff)
             string += "\n"
@@ -128,7 +126,6 @@ class MainView(Screen):
             append = self.checkProfit(item, 1)
             tempItem = item
             tempItem["volume"] = self.percentage * item["volume"]
-            print(tempItem["volume"])
             sellPrice = self.checkProfit(tempItem, 1)
             reccomended = ""
             if item["type"] == "crypto":
