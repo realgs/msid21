@@ -329,8 +329,8 @@ def save_wallet(wallet, file_path=DEFAULT_CONFIG_PATH):
 
 
 # Sell given currency using best exchange for given api
-def sell_currency(api, currency):
-    c_buy = currency["volume"] * currency["price"]
+def sell_currency(api, currency, amount=1.0):
+    c_buy = currency["volume"] * currency["price"] * amount
     no_sell_data = {
         "price": 0,
         "value": 0,
@@ -355,13 +355,13 @@ def sell_currency(api, currency):
 
             old_price = currency["price"]
             price = data["bid"] / exchange_ask
-            value = price * currency["volume"]
-            buy_cost = currency["volume"] * old_price
+            value = price * currency["volume"] * amount
+            buy_cost = currency["volume"] * old_price * amount
             profit = value - buy_cost
         else:
             price = data["bid"]
-            value = price * currency["volume"]
-            buy_cost = currency["volume"] * currency["price"]
+            value = price * currency["volume"] * amount
+            buy_cost = currency["volume"] * currency["price"] * amount
             profit = value - buy_cost
 
         sell_data = {
@@ -423,7 +423,32 @@ def sell_crypto(api, crypto, amount=1.0):
     return sell_data
 
 
-# Find possible resource sale in apis
+# Sell given stock using average exchange for given api
+def sell_us_stock(api, stock, amount):
+    c_buy = stock["volume"] * stock["price"] * amount
+    no_sell_data = {
+        "price": 0,
+        "value": 0,
+        "buy_cost": c_buy,
+        "profit": 0
+    }
+    try:
+        res = yf.Ticker(stock["symbol"])
+    except KeyError:
+        return no_sell_data
+    average_price = (res.info["previousClose"] + res.info["open"]) / 2
+    value = average_price * stock["volume"] * amount
+    profit = value - c_buy
+    sell_data = {
+        "price": average_price,
+        "value": value,
+        "buy_cost": c_buy,
+        "profit": profit
+    }
+    return sell_data
+
+
+# Find best possible resource sale in apis
 def find_offers_for_wallet(wallet, amount):
     sell_data = {}
     for res in wallet:
@@ -431,17 +456,29 @@ def find_offers_for_wallet(wallet, amount):
         for api in MARKET_API:
             types = MARKET_API[api]["type"]
             # If resource is in api
+            data = None
             if resource["type"] in types:
                 # If resource is cryptocurrency
                 if resource["type"] == RES_TYPES["crypto"]:
-                    pass
                     data = sell_crypto(MARKET_API[api], resource, amount)
-                    sell_data[res] = data
                 # If resource is currency
                 elif resource["type"] == RES_TYPES["currency"]:
-                    data = sell_currency(MARKET_API[api], resource)
+                    data = sell_currency(MARKET_API[api], resource, amount)
+                # If resource is us market stock
+                elif resource["type"] == RES_TYPES["us"]:
+                    data = sell_us_stock(MARKET_API[api], resource, amount)
+
+            best = sell_data.get(res, None)
+            if best is not None and data is not None:
+                # Choose better offer
+                if best["profit"] < data["profit"]:
                     sell_data[res] = data
-    print_wallet_sell_options(wallet, sell_data)
+            elif data is not None:
+                sell_data[res] = data
+        # Resource not in any api
+        if sell_data.get(res, None) is None:
+            sell_data[res] = None
+    print_wallet_sell_options(wallet, sell_data, amount)
 
 
 # Add new resource to the wallet
@@ -490,31 +527,49 @@ def add_resource(wallet):
     return True
 
 
-def print_wallet_sell_options(wallet, sell_data):
-    table = "Wallet sell options\n"
-    table += "-" * 80
-    table += "\n|{:>8}| {:>8}| {:>15}| {:>10}| {:>8}| {:>12}| {:>12}| {:>10}|\n".format("type", "symbol", "volume", "price", "base", "sell price", "sell value", "profit")
+# Print wallet resources and sell options in table
+def print_wallet_sell_options(wallet, sell_data, amount=1.0):
+    value_sum = 0.0
+    profit_sum = 0.0
+
+    table = "\nWallet sell options\n"
+    table += "Sell amount: {:.3f}%\n".format(amount*100)
+    table += "-" * 100
+    table += "\n|{:>8}| {:>8}| {:>15}| {:>12}| {:>6}| {:>12}| {:>12}| {:>10}|\n".format("Symbol", "Type", "Volume", "Price", "Base", "Sell price", "Sell value", "Profit")
     for key in wallet:
-        res = wallet[key]
         s_data = sell_data[key]
-        table += ("|{:>8}| {:>8}| {:>15.8f}| {:>10.4f}| {:>8}| {:>12.4f}| {:>12.2f}| {:>10.2f}|\n"
-                  .format(res["type"], res["symbol"], res["volume"], res["price"], res["base"], s_data["price"], s_data["value"], s_data["profit"]))
-    table += "-" * 80
+        res = wallet[key]
+        print(key)
+        print(s_data)
+        if s_data is not None:
+            value_sum += s_data["value"]
+            profit_sum += s_data["profit"]
+            table += ("|{:>8}| {:>8}| {:>15.6f}| {:>12.4f}| {:>6}| {:>12.4f}| {:>12.2f}| {:>10.2f}|\n"
+                      .format(res["symbol"], res["type"], res["volume"], res["price"], res["base"], s_data["price"], s_data["value"], s_data["profit"]))
+        # No data for resource
+        else:
+            table += ("|{:>8}| {:>8}| {:>15.6f}| {:>12.4f}| {:>6}| {:>12.2f}| {:>12.2f}| {:>10.2f}|\n"
+                      .format(res["type"], res["symbol"], res["volume"], res["price"], res["base"], 0.0, 0.0, 0.0))
+    table += "-" * 100
+    # table += "\nTotal value: {:.2f}\n".format(value_sum)
+    # table += "Total profit: {:.2f}\n".format(profit_sum)
+    table += "\n"
     print(table)
     return table
 
 
 # Return wallet data in table format
 def print_wallet(wallet):
-    table = "Wallet\n"
+    table = "\nWallet\n"
     table += "-" * 65
-    table += "\n|{:>4}| {:>8}| {:>8}| {:>15}| {:>10}| {:>8}|\n".format("nr", "type", "symbol", "volume", "price", "base")
+    table += "\n|{:>4}| {:>8}| {:>8}| {:>15}| {:>12}| {:>6}|\n".format("Nr", "Type", "Symbol", "Volume", "Price", "Base")
     i = 1
     for key in wallet:
         res = wallet[key]
-        table += ("|{:>4}| {:>8}| {:>8}| {:>15.8f}| {:>10.2f}| {:>8}|\n".format(i, res["type"], res["symbol"], res["volume"], res["price"], res["base"]))
+        table += ("|{:>4}| {:>8}| {:>8}| {:>15.8f}| {:>12.4f}| {:>6}|\n".format(i, res["type"], res["symbol"], res["volume"], res["price"], res["base"]))
         i += 1
     table += "-" * 65
+    table += "\n"
     print(table)
     return table
 

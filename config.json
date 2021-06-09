@@ -27,6 +27,13 @@
             "symbol": "USD",
             "type": "currency",
             "volume": 10000.0
+        },
+        "GOOGL": {
+            "base": "PLN",
+            "price": 2398.44,
+            "symbol": "GOOGL",
+            "type": "us",
+            "volume": 10.0
         }
     }
 }
