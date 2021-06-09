@@ -14,7 +14,7 @@ APIS = {
 }
 
 
-def getEodData(stock='AAPL.US', token='xxxxxx'):
+def getEodData(stock='AAPL.US', token='xxxx'):
     url = APIS['Stocks']['Eodhistoricaldata'] % stock + "?api_token=" + token + '&fmt=json'
     response = getDataFromApi(url)
     return response
@@ -52,12 +52,11 @@ def getExchangeRateToPLN(currency):
 
 def getExchangeRateFromPLNToUSD(currency='USD'):
     rates = getRates()
-    rateTo = getExchangeRateToPLN('USD')
-    rateFrom = 1
+    rateUSD = 0
     for rate in rates:
         if rate['code'] == currency:
-            rateFrom = rate['mid']
-    return rateTo / rateFrom
+            rateUSD = rate['mid']
+    return 1 / rateUSD
 
 
 def showResourcesProfits(dataFrame):
@@ -134,7 +133,7 @@ class Wallet:
                     'price'])
                 soldStocks[stock].append(
                     {'stock': stock, 'quantity': volumen, 'price': self.__polishStocks[stock]['price'] * exchangeRate,
-                     'profit': profit, 'profit netto': profit * 0.81})
+                     'profit': profit * exchangeRate, 'profit netto': (profit * 0.81) * exchangeRate})
             else:
                 for offer in stockData:
                     if volumen == 0:
