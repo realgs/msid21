@@ -3,6 +3,8 @@ import json
 import requests
 import time
 import yfinance as yf
+from bs4 import BeautifulSoup
+
 
 # Default variables
 BASE_CURRENCY = "USD"
@@ -18,7 +20,7 @@ VOLUMES_EQUAL_PRECISION = 1.0E-9
 MARKET_API = {}
 
 # Available resource types
-RES_TYPES = {"crypto": "crypto", "currency": "currency", "us": "us"}
+RES_TYPES = {"crypto": "crypto", "currency": "currency", "us": "us", "pl": "pl"}
 
 
 def get_data_from_url(url):
@@ -28,6 +30,13 @@ def get_data_from_url(url):
     else:
         return None
 
+
+def get_text_from_url(url):
+    response = requests.request("GET", url)
+    if response.status_code == 200:
+        return response.text
+    else:
+        return None
 
 # Format given orders depending on api
 def format_orders(api, orders, quantity=ORDERS_COUNT):
@@ -432,20 +441,52 @@ def sell_us_stock(api, stock, amount):
         "buy_cost": c_buy,
         "profit": 0
     }
-    try:
-        res = yf.Ticker(stock["symbol"])
-    except KeyError:
-        return no_sell_data
-    average_price = (res.info["previousClose"] + res.info["open"]) / 2
-    value = average_price * stock["volume"] * amount
-    profit = value - c_buy
-    sell_data = {
-        "price": average_price,
-        "value": value,
+    if api == MARKET_API["YAHOO"]:
+        try:
+            res = yf.Ticker(stock["symbol"])
+        except KeyError:
+            return no_sell_data
+        average_price = (res.info["previousClose"] + res.info["open"]) / 2
+        value = average_price * stock["volume"] * amount
+        profit = value - c_buy
+        sell_data = {
+            "price": average_price,
+            "value": value,
+            "buy_cost": c_buy,
+            "profit": profit
+        }
+        return sell_data
+    return no_sell_data
+
+
+# Sell given stock using average exchange for given api
+def sell_pl_stock(api, stock, amount):
+    c_buy = stock["volume"] * stock["price"] * amount
+    no_sell_data = {
+        "price": 0,
+        "value": 0,
         "buy_cost": c_buy,
-        "profit": profit
+        "profit": 0
     }
-    return sell_data
+    if api == MARKET_API["STOOQ"]:
+        print("xd")
+        try:
+            data = get_text_from_url("{0}/q/?s={1}".format(api["url"], stock["symbol"]))
+            data = BeautifulSoup(data, "html.parser")
+            data = float(data.find(id="t1").find('td').find('span').text)
+        except Exception:
+            return no_sell_data
+        price = data
+        value = price * stock["volume"] * amount
+        profit = value - c_buy
+        sell_data = {
+            "price": price,
+            "value": value,
+            "buy_cost": c_buy,
+            "profit": profit
+        }
+        return sell_data
+    return no_sell_data
 
 
 # Find best possible resource sale in apis
@@ -467,6 +508,9 @@ def find_offers_for_wallet(wallet, amount):
                 # If resource is us market stock
                 elif resource["type"] == RES_TYPES["us"]:
                     data = sell_us_stock(MARKET_API[api], resource, amount)
+                # If resource is us market stock
+                elif resource["type"] == RES_TYPES["pl"]:
+                    data = sell_pl_stock(MARKET_API[api], resource, amount)
 
             best = sell_data.get(res, None)
             if best is not None and data is not None:
@@ -539,8 +583,6 @@ def print_wallet_sell_options(wallet, sell_data, amount=1.0):
     for key in wallet:
         s_data = sell_data[key]
         res = wallet[key]
-        print(key)
-        print(s_data)
         if s_data is not None:
             value_sum += s_data["value"]
             profit_sum += s_data["profit"]
@@ -549,7 +591,7 @@ def print_wallet_sell_options(wallet, sell_data, amount=1.0):
         # No data for resource
         else:
             table += ("|{:>8}| {:>8}| {:>15.6f}| {:>12.4f}| {:>6}| {:>12.2f}| {:>12.2f}| {:>10.2f}|\n"
-                      .format(res["type"], res["symbol"], res["volume"], res["price"], res["base"], 0.0, 0.0, 0.0))
+                      .format(res["symbol"], res["type"], res["volume"], res["price"], res["base"], 0.0, 0.0, 0.0))
     table += "-" * 100
     # table += "\nTotal value: {:.2f}\n".format(value_sum)
     # table += "Total profit: {:.2f}\n".format(profit_sum)

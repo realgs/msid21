@@ -588,6 +588,14 @@
         ],
         "url": "http://api.nbp.pl/api"
     },
+    "STOOQ": {
+        "limit": 50,
+        "name": "STOOQ",
+        "type": [
+            "pl"
+        ],
+        "url": "https://stooq.pl"
+    },
     "YAHOO": {
         "limit": 33,
         "name": "YAHOO",
