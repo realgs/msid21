@@ -174,12 +174,9 @@ class MainView(Screen):
 
         tempResources = self.wallet["resources"]
 
-        print(percentage)
-
         for item in tempResources:
             tempItem = item
             tempItem["volume"] = percentage * item["volume"]
-            print(tempItem["volume"])
             sellPrice = self.checkProfit(tempItem, 1)
             val += sellPrice
 

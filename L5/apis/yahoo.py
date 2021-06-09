@@ -1,7 +1,6 @@
-from apis.api import Api
 import yfinance as yf
 
-class Yahoo(Api):
+class Yahoo():
 
     def __init__(self):
         self.cmp = yf.Ticker("")

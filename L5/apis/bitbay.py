@@ -1,4 +1,3 @@
-from apis.api import Api
 import requests
 
 API = "https://bitbay.net/API/Public/{}{}/orderbook.json"
@@ -53,7 +52,7 @@ BITBAY_FEES = {
     'ZRX'	:	56.00000000
 }
 
-class Bitbay(Api):
+class Bitbay():
 
     def __init__(self):
         pass

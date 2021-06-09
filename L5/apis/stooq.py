@@ -1,9 +1,8 @@
 import requests
 from bs4 import BeautifulSoup
-from apis.api import Api
 from apis import nbp
 
-class Stooq(Api):
+class Stooq():
 
     def __init__(self):
         self.cmp = ""

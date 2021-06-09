@@ -1,11 +1,10 @@
-from apis.api import Api
 import requests
 
 API = "https://api.bittrex.com/api/v1.1/public/getorderbook?market={}-{}&type=both"
 BITTREX_FEES = {}
 BITREX_TAKER = 0.0025
 
-class Bittrex(Api):
+class Bittrex():
 
     def __init__(self):
         self.a = ""
