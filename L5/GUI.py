@@ -99,8 +99,8 @@ class MainView(Screen):
                     j += 1
                 i += 1
             if inplus:
-                string += "Can be arbitrated: " + str(amountToBeArbitrated)
-                string += "; Profit: " + str(diff)
+                string += "Can be arbitrated: " + str(round(amountToBeArbitrated, 2))
+                string += "; Profit: " + str(round(diff, 2))
             string += "\n"
 
         content = BoxLayout(orientation = 'vertical')
