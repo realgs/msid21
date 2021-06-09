@@ -9,9 +9,9 @@
         },
         {
             "type": "crypto",
-            "name": "LTC",
-            "volume": 3.1,
-            "price": 151.59
+            "name": "ETH",
+            "volume": 0.4,
+            "price": 2401.2
         },
         {
             "type": "stock",
