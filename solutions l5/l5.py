@@ -1,10 +1,10 @@
 import requests
 import json
 
+ASSETS_FILE = 'D:\\OneDrive - Politechnika Wroclawska\\Dokumenty\\Szkoła\\PWr_W8_IS_semestr_4\\Metody systemowe i decyzyjne\\L\\msid21\\solutions l5\\assets1.json'
+
 PRICE_AND_QUANTITY_IN_ARRAY = 0
 PRICE_AND_QUANTITY_AS_JSON_KEYS = 1
-
-ASSETS_FILE = 'D:\\OneDrive - Politechnika Wroclawska\\Dokumenty\\Szkoła\\PWr_W8_IS_semestr_4\\Metody systemowe i decyzyjne\\L\\msid21\\solutions l5\\assets1.json'
 
 API1_NAME = "Bitbay"
 API1_ORDERBOOK_URL = "https://bitbay.net/API/Public/{}{}/orderbook.json"
@@ -20,6 +20,7 @@ API2_ENCODING = PRICE_AND_QUANTITY_AS_JSON_KEYS
 API2_PRICE_MAPPING = 'Rate'
 API2_QUANTITY_MAPPING = 'Quantity'
 
+
 def read_assets_data(file):
     with open(file) as json_file:
         assets_data = json.load(json_file)
@@ -33,6 +34,7 @@ def read_assets_data(file):
             all_assets.append(asset)
     return (base_currency, all_assets)
 
+
 def get_orderbook_json(orderbook_url, currency1, currency2):
     try: 
         return requests.get(orderbook_url.format(currency1, currency2)).json()
@@ -44,6 +46,7 @@ def get_orderbook_json(orderbook_url, currency1, currency2):
         raise SystemExit(err)
     except requests.exceptions.RequestException as err:
         raise SystemExit(err)
+
 
 def pull_orderbook_from_json(orderbook_json, records_type, buy_mapping, sell_mapping, price_mapping=None, quantity_mapping=None):
         
@@ -95,6 +98,7 @@ def pull_orderbook_from_json(orderbook_json, records_type, buy_mapping, sell_map
 
         return (buys, sells)
 
+
 def create_generalized_buybook(want_sell_currency, want_buy_currency):
     generalized_buybook = []
     try:
@@ -139,6 +143,7 @@ def create_generalized_buybook(want_sell_currency, want_buy_currency):
 
     return generalized_buybook
 
+
 def calculate_value(generalized_buybook, base_currency, asset, asset_depth):
     currency = asset['currency']
     requested_amount = asset['amount'] * (asset_depth / 100)
@@ -147,10 +152,12 @@ def calculate_value(generalized_buybook, base_currency, asset, asset_depth):
     total_quantity = 0
     total_value = 0
     best_price = 0
+    best_price_place = ''
 
     for buy_dict in generalized_buybook:
-        if (best_price == 0):
+        if (total_quantity == 0):
             best_price = buy_dict['price']
+            best_price_place = buy_dict['api_name']
         if (total_quantity >= requested_amount):
             break
         if (total_quantity + buy_dict['quantity'] > requested_amount):
@@ -161,19 +168,20 @@ def calculate_value(generalized_buybook, base_currency, asset, asset_depth):
             total_quantity += buy_dict['quantity']
             total_value += buy_dict['quantity'] * buy_dict['price']
 
-    return (total_value, total_quantity, best_price)
+    return (total_value, total_quantity, best_price, best_price_place)
+
 
 def create_table(base_currency, all_assets, depth):
     total_value_all = 0
     total_value = 0
     total_netto_value_all = 0
     total_netto_value = 0
-    print('[currency]\tamount\t\tprice\t\tvalue\t\tvalue ' + str(depth) + '% of amount\tnetto value\t netto value ' + str(depth) + '% od amount')
+    print('[currency]\tamount\t\tprice\t\tvalue\t\tvalue ' + str(depth) + '% of amount\t\tnetto value\t\t netto value ' + str(depth) + '% od amount\t\trecommenced sell place')
     for asset in all_assets:
         currency = asset['currency']
         if currency != base_currency:
-            (asset_value_all, available_to_sell_quantity_all, price) = calculate_value(create_generalized_buybook(currency, base_currency), base_currency, asset, 100)
-            (asset_value, available_to_sell_quantity, _) = calculate_value(create_generalized_buybook(currency, base_currency), base_currency, asset, depth)
+            (asset_value_all, available_to_sell_quantity_all, price, best_place) = calculate_value(create_generalized_buybook(currency, base_currency), base_currency, asset, 100)
+            (asset_value, available_to_sell_quantity, _, _) = calculate_value(create_generalized_buybook(currency, base_currency), base_currency, asset, depth)
             fee_all = max(0, (asset_value_all - (available_to_sell_quantity_all * asset['avg_buy_price'])) * 0.19)
             fee = max(0, (asset_value - (available_to_sell_quantity * asset['avg_buy_price'])) * 0.19)
             asset_netto_value_all = asset_value_all - fee_all
@@ -191,25 +199,16 @@ def create_table(base_currency, all_assets, depth):
             asset_netto_value_all = asset_value_all
             asset_netto_value = asset_value
         
-        print('[' + asset['currency'] + ']\t\t' + ('%.2f' % asset['amount']) + '\t\t' + ('%.2f' % price) + '\t\t' + ('%.2f' % asset_value_all) + base_currency + '\t\t' + ('%.2f' % asset_value) + base_currency + '\t\t' + ('%.2f' % asset_netto_value_all) + base_currency + '\t\t' + ('%.2f' % asset_netto_value) + base_currency)
+        print('[' + asset['currency'] + ']\t\t' + ('%.2f' % asset['amount']) + '\t\t' + ('%.2f' % price) + '\t\t' + ('%.2f' % asset_value_all) + base_currency + '\t\t' + ('%.2f' % asset_value) + base_currency + '\t\t' + ('%.2f' % asset_netto_value_all) + base_currency + '\t\t' + ('%.2f' % asset_netto_value) + base_currency + '\t\t' + best_place)
     
     print('TOTAL: \t\t\t\t\t\t' + ('%.2f' % total_value_all) + base_currency + '\t\t' + ('%.2f' % total_value) + base_currency + '\t\t' + ('%.2f' % total_netto_value_all) + base_currency + '\t\t' + ('%.2f' % total_netto_value) + base_currency)
 
+
 def main():
-    # (base_currency, all_assets) = read_assets_data()
-
-    # print(create_generalized_buybook("USD", "BTC"))
-
-    
-
     depth = int(input("Podaj ile procent zasobow chcesz sprzedac: "))
 
     (base_currency, all_assets) = read_assets_data(ASSETS_FILE)
     create_table(base_currency, all_assets, depth)
-
-    # testowy_orderbook = get_orderbook_json(API1_ORDERBOOK_URL, "BTC", "USD")
-    # (buys, sells) = pull_orderbook_from_json(testowy_orderbook, API1_ENCODING, API1_BUY_MAPPING, API1_SELL_MAPPING)
-    # print(sells)
 
 
 if __name__ == "__main__":
