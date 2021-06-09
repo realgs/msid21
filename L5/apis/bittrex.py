@@ -34,20 +34,6 @@ class Bittrex(Api):
         else:
             return -1
 
-    def buyCrypto(self, crypto, money):
-        response = requests.get(API.format("USD", crypto))
-        buyValue = 0.0
-        if (response.status_code == 200):
-            offers = response.json()["result"]["sell"]
-            index = 0
-            sum = 0
-            while sum < money and index < len(offers):
-                buyValue += offers[index]["Rate"] * offers[index]["Quantity"]
-                sum += buyValue
-                index += 1
-            return sum
-        else:
-            return None
 
     def sellCrypto(self, crypto, rate, volume):
         response = requests.get(API.format("USD", crypto))

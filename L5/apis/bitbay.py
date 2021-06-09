@@ -58,21 +58,6 @@ class Bitbay(Api):
     def __init__(self):
         pass
 
-    def buyCrypto(self, crypto, money):
-        response = requests.get(API.format(crypto, "USD"))
-        buyValue = 0.0
-        if (response.status_code == 200):
-            offers = response.json()["asks"]
-            index = 0
-            sum = 0
-            while sum < money and index < len(offers):
-                buyValue += offers[index][0] * offers[index][1]
-                sum += buyValue
-                index += 1
-            return sum
-        else:
-            return None
-
     def getSellRate(self, crypto):
         response = requests.get(API.format(crypto, "USD"))
         if(response.status_code == 200):

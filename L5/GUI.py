@@ -132,7 +132,7 @@ class MainView(Screen):
             sellPrice = self.checkProfit(tempItem, 0.81)
             reccomended = ""
             if item["type"] == "crypto":
-                reccomended = "; reccomended: " + self.reccomended
+                reccomended = "reccomended: " + self.reccomended
             sellVal = round(float(append) - float(item["price"]) * float(item["volume"]), 2)
             layout = GridLayout(rows = 1)
             layout.add_widget(Label(text = str(item["type"])))
