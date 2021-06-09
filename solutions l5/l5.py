@@ -2,7 +2,7 @@ import requests
 import json
 
 ASSETS_FILE = 'D:\\OneDrive - Politechnika Wroclawska\\Dokumenty\\Szkoła\\PWr_W8_IS_semestr_4\\Metody systemowe i decyzyjne\\L\\msid21\\solutions l5\\assets1.json'
-INCOME_FEE = 0.19
+INCOME_TAX = 0.19
 
 PRICE_AND_QUANTITY_IN_ARRAY = 0
 PRICE_AND_QUANTITY_AS_JSON_KEYS = 1
@@ -187,14 +187,14 @@ def create_table(base_currency, all_assets, depth):
         asset_currency = asset['currency']
         if asset_currency != base_currency:
             (asset_value_all, available_to_sell_quantity_all, price, best_place) = calculate_asset_value(create_generalized_buybook(asset_currency, base_currency), base_currency, asset, 100)
-            fee_all = max(0, (asset_value_all - (available_to_sell_quantity_all * asset['avg_buy_price'])) * INCOME_FEE)
-            asset_netto_value_all = asset_value_all - fee_all
+            tax_all = max(0, (asset_value_all - (available_to_sell_quantity_all * asset['avg_buy_price'])) * INCOME_TAX)
+            asset_netto_value_all = asset_value_all - tax_all
             total_value_all += asset_value_all
             total_netto_value_all += asset_netto_value_all
 
             (asset_value, available_to_sell_quantity, _, _) = calculate_asset_value(create_generalized_buybook(asset_currency, base_currency), base_currency, asset, depth)
-            fee = max(0, (asset_value - (available_to_sell_quantity * asset['avg_buy_price'])) * INCOME_FEE)
-            asset_netto_value = asset_value - fee
+            tax = max(0, (asset_value - (available_to_sell_quantity * asset['avg_buy_price'])) * INCOME_TAX)
+            asset_netto_value = asset_value - tax
             total_value += asset_value
             total_netto_value += asset_netto_value
 
