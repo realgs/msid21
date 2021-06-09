@@ -1,17 +1,32 @@
 {
-    "wallet": [
-        {
+    "wallet": {
+        "BTC": {
+            "base": "USD",
+            "price": 35906.5,
             "symbol": "BTC",
-            "volume": 0.05,
-            "price": 35906.50,
-            "base": "USD"
+            "type": "crypto",
+            "volume": 0.05
         },
-        {
-            "symbol": "ETH",
-            "volume": 1.0,
+        "ETH": {
+            "base": "USD",
             "price": 2575.79,
-            "base": "USD"
+            "symbol": "ETH",
+            "type": "crypto",
+            "volume": 1.0
+        },
+        "EUR": {
+            "base": "USD",
+            "price": 1.22,
+            "symbol": "EUR",
+            "type": "currency",
+            "volume": 3300.0
+        },
+        "USD": {
+            "base": "PLN",
+            "price": 3.59,
+            "symbol": "USD",
+            "type": "currency",
+            "volume": 10000.0
         }
-    ]
-    
+    }
 }

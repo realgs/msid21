@@ -1,8 +1,8 @@
 from json import JSONDecodeError
-
-import requests
 import json
+import requests
 import time
+import yfinance as yf
 
 # Default variables
 BASE_CURRENCY = "USD"
@@ -13,21 +13,12 @@ DEFAULT_API_PATH = "api_data.json"
 DEFAULT_CONFIG_PATH = "config.json"
 
 # Decides when two volumes are considered equal
-ARBITRAGE_EQUAL_PRECISION = 1.0E-9
-
+VOLUMES_EQUAL_PRECISION = 1.0E-9
 # Api
 MARKET_API = {}
 
-
-# Read api configuration file
-def read_api_data_from_file(filename=DEFAULT_API_PATH):
-    global MARKET_API
-    try:
-        with open(filename) as json_file:
-            MARKET_API = json.load(json_file)
-    except (FileNotFoundError, IOError, OSError):
-        return False
-    return True
+# Available resource types
+RES_TYPES = {"crypto": "crypto", "currency": "currency", "us": "us"}
 
 
 def get_data_from_url(url):
@@ -142,7 +133,7 @@ def calculate_arbitrage(cryptocurrency, api_bid, api_ask, bids, asks):
 
         # Move to the next offers
         # If volumes were equal
-        if abs(float(ask["volume"]) - float(bid["volume"])) <= ARBITRAGE_EQUAL_PRECISION:
+        if abs(float(ask["volume"]) - float(bid["volume"])) <= VOLUMES_EQUAL_PRECISION:
             # print(f"Equal: {ask['volume']}, {bid['volume']}")
             bids_index += 1
             asks_index += 1
@@ -295,6 +286,17 @@ def update_bittrex_fees():
         return False
 
 
+# Read api configuration file
+def read_api_data_from_file(filename=DEFAULT_API_PATH):
+    global MARKET_API
+    try:
+        with open(filename) as json_file:
+            MARKET_API = json.load(json_file)
+    except (FileNotFoundError, IOError, OSError):
+        return False
+    return True
+
+
 # Save current api data
 def save_api_data(file_path=DEFAULT_API_PATH):
     try:
@@ -305,8 +307,8 @@ def save_api_data(file_path=DEFAULT_API_PATH):
         return False
 
 
-# Read user resources, if successful return list
-def read_config(file_path=DEFAULT_CONFIG_PATH):
+# Read user resources, if successful return dictionary
+def read_wallet(file_path=DEFAULT_CONFIG_PATH):
     try:
         with open(file_path, "r") as file:
             data = json.load(file)["wallet"]
@@ -314,22 +316,256 @@ def read_config(file_path=DEFAULT_CONFIG_PATH):
     except (FileNotFoundError, IOError, OSError, JSONDecodeError):
         return None
 
+
+# Save user resources, return true if successful
+def save_wallet(wallet, file_path=DEFAULT_CONFIG_PATH):
+    try:
+        with open(file_path, "w") as file:
+            data = {"wallet": wallet}
+            json.dump(data, file, indent=4, sort_keys=True)
+            return True
+    except (IOError, OSError):
+        return False
+
+
+# Sell given currency using best exchange for given api
+def sell_currency(api, currency):
+    c_buy = currency["volume"] * currency["price"]
+    no_sell_data = {
+        "price": 0,
+        "value": 0,
+        "buy_cost": c_buy,
+        "profit": 0
+    }
+    if api == MARKET_API["NBP"]:
+        nbp = MARKET_API["NBP"]
+        data = get_data_from_url("{0}{1}/C/{2}".format(nbp["url"], nbp["currency"], currency["symbol"]))
+        # Unable to read data
+        if data is None:
+            return no_sell_data
+        data = data["rates"][0]
+
+        # If base is not pln exchange to pln
+        if currency["base"] != "PLN":
+            exchange_data = get_data_from_url("{0}{1}/C/{2}".format(nbp["url"], nbp["currency"], currency["base"]))
+            if exchange_data is None:
+                return no_sell_data
+            exchange_data = exchange_data["rates"][0]
+            exchange_ask = exchange_data["ask"]
+
+            old_price = currency["price"]
+            price = data["bid"] / exchange_ask
+            value = price * currency["volume"]
+            buy_cost = currency["volume"] * old_price
+            profit = value - buy_cost
+        else:
+            price = data["bid"]
+            value = price * currency["volume"]
+            buy_cost = currency["volume"] * currency["price"]
+            profit = value - buy_cost
+
+        sell_data = {
+            "price": price,
+            "value": value,
+            "buy_cost": buy_cost,
+            "profit": profit
+        }
+        return sell_data
+    # Api not supported
+    else:
+        return no_sell_data
+
+
+# Sell given cryptocurrency using best exchange for given api
+def sell_crypto(api, crypto, amount=1.0):
+    c_buy = crypto["volume"] * crypto["price"] * amount
+    no_sell_data = {
+        "price": 0,
+        "value": 0,
+        "buy_cost": c_buy,
+        "profit": 0
+    }
+    offers = get_market_orders(api, crypto["symbol"], crypto["base"])
+    if offers is None:
+        return no_sell_data
+    offers = offers["bids"]
+    has_volume = True
+
+    i = 0
+    off_len = len(offers)
+    volume_left = crypto["volume"] * amount
+    value = 0.0
+    while has_volume and i < off_len:
+        offer = offers[i]
+        offer_volume = float(offer["volume"])
+        offer_price = float(offer["price"])
+        # If no volume left
+        if volume_left - offer_volume < 0:
+            value += offer_price * volume_left
+            volume_left = 0.0
+            has_volume = False
+        # Normal case
+        else:
+            volume_left -= offer_volume
+            value += offer_price * offer_volume
+        i += 1
+    # If run out of offers
+    if has_volume:
+        value += offer_price * volume_left
+    price = offer_price
+    profit = value - c_buy
+    sell_data = {
+        "price": price,
+        "value": value,
+        "buy_cost": c_buy,
+        "profit": profit
+    }
+    return sell_data
+
+
+# Find possible resource sale in apis
+def find_offers_for_wallet(wallet, amount):
+    sell_data = {}
+    for res in wallet:
+        resource = wallet[res]
+        for api in MARKET_API:
+            types = MARKET_API[api]["type"]
+            # If resource is in api
+            if resource["type"] in types:
+                # If resource is cryptocurrency
+                if resource["type"] == RES_TYPES["crypto"]:
+                    pass
+                    data = sell_crypto(MARKET_API[api], resource, amount)
+                    sell_data[res] = data
+                # If resource is currency
+                elif resource["type"] == RES_TYPES["currency"]:
+                    data = sell_currency(MARKET_API[api], resource)
+                    sell_data[res] = data
+    print_wallet_sell_options(wallet, sell_data)
+
+
+# Add new resource to the wallet
+def add_resource(wallet):
+    res_symbol = input("Enter resource symbol: ")
+    res_symbol = res_symbol.strip()
+    if res_symbol in wallet:
+        print("Resource is already in wallet")
+        return False
+
+    print("Types: {0}".format(list(RES_TYPES.values())))
+    res_type = input("Enter resource type: ")
+    res_type = res_type.strip()
+    if res_type not in RES_TYPES:
+        print("Invalid type")
+        return False
+
+    res_volume = input("Enter resource volume: ")
+    res_volume = res_volume.strip()
+    try:
+        res_volume = float(res_volume)
+    except ValueError:
+        print("Invalid volume")
+        return False
+
+    res_price = input("Enter resource price: ")
+    res_price = res_price.strip()
+    try:
+        res_price = float(res_price)
+    except ValueError:
+        print("Invalid price")
+        return False
+
+    res_base = input("Enter resource base currency: ")
+    res_base = res_base.strip()
+
+    res = {
+        "type": res_type,
+        "symbol": res_symbol,
+        "volume": res_volume,
+        "price": res_price,
+        "base": res_base
+    }
+
+    wallet[res_symbol] = res
+    return True
+
+
+def print_wallet_sell_options(wallet, sell_data):
+    table = "Wallet sell options\n"
+    table += "-" * 80
+    table += "\n|{:>8}| {:>8}| {:>15}| {:>10}| {:>8}| {:>12}| {:>12}| {:>10}|\n".format("type", "symbol", "volume", "price", "base", "sell price", "sell value", "profit")
+    for key in wallet:
+        res = wallet[key]
+        s_data = sell_data[key]
+        table += ("|{:>8}| {:>8}| {:>15.8f}| {:>10.4f}| {:>8}| {:>12.4f}| {:>12.2f}| {:>10.2f}|\n"
+                  .format(res["type"], res["symbol"], res["volume"], res["price"], res["base"], s_data["price"], s_data["value"], s_data["profit"]))
+    table += "-" * 80
+    print(table)
+    return table
+
+
+# Return wallet data in table format
+def print_wallet(wallet):
+    table = "Wallet\n"
+    table += "-" * 65
+    table += "\n|{:>4}| {:>8}| {:>8}| {:>15}| {:>10}| {:>8}|\n".format("nr", "type", "symbol", "volume", "price", "base")
+    i = 1
+    for key in wallet:
+        res = wallet[key]
+        table += ("|{:>4}| {:>8}| {:>8}| {:>15.8f}| {:>10.2f}| {:>8}|\n".format(i, res["type"], res["symbol"], res["volume"], res["price"], res["base"]))
+        i += 1
+    table += "-" * 65
+    print(table)
+    return table
+
+
+def menu(wallet):
+    while True:
+        print()
+        print("1. Wallet")
+        print("2. Find offers")
+        print("3. Add resource")
+        print("4. Exit")
+        option = input("Please choose option: ")
+        try:
+            option = int(option.strip())
+        except ValueError:
+            print("Invalid option")
+        if option == 1:
+            print_wallet(wallet)
+        elif option == 2:
+            amount = input("Insert amount to sell (0 - 1.0): ")
+            try:
+                amount = float(amount.strip())
+                if amount < 0 or amount > 1.0:
+                    raise ValueError
+                find_offers_for_wallet(wallet, amount)
+            except ValueError:
+                print("Incorrect amount")
+
+        elif option == 3:
+            add_resource(wallet)
+            if not save_wallet(wallet):
+                print("Error while saving new resource")
+        elif option == 4:
+            exit(0)
+
+
 def main():
-    #if not read_api_data_from_file():
-    #    print("Critical error, failed to read {0}".format(DEFAULT_API_PATH))
-    #    return
-    #if update_bittrex_fees():
-    #    if not save_api_data():
-    #        print("Failed to save updated bittrex fees")
-    #else:
-    #    print("Failed to update bittrex fees")
+    if not read_api_data_from_file():
+        print("Critical error, failed to read {0}".format(DEFAULT_API_PATH))
+        return
+    if update_bittrex_fees():
+        if not save_api_data():
+            print("Failed to save updated bittrex fees")
+    else:
+        print("Failed to update bittrex fees")
     #lab_4()
-    wallet = read_config()
+    wallet = read_wallet()
     if wallet is None:
         print("Unable to read config file {0}".format(DEFAULT_CONFIG_PATH))
         return
-
-
+    menu(wallet)
 
 
 if __name__ == "__main__":
