@@ -152,9 +152,7 @@ class MainView(Screen):
 
     def evaluateWallet(self):
 
-
-
-        val = self.value
+        val = 0
 
         if self.ids.wallet_percentage.text == "" or not str(self.ids.wallet_percentage.text).isnumeric():
             percentage = 1
@@ -163,13 +161,18 @@ class MainView(Screen):
 
         tempResources = self.wallet["resources"]
 
+        print(percentage)
+
         for item in tempResources:
             tempItem = item
-            tempItem["volume"] = percentage * item
-            sellPrice = self.checkProfit(item, percentage)
-            pass
+            tempItem["volume"] = percentage * item["volume"]
+            print(tempItem["volume"])
+            sellPrice = self.checkProfit(tempItem, 0.81)
+            val += sellPrice
 
-        val *= percentage
+        file = open("wallet.json")
+        self.wallet = json.load(file)
+
         self.ids.wallet_value.text = str(round(val, 2))
 
 
