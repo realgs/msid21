@@ -1,0 +1,37 @@
+{
+    "base_currency": "USD",
+    "crypto_currency": [
+        {
+            "api": "BitBay",
+            "avg_price": 38044.82,
+            "quantity": 0.41985722,
+            "symbol": "BTC"
+        }
+    ],
+    "currency": [
+        {
+            "avg_price": 1.21,
+            "quantity": 10355,
+            "symbol": "EUR"
+        },
+        {
+            "avg_price": 0.903,
+            "quantity": 21370,
+            "symbol": "CHF"
+        }
+    ],
+    "foreign_stock": [
+        {
+            "avg_price": 654.73,
+            "quantity": 21,
+            "symbol": "NVDA"
+        }
+    ],
+    "polish_stock": [
+        {
+            "avg_price": 4.21,
+            "quantity": 120,
+            "symbol": "SAN"
+        }
+    ]
+}
