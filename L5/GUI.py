@@ -47,14 +47,14 @@ class MainView(Screen):
         file = open("wallet.json")
         self.wallet = json.load(file)
         arr = []
-        str = ""
+        string = ""
         cryptocurrencies = self.wallet["resources"]
         for curr in cryptocurrencies:
             if curr["type"] == "crypto":
                 arr.append(curr)
 
         for curr in arr:
-            str += curr["name"] + ": "
+            string += curr["name"] + ": "
             r1 = self.bitbay.getOrderBook(curr["name"])
             r2 = self.bittrex.getOrderBook(curr["name"])
             transferFeeBittrex = BITTREX_FEES[curr["name"]]
@@ -98,12 +98,13 @@ class MainView(Screen):
                     j += 1
                 i += 1
             if inplus:
-                str + str("Can be arbitrated: ", amountToBeArbitrated)
-                str + ("; Profit: ", diff)
-            str += "\n"
+                print("inplus")
+                string += "Can be arbitrated: " + str(amountToBeArbitrated)
+                string += "; Profit: " + str(diff)
+            string += "\n"
 
         content = BoxLayout(orientation = 'vertical')
-        content.add_widget(Label(text = str))
+        content.add_widget(Label(text = string))
         button = Button(text = "Close")
         content.add_widget(button)
         popup = Popup(auto_dismiss = False, title = "")
@@ -131,8 +132,7 @@ class MainView(Screen):
                                                            + "  " + item["name"] + "  " + str(item["volume"]) + "  "
                                                            + str(item["price"]) + "; sell price now: " + str(append) + "; profit: " +
                                                            str(sellVal) + reccomended)))
-            self.value += sellVal
-        pass
+            self.value += append
 
     def checkProfit(self, resource, percentage):
         self.reccomended = ""
@@ -152,26 +152,26 @@ class MainView(Screen):
 
     def evaluateWallet(self):
 
-        val = 0
+
+
+        val = self.value
 
         if self.ids.wallet_percentage.text == "" or not str(self.ids.wallet_percentage.text).isnumeric():
             percentage = 1
         else:
             percentage = float(self.ids.wallet_percentage.text) / 100.0
 
-        print(percentage)
-        file = open("wallet.json")
-        self.wallet = json.load(file)
-        for item in self.wallet["resources"]:
-            print(item["price"])
-            print(item["volume"])
-            print("you bought for: " + str(float(item["price"]) * float(item["volume"])))
-            print(str(self.checkProfit(item, percentage) - float(item["price"]) * float(item["volume"])))
-            val += self.checkProfit(item, percentage) - float(item["price"]) * float(item["volume"])
-        val = round(val, 2)
-        self.ids.wallet_value.text = str(val)
+        tempResources = self.wallet["resources"]
 
-        self.showWallet()
+        for item in tempResources:
+            tempItem = item
+            tempItem["volume"] = percentage * item
+            sellPrice = self.checkProfit(item, percentage)
+            pass
+
+        val *= percentage
+        self.ids.wallet_value.text = str(round(val, 2))
+
 
 
 class FinancesApp(App):
