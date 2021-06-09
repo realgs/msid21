@@ -11,7 +11,7 @@ COLS = (
     'Quantity',
     'Sell rate',
     'Sell value',
-    'Profit\n(post-tax)'
+    'Profit\n(post-tax)',
     'Recommended\nmarket',
     'Arbitrage'
 )
@@ -59,7 +59,7 @@ class MainScreen(Screen):
 
             # Add labels
             for i in range(len(COLS)):
-                self.ids.table.children[len(self.ids.table.children)-i].add_widget(Label(
+                self.ids.table.children[len(self.ids.table.children)-i-1].add_widget(Label(
                     text=f'[b]{COLS[i]}[/b]',
                     markup=True,
                     size_hint=(1, 0.08),
