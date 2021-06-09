@@ -1,0 +1,28 @@
+{
+  "foreign_stock":
+  {
+    "IBM": {"quantity":  17, "avr_price": 149.07},
+    "AAPL": {"quantity":  90, "avr_price": 126.74}
+
+  },
+
+  "polish_stock":
+  {
+    "CDR": {"quantity":  23, "avr_price": 52.3}
+  },
+
+  "crypto":
+  {
+    "BTC": {"quantity":  0.23, "avr_price": 33584.1},
+    "ETH": {"quantity":  14.98, "avr_price": 2704.71},
+    "LTC": {"quantity":  13.92, "avr_price": 161.54}
+  },
+
+  "currencies":
+  {
+    "EUR": {"quantity":  1467.43, "avr_price": 1.22},
+    "GBP": {"quantity":  5568.65, "avr_price": 1.42}
+  },
+
+  "base_currency": "USD"
+}
