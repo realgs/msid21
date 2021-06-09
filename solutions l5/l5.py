@@ -166,22 +166,34 @@ def calculate_value(generalized_buybook, base_currency, asset, asset_depth):
 def create_table(base_currency, all_assets, depth):
     total_value_all = 0
     total_value = 0
-    print('[currency]\tamount\t\tprice\t\tvalue\t\tvalue ' + str(depth) + '% of amount ')
+    total_netto_value_all = 0
+    total_netto_value = 0
+    print('[currency]\tamount\t\tprice\t\tvalue\t\tvalue ' + str(depth) + '% of amount\tnetto value\t netto value ' + str(depth) + '% od amount')
     for asset in all_assets:
         currency = asset['currency']
         if currency != base_currency:
             (asset_value_all, available_to_sell_quantity_all, price) = calculate_value(create_generalized_buybook(currency, base_currency), base_currency, asset, 100)
             (asset_value, available_to_sell_quantity, _) = calculate_value(create_generalized_buybook(currency, base_currency), base_currency, asset, depth)
+            fee_all = max(0, (asset_value_all - (available_to_sell_quantity_all * asset['avg_buy_price'])) * 0.19)
+            fee = max(0, (asset_value - (available_to_sell_quantity * asset['avg_buy_price'])) * 0.19)
+            asset_netto_value_all = asset_value_all - fee_all
+            asset_netto_value = asset_value - fee
+
             total_value_all += asset_value_all
             total_value += asset_value
+            total_netto_value_all += asset_netto_value_all
+            total_netto_value += asset_netto_value
         else:
             asset_value_all = asset['amount']
-            asset_value = 'not applicable'
+            asset_value = 0
             price = 1
             total_value_all += asset_value_all
+            asset_netto_value_all = asset_value_all
+            asset_netto_value = asset_value
         
-        print('[' + asset['currency'] + ']\t\t' + str(asset['amount']) + '\t\t' + str(price) + '\t\t' + str(asset_value_all) + base_currency + '\t\t' + str(asset_value) + base_currency)
-    print('TOTAL: \t\t\t\t\t\t' + str(total_value_all) + '\t\t' +str(total_value))
+        print('[' + asset['currency'] + ']\t\t' + ('%.2f' % asset['amount']) + '\t\t' + ('%.2f' % price) + '\t\t' + ('%.2f' % asset_value_all) + base_currency + '\t\t' + ('%.2f' % asset_value) + base_currency + '\t\t' + ('%.2f' % asset_netto_value_all) + base_currency + '\t\t' + ('%.2f' % asset_netto_value) + base_currency)
+    
+    print('TOTAL: \t\t\t\t\t\t' + ('%.2f' % total_value_all) + base_currency + '\t\t' + ('%.2f' % total_value) + base_currency + '\t\t' + ('%.2f' % total_netto_value_all) + base_currency + '\t\t' + ('%.2f' % total_netto_value) + base_currency)
 
 def main():
     # (base_currency, all_assets) = read_assets_data()
