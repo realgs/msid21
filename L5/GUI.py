@@ -1,4 +1,5 @@
 from kivy.app import App
+from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.stacklayout import StackLayout
 from kivy.uix.label import Label
@@ -7,6 +8,8 @@ from apis.stooq import *
 from apis.bitbay import *
 from apis.bittrex import *
 from kivy.uix.screenmanager import ScreenManager, Screen, FadeTransition
+from kivy.uix.button import Button
+from kivy.uix.popup import Popup
 import json
 
 class AddResourcePanel(Screen):
@@ -41,12 +44,77 @@ class MainView(Screen):
         self.bittrex = Bittrex()
 
 
-    def addResource(self):
-        self.showWallet()
-        pass
-
     def checkArbitrage(self):
-        pass
+        file = open("wallet.json")
+        self.wallet = json.load(file)
+        arr = []
+        str = ""
+        cryptocurrencies = self.wallet["resources"]
+        for curr in cryptocurrencies:
+            if curr["type"] == "crypto":
+                arr.append(curr)
+
+
+        for curr in arr:
+            str += curr["name"] + ": "
+            r1 = self.bitbay.getOrderBook(curr["name"])
+            r2 = self.bittrex.getOrderBook(curr["name"])
+            transferFeeBittrex = BITTREX_FEES[curr["name"]]
+            transferFeeBitbay = BITBAY_FEES[curr["name"]]
+            amountToBeArbitrated = 0.0
+            inplus = False
+            i = 0
+            diff = 0
+            computedDiff = diff
+            while i < 3:
+                j = 0
+                while j < self.bitbay.getOrdersNumber(r1.json()) and j < self.bittrex.getOrdersNumber(r2.json()):
+                    buyOnBitbay = self.bitbay.getField(r1.json(), i, "sells")[0] * self.bitbay.getField(r1.json(), i, "sells")[
+                        1] - (self.bitbay.getField(r1.json(), i, "sells")[0] * self.bitbay.getField(r1.json(), i, "sells")[
+                        1] * BITBAY_TAKER) - (self.bitbay.getField(r1.json(), i, "sells")[0] *
+                                              self.bitbay.getField(r1.json(), i, "sells")[1] * transferFeeBitbay)
+                    buyOnBittrex = self.bittrex.getField(r2.json(), i, "sells")[0] * self.bittrex.getField(r2.json(), i, "sells")[
+                        1] - (self.bittrex.getField(r2.json(), i, "sells")[0] * self.bittrex.getField(r2.json(), i, "sells")[
+                        1] * BITREX_TAKER) - (self.bittrex.getField(r2.json(), i, "sells")[0] *
+                                              self.bittrex.getField(r2.json(), i, "sells")[1] * transferFeeBittrex)
+                    sellOnBitbay = self.bitbay.getField(r1.json(), j, "bids")[0] * self.bitbay.getField(r1.json(), j, "bids")[
+                        1] - (self.bitbay.getField(r1.json(), j, "bids")[0] * self.bitbay.getField(r1.json(), j, "bids")[
+                        1] * BITBAY_TAKER) - (self.bitbay.getField(r1.json(), j, "bids")[0] *
+                                              self.bitbay.getField(r1.json(), j, "bids")[1] * transferFeeBitbay)
+                    sellOnBittrex = self.bittrex.getField(r2.json(), j, "bids")[0] * self.bittrex.getField(r2.json(), j, "bids")[
+                        1] - (self.bittrex.getField(r2.json(), j, "bids")[0] * self.bittrex.getField(r2.json(), j, "bids")[
+                        1] * BITREX_TAKER) - (self.bittrex.getField(r2.json(), j, "bids")[0] *
+                                              self.bittrex.getField(r2.json(), j, "bids")[1] * transferFeeBittrex)
+                    if self.bitbay.getField(r1.json(), i, "sells")[1] > self.bittrex.getField(r2.json(), j, "bids")[1]:
+                        computedDiff = sellOnBittrex - buyOnBitbay
+                    if computedDiff > diff:
+                        amountToBeArbitrated = self.bittrex.getField(r2.json(), j, "bids")[1]
+                        diff = computedDiff
+                        inplus = True
+                    if self.bittrex.getField(r2.json(), i, "sells")[1] > self.bitbay.getField(r1.json(), j, "bids")[1]:
+                        computedDiff = sellOnBitbay - buyOnBittrex
+                    if computedDiff > diff:
+                        amountToBeArbitrated = self.bitbay.getField(r1.json(), j, "bids")[1]
+                        diff = computedDiff
+                        inplus = True
+                    j += 1
+                i += 1
+            if inplus:
+                str + str("Can be arbitrated: ", amountToBeArbitrated)
+                str + ("; Profit: ", diff)
+            str += "\n"
+
+        content = BoxLayout(orientation = 'vertical')
+        content.add_widget(Label(text = str))
+        button = Button(text = "Close")
+        content.add_widget(button)
+        popup = Popup(auto_dismiss = False, title = "")
+        popup.add_widget(content)
+        button.bind(on_press=popup.dismiss)
+
+        popup.open()
+
+
 
     def showWallet(self):
         self.value = 0.0
@@ -67,7 +135,6 @@ class MainView(Screen):
                                                            + str(item["price"]) + "; sell price now: " + append + "; profit: " +
                                                            str(sellVal) + reccomended)))
             self.value += sellVal
-            print("a")
         pass
 
     def checkProfit(self, resource):

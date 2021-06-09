@@ -10,12 +10,4 @@ def printFullWalletValue(wallet):
     print(val)
 
 if __name__ == '__main__':
-    file = open("wallet.json")
-    wallet = json.load(file)
-    print(wallet)
-    printFullWalletValue(wallet)
-    yahoo = Yahoo()
-    yahoo.getPrice("MSFT")
-    stooq = Stooq()
-    stooq.getPrice("PZU")
     FinancesApp().run()

@@ -58,8 +58,20 @@ class Bitbay(Api):
     def __init__(self):
         pass
 
-    def buyCrypto(self, crypto, rate, volume):
-        pass
+    def buyCrypto(self, crypto, money):
+        response = requests.get(API.format(crypto, "USD"))
+        buyValue = 0.0
+        if (response.status_code == 200):
+            offers = response.json()["asks"]
+            index = 0
+            sum = 0
+            while sum < money and index < len(offers):
+                buyValue += offers[index][0] * offers[index][1]
+                sum += buyValue
+                index += 1
+            return sum
+        else:
+            return None
 
     def getSellRate(self, crypto):
         response = requests.get(API.format(crypto, "USD"))
@@ -88,3 +100,21 @@ class Bitbay(Api):
             return sumValue - sellValue
         else:
             return None
+
+    def getOrdersNumber(self, json):
+        l1 = len(json["bids"])
+        l2 = len(json["asks"])
+        if l1 > l2:
+            return l2
+        else:
+            return l1
+
+    def getField(self, json, i, action):
+        if action == "asks":
+            return (json["asks"][i][0], json["asks"][i][1])
+        else:
+            return (json["bids"][i][0], json["bids"][i][1])
+
+    def getOrderBook(self, crypto):
+        s = "https://bitbay.net/API/Public/{}{}/orderbook.json".format(crypto, "USD")
+        return requests.get(s)
