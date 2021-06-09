@@ -22,4 +22,4 @@ class Stooq(Api):
         results = soup.find(id=id)
 
         price = results.prettify().__str__().split(">")[1].split("<")[0].split()[0]
-        return float(price)
+        return nbp.calculate("USD", float(price))

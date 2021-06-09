@@ -57,11 +57,14 @@ class Bittrex(Api):
             offers = response.json()["result"]["buy"]
             index = 0
             sum = 0
-            while sum < volume and index < len(offers):
-                sellValue += offers[index]["Rate"] * offers[index]["Quantity"]
-                sum += offers[index]["Quantity"]
+            while volume > 0 and index < len(offers):
+                if volume > float(offers[index]["Quantity"]):
+                    sellValue += offers[index]["Rate"] * offers[index]["Quantity"]
+                    volume -= offers[index]["Quantity"]
+                else:
+                    sellValue += offers[index]["Rate"] * volume
+                    volume = 0
                 index += 1
-                pass
             return sellValue
         else:
             return None

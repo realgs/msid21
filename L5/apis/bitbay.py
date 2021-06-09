@@ -92,12 +92,14 @@ class Bitbay(Api):
             offers = response.json()["bids"]
             index = 0
             sum = 0
-            while sum < volume and index < len(offers):
-                sellValue += offers[index][0] * offers[index][1]
-                sum += offers[index][1]
+            while volume > 0 and index < len(offers):
+                if volume > offers[index][1]:
+                    sellValue += offers[index][0] * offers[index][1]
+                    volume -= offers[index][1]
+                else:
+                    sellValue += offers[index][0] * volume
                 index += 1
-                pass
-            return sumValue - sellValue
+            return sellValue
         else:
             return None
 

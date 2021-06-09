@@ -43,7 +43,6 @@ class MainView(Screen):
         self.bitbay = Bitbay()
         self.bittrex = Bittrex()
 
-
     def checkArbitrage(self):
         file = open("wallet.json")
         self.wallet = json.load(file)
@@ -53,7 +52,6 @@ class MainView(Screen):
         for curr in cryptocurrencies:
             if curr["type"] == "crypto":
                 arr.append(curr)
-
 
         for curr in arr:
             str += curr["name"] + ": "
@@ -114,9 +112,8 @@ class MainView(Screen):
 
         popup.open()
 
-
-
     def showWallet(self):
+        self.ids.resources.clear_widgets()
         self.value = 0.0
         self.stooq = Stooq()
         self.yahoo = Yahoo()
@@ -125,46 +122,56 @@ class MainView(Screen):
         file = open("wallet.json")
         self.wallet = json.load(file)
         for item in self.wallet["resources"]:
-            append = self.checkProfit(item)
+            append = self.checkProfit(item, 0.81)
             reccomended = ""
             if item["type"] == "crypto":
                 reccomended = "; reccomended: " + self.reccomended
-            sellVal = round(float(item["price"]) * float(item["volume"]) - float(append), 2)
+            sellVal = round(float(append) - float(item["price"]) * float(item["volume"]), 2)
             self.ids.resources.add_widget(Label(text = str(item["type"]
                                                            + "  " + item["name"] + "  " + str(item["volume"]) + "  "
-                                                           + str(item["price"]) + "; sell price now: " + append + "; profit: " +
+                                                           + str(item["price"]) + "; sell price now: " + str(append) + "; profit: " +
                                                            str(sellVal) + reccomended)))
             self.value += sellVal
         pass
 
-    def checkProfit(self, resource):
+    def checkProfit(self, resource, percentage):
+        self.reccomended = ""
         if resource["type"] == "crypto":
             if self.bitbay.getSellRate(resource["name"]) > self.bittrex.getSellRate(resource["name"]):
                 self.reccomended = 'bitbay'
-                return str(round(self.bitbay.sellCrypto(resource["name"], resource["price"], resource["volume"]), 2))
+                return round(self.bitbay.sellCrypto(resource["name"], resource["price"], resource["volume"] * percentage), 2)
             else:
                 self.reccomended = 'bittrex'
-                return str(round(self.bittrex.sellCrypto(resource["name"], resource["price"], resource["volume"]), 2))
+                return round(self.bittrex.sellCrypto(resource["name"], resource["price"], resource["volume"] * percentage), 2)
         elif resource["type"] == "stock":
-            self.reccomended = ""
-            return str(float(self.yahoo.getPrice(resource["name"])) * float(resource["volume"]))
+            return round(float(self.yahoo.getPrice(resource["name"])) * float(resource["volume"] * percentage), 2)
         elif resource["type"] == "pl_stock":
-            self.reccomended = ""
-            return str(float(self.stooq.getPrice(resource["name"])) * float(resource["volume"]))
+            return round(float(self.stooq.getPrice(resource["name"])) * float(resource["volume"] * percentage), 2)
         else:
-            self.reccomended = ""
-            return str(float(resource["price"]) * float(resource["volume"]))
+            return round(float(resource["price"]) * float(resource["volume"] * percentage), 2)
 
     def evaluateWallet(self):
-        val = self.value
-        print(self.value)
+
+        val = 0
 
         if self.ids.wallet_percentage.text == "" or not str(self.ids.wallet_percentage.text).isnumeric():
             percentage = 1
         else:
             percentage = float(self.ids.wallet_percentage.text) / 100.0
-        val = round(val * percentage, 2)
+
+        print(percentage)
+        file = open("wallet.json")
+        self.wallet = json.load(file)
+        for item in self.wallet["resources"]:
+            print(item["price"])
+            print(item["volume"])
+            print("you bought for: " + str(float(item["price"]) * float(item["volume"])))
+            print(str(self.checkProfit(item, percentage) - float(item["price"]) * float(item["volume"])))
+            val += self.checkProfit(item, percentage) - float(item["price"]) * float(item["volume"])
+        val = round(val, 2)
         self.ids.wallet_value.text = str(val)
+
+        self.showWallet()
 
 
 class FinancesApp(App):
