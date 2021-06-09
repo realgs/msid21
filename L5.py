@@ -316,30 +316,37 @@ def save_wallet(wallet, file_path=DEFAULT_CONFIG_PATH):
         return False
 
 
-# Sell given currency using best exchange for given api
-def sell_currency(api, currency, amount=1.0):
-    c_buy = currency["volume"] * currency["price"] * amount
+# Return new dictionary with empty data
+def no_sell_data(api, resource, amount):
+    c_buy = resource["volume"] * resource["price"] * amount
     no_sell_data = {
         "price": 0,
         "value": 0,
         "buy_cost": c_buy,
         "profit": 0,
         "api": api["name"][:4],
-        "net": 0
+        "net": 0,
+        "arb": ""
     }
+    return no_sell_data
+
+
+# Sell given currency using best exchange for given api
+def sell_currency(api, currency, amount=1.0):
+    no_data = no_sell_data(api, currency, amount)
     if api == MARKET_API["NBP"]:
         nbp = MARKET_API["NBP"]
         data = get_data_from_url("{0}{1}/C/{2}".format(nbp["url"], nbp["currency"], currency["symbol"]))
         # Unable to read data
         if data is None:
-            return no_sell_data
+            return no_data
         data = data["rates"][0]
 
         # If base is not pln exchange to pln
         if currency["base"] != "PLN":
             exchange_data = get_data_from_url("{0}{1}/C/{2}".format(nbp["url"], nbp["currency"], currency["base"]))
             if exchange_data is None:
-                return no_sell_data
+                return no_data
             exchange_data = exchange_data["rates"][0]
             exchange_ask = exchange_data["ask"]
 
@@ -354,45 +361,106 @@ def sell_currency(api, currency, amount=1.0):
             buy_cost = currency["volume"] * currency["price"] * amount
             profit = value - buy_cost
 
-        net = profit * (1 - TAX)
+        if profit < 0:
+            net = profit
+        else:
+            net = profit * (1 - TAX)
         sell_data = {
             "price": price,
             "value": value,
             "buy_cost": buy_cost,
             "profit": profit,
             "api": api["name"][:4],
-            "net": net
+            "net": net,
+            "arb": ""
         }
         return sell_data
     # Api not supported
     else:
-        return no_sell_data
+        return no_data
+
+
+def arbitrage(cryptocurrency, base, api_bid, api_ask, bids, asks):
+    bids_index = 0
+    asks_index = 0
+    bids_len = len(bids)
+    asks_len = len(asks)
+    # Total earnings in base currency
+    total_profit = 0
+    # Total cost of buying
+    total_buy_price = 0
+    # Total cost of fees
+    total_fee = 0
+    # If it's first calculation, return profit even if it's negative
+    first_iteration = True
+
+    # While there are offers
+    while bids_index < bids_len and asks_index < asks_len:
+        bid = bids[bids_index]
+        ask = asks[asks_index]
+        # print(f"bid: {bid}", end=", ")
+        # print(f"ask: {ask}")
+        # Find smallest volume
+        volume = float(bid["volume"])
+        if float(ask["volume"]) < volume:
+            volume = float(ask["volume"])
+
+        # Calculate base profit
+        buy_price = volume * float(ask["price"])
+        total_buy_price += buy_price
+        sell_price = volume * float(bid["price"])
+        base_profit = sell_price - buy_price
+
+        # Calculate fees
+        buy_fee = buy_price * api_ask["taker"] + api_ask["transfer"][cryptocurrency] * float(ask["price"])
+        sell_fee = sell_price * api_bid["taker"] + api_bid["transfer"][cryptocurrency] * float(bid["price"])
+        current_fee = buy_fee + sell_fee
+        total_fee += current_fee
+        # Calculate profit
+        current_profit = base_profit - current_fee
+
+        # Stop if profit is not positive
+        if current_profit <= 0:
+            if first_iteration:
+                return ("{}-{}, {}{}, {:.2f}{}".format(api_bid["name"][:4], api_ask["name"][:4], cryptocurrency, base, current_profit, base), current_profit)
+            return ("{}-{}, {}{}, {:.2f}{}".format(api_bid["name"][:4], api_ask["name"][:4], cryptocurrency, base, total_profit, base), total_profit)
+        first_iteration = False
+
+        # Move to the next offers
+        # If volumes were equal
+        if abs(float(ask["volume"]) - float(bid["volume"])) <= VOLUMES_EQUAL_PRECISION:
+            # print(f"Equal: {ask['volume']}, {bid['volume']}")
+            bids_index += 1
+            asks_index += 1
+        # If we're left with bid volume
+        elif float(ask["volume"]) < float(bid["volume"]):
+            bid["volume"] = float(bid["volume"]) - float(ask["volume"])
+            asks_index += 1
+            # print(f"Left bid: {bid}")
+        # If we're left with ask volume
+        else:
+            ask["volume"] = float(ask["volume"]) - float(bid["volume"])
+            bids_index += 1
+            # print(f"Left ask: {ask}")
+        total_profit += current_profit
+    return ("{}-{}, {}{}, {:.2f}{}".format(api_bid["name"][:4], api_ask["name"][:4], cryptocurrency, base, total_profit, base), total_profit)
 
 
 # Sell given cryptocurrency using best exchange for given api
 def sell_crypto(api, crypto, amount=1.0):
     c_buy = crypto["volume"] * crypto["price"] * amount
-    net = c_buy * (1 - TAX)
-    no_sell_data = {
-        "price": 0,
-        "value": 0,
-        "buy_cost": c_buy,
-        "profit": 0,
-        "api": api["name"][:4],
-        "net": 0
-    }
+    no_data = no_sell_data(api, crypto, amount)
     offers = get_market_orders(api, crypto["symbol"], crypto["base"])
     if offers is None:
-        return no_sell_data
-    offers = offers["bids"]
+        return no_data
     has_volume = True
 
     i = 0
-    off_len = len(offers)
+    off_len = len(offers["bids"])
     volume_left = crypto["volume"] * amount
     value = 0.0
     while has_volume and i < off_len:
-        offer = offers[i]
+        offer = offers["bids"][i]
         offer_volume = float(offer["volume"])
         offer_price = float(offer["price"])
         # If no volume left
@@ -410,14 +478,41 @@ def sell_crypto(api, crypto, amount=1.0):
         value += offer_price * volume_left
     price = offer_price
     profit = value - c_buy
-    net = profit * (1 - TAX)
+    if profit < 0:
+        net = profit
+    else:
+        net = profit * (1 - TAX)
+
+    arb = ""
+    # Find possible arbitrage options
+    for a in MARKET_API:
+        compare_api = MARKET_API[a]
+        # Exclude himself
+        if compare_api != api:
+            comp_offers = get_market_orders(compare_api, crypto["symbol"], crypto["base"])
+            if comp_offers is None:
+                continue
+            new_arb = arbitrage(crypto['symbol'], crypto['base'], api, compare_api, offers["bids"], comp_offers["asks"])
+            rev_arb = arbitrage(crypto['symbol'], crypto['base'], compare_api, api, comp_offers["bids"], offers["asks"])
+            # Check which option is more beneficial
+            if new_arb[1] < rev_arb[1]:
+                new_arb = rev_arb
+            # If new arbitrage is worse than previous ignore result
+            if arb != "" and new_arb[1] < arb[1]:
+                pass
+            else:
+                arb = new_arb
+
+    if type(arb) is tuple:
+        arb = arb[0]
     sell_data = {
         "price": price,
         "value": value,
         "buy_cost": c_buy,
         "profit": profit,
         "api": api["name"][:4],
-        "net": net
+        "net": net,
+        "arb": arb
     }
     return sell_data
 
@@ -425,67 +520,61 @@ def sell_crypto(api, crypto, amount=1.0):
 # Sell given stock using average exchange for given api
 def sell_us_stock(api, stock, amount):
     c_buy = stock["volume"] * stock["price"] * amount
-    no_sell_data = {
-        "price": 0,
-        "value": 0,
-        "buy_cost": c_buy,
-        "profit": 0,
-        "api": api["name"][:4],
-        "net": 0
-    }
+    no_data = no_sell_data(api, stock, amount)
     if api == MARKET_API["YAHOO"]:
         try:
             res = yf.Ticker(stock["symbol"])
         except KeyError:
-            return no_sell_data
+            return no_data
         average_price = (res.info["previousClose"] + res.info["open"]) / 2
         value = average_price * stock["volume"] * amount
         profit = value - c_buy
-        net = profit * (1 - TAX)
+        if profit < 0:
+            net = profit
+        else:
+            net = profit * (1 - TAX)
         sell_data = {
             "price": average_price,
             "value": value,
             "buy_cost": c_buy,
             "profit": profit,
             "api": api["name"][:4],
-            "net": net
+            "net": net,
+            "arb": ""
         }
         return sell_data
-    return no_sell_data
+    return no_data
 
 
 # Sell given stock using average exchange for given api
 def sell_pl_stock(api, stock, amount):
     c_buy = stock["volume"] * stock["price"] * amount
-    no_sell_data = {
-        "price": 0,
-        "value": 0,
-        "buy_cost": c_buy,
-        "profit": 0,
-        "api": api["name"][:4],
-        "net": 0
-    }
+    no_data = no_sell_data(api, stock, amount)
     if api == MARKET_API["STOOQ"]:
         try:
             data = get_text_from_url("{0}/q/?s={1}".format(api["url"], stock["symbol"]))
             data = BeautifulSoup(data, "html.parser")
             data = float(data.find(id="t1").find('td').find('span').text)
         except Exception:
-            return no_sell_data
+            return no_data
         price = data
         value = price * stock["volume"] * amount
         profit = value - c_buy
-        net = profit * (1 - TAX)
+        if profit < 0:
+            net = profit
+        else:
+            net = profit * (1 - TAX)
         sell_data = {
             "price": price,
             "value": value,
             "buy_cost": c_buy,
             "profit": profit,
             "api": api["name"][:4],
-            "net": net
+            "net": net,
+            "arb": ""
         }
         return sell_data
-    return no_sell_data
+    return no_data
 
 
 # Find best possible resource sale in apis
@@ -577,22 +666,22 @@ def print_wallet_sell_options(wallet, sell_data, amount=1.0):
 
     table = "\nWallet sell options\n"
     table += "Sell amount: {:.3f}%\n".format(amount*100)
-    table += "-" * 118
-    table += "\n|{:>8}| {:>8}| {:>15}| {:>12}| {:>6}| {:>12}| {:>12}| {:>10}| {:>10}| {:>5}|\n"\
-        .format("Symbol", "Type", "Volume", "Price", "Base", "Sell price", "Sell value", "Profit", "Net profit", "Api")
+    table += "-" * 160
+    table += "\n|{:>8}| {:>8}| {:>15}| {:>12}| {:>6}| {:>12}| {:>12}| {:>10}| {:>10}| {:>5}| {:>40}|\n"\
+        .format("Symbol", "Type", "Volume", "Price", "Base", "Sell price", "Sell value", "Profit", "Net profit", "Api", "Arbitrage")
     for key in wallet:
         s_data = sell_data[key]
         res = wallet[key]
         if s_data is not None:
             value_sum += s_data["value"]
             profit_sum += s_data["profit"]
-            table += ("|{:>8}| {:>8}| {:>15.6f}| {:>12.4f}| {:>6}| {:>12.4f}| {:>12.2f}| {:>10.2f}| {:>10.2f}| {:>5}|\n"
-                      .format(res["symbol"], res["type"], res["volume"], res["price"], res["base"], s_data["price"], s_data["value"], s_data["profit"], s_data["net"], s_data["api"]))
+            table += ("|{:>8}| {:>8}| {:>15.6f}| {:>12.4f}| {:>6}| {:>12.4f}| {:>12.2f}| {:>10.2f}| {:>10.2f}| {:>5}| {:>40}|\n"
+                      .format(res["symbol"], res["type"], res["volume"], res["price"], res["base"], s_data["price"], s_data["value"], s_data["profit"], s_data["net"], s_data["api"], s_data["arb"]))
         # No data for resource
         else:
-            table += ("|{:>8}| {:>8}| {:>15.6f}| {:>12.4f}| {:>6}| {:>12.2f}| {:>12.2f}| {:>10.2f}| {:>10.2f}| {:>5}|\n"
-                      .format(res["symbol"], res["type"], res["volume"], res["price"], res["base"], 0.0, 0.0, 0.0, 0.0, s_data["api"]))
-    table += "-" * 118
+            table += ("|{:>8}| {:>8}| {:>15.6f}| {:>12.4f}| {:>6}| {:>12.2f}| {:>12.2f}| {:>10.2f}| {:>10.2f}| {:>5}| {:>40}|\n"
+                      .format(res["symbol"], res["type"], res["volume"], res["price"], res["base"], 0.0, 0.0, 0.0, 0.0, "", ""))
+    table += "-" * 160
     # table += "\nTotal value: {:.2f}\n".format(value_sum)
     # table += "Total profit: {:.2f}\n".format(profit_sum)
     table += "\n"
