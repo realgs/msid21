@@ -10,6 +10,7 @@ from bs4 import BeautifulSoup
 BASE_CURRENCY = "USD"
 ORDERS_COUNT = 30
 DEFAULT_API_PATH = "api_data.json"
+TAX = 0.19
 
 # Wallet path
 DEFAULT_CONFIG_PATH = "config.json"
@@ -37,6 +38,7 @@ def get_text_from_url(url):
         return response.text
     else:
         return None
+
 
 # Format given orders depending on api
 def format_orders(api, orders, quantity=ORDERS_COUNT):
@@ -258,29 +260,6 @@ def calculate_arbitrage_for_apis(api_1, api_2, common_markets, common_markets_in
             time.sleep(1)
 
 
-def lab_4():
-    markets_api_list = list(MARKET_API)
-    common_markets = list()
-    arbitrages_list = list()
-    # Find common markets for each market api pair, store common markets
-    common_markets_index = 0
-    for api_1_index in range(0, len(MARKET_API) - 1):
-        for api_2_index in range(api_1_index + 1, len(MARKET_API)):
-            if api_1_index != api_2_index:
-                api_1 = MARKET_API[markets_api_list[api_1_index]]
-                api_2 = MARKET_API[markets_api_list[api_2_index]]
-                common_markets.append(find_common_markets(api_1, api_2))
-
-                # print(f"{api_1['name']} {api_2['name']}")
-
-                # Get all market pairs and calculate arbitrage for them
-                calculate_arbitrage_for_apis(api_1, api_2, common_markets, common_markets_index, arbitrages_list)
-            common_markets_index += 1
-
-    arbitrages_list.sort(key=lambda x: x['profit'], reverse=True)
-    print_ranking(arbitrages_list)
-
-
 # Get current fees for bittrex
 def update_bittrex_fees():
     try:
@@ -344,7 +323,9 @@ def sell_currency(api, currency, amount=1.0):
         "price": 0,
         "value": 0,
         "buy_cost": c_buy,
-        "profit": 0
+        "profit": 0,
+        "api": api["name"][:4],
+        "net": 0
     }
     if api == MARKET_API["NBP"]:
         nbp = MARKET_API["NBP"]
@@ -373,11 +354,14 @@ def sell_currency(api, currency, amount=1.0):
             buy_cost = currency["volume"] * currency["price"] * amount
             profit = value - buy_cost
 
+        net = profit * (1 - TAX)
         sell_data = {
             "price": price,
             "value": value,
             "buy_cost": buy_cost,
-            "profit": profit
+            "profit": profit,
+            "api": api["name"][:4],
+            "net": 0
         }
         return sell_data
     # Api not supported
@@ -388,11 +372,14 @@ def sell_currency(api, currency, amount=1.0):
 # Sell given cryptocurrency using best exchange for given api
 def sell_crypto(api, crypto, amount=1.0):
     c_buy = crypto["volume"] * crypto["price"] * amount
+    net = c_buy * (1 - TAX)
     no_sell_data = {
         "price": 0,
         "value": 0,
         "buy_cost": c_buy,
-        "profit": 0
+        "profit": 0,
+        "api": api["name"][:4],
+        "net": 0
     }
     offers = get_market_orders(api, crypto["symbol"], crypto["base"])
     if offers is None:
@@ -423,11 +410,14 @@ def sell_crypto(api, crypto, amount=1.0):
         value += offer_price * volume_left
     price = offer_price
     profit = value - c_buy
+    net = profit * (1 - TAX)
     sell_data = {
         "price": price,
         "value": value,
         "buy_cost": c_buy,
-        "profit": profit
+        "profit": profit,
+        "api": api["name"][:4],
+        "net": net
     }
     return sell_data
 
@@ -439,7 +429,9 @@ def sell_us_stock(api, stock, amount):
         "price": 0,
         "value": 0,
         "buy_cost": c_buy,
-        "profit": 0
+        "profit": 0,
+        "api": api["name"][:4],
+        "net": 0
     }
     if api == MARKET_API["YAHOO"]:
         try:
@@ -449,11 +441,14 @@ def sell_us_stock(api, stock, amount):
         average_price = (res.info["previousClose"] + res.info["open"]) / 2
         value = average_price * stock["volume"] * amount
         profit = value - c_buy
+        net = profit * (1 - TAX)
         sell_data = {
             "price": average_price,
             "value": value,
             "buy_cost": c_buy,
-            "profit": profit
+            "profit": profit,
+            "api": api["name"][:4],
+            "net": net
         }
         return sell_data
     return no_sell_data
@@ -466,10 +461,11 @@ def sell_pl_stock(api, stock, amount):
         "price": 0,
         "value": 0,
         "buy_cost": c_buy,
-        "profit": 0
+        "profit": 0,
+        "api": api["name"][:4],
+        "net": 0
     }
     if api == MARKET_API["STOOQ"]:
-        print("xd")
         try:
             data = get_text_from_url("{0}/q/?s={1}".format(api["url"], stock["symbol"]))
             data = BeautifulSoup(data, "html.parser")
@@ -479,11 +475,14 @@ def sell_pl_stock(api, stock, amount):
         price = data
         value = price * stock["volume"] * amount
         profit = value - c_buy
+        net = profit * (1 - TAX)
         sell_data = {
             "price": price,
             "value": value,
             "buy_cost": c_buy,
-            "profit": profit
+            "profit": profit,
+            "api": api["name"][:4],
+            "net": net
         }
         return sell_data
     return no_sell_data
@@ -578,21 +577,22 @@ def print_wallet_sell_options(wallet, sell_data, amount=1.0):
 
     table = "\nWallet sell options\n"
     table += "Sell amount: {:.3f}%\n".format(amount*100)
-    table += "-" * 100
-    table += "\n|{:>8}| {:>8}| {:>15}| {:>12}| {:>6}| {:>12}| {:>12}| {:>10}|\n".format("Symbol", "Type", "Volume", "Price", "Base", "Sell price", "Sell value", "Profit")
+    table += "-" * 118
+    table += "\n|{:>8}| {:>8}| {:>15}| {:>12}| {:>6}| {:>12}| {:>12}| {:>10}| {:>10}| {:>5}|\n"\
+        .format("Symbol", "Type", "Volume", "Price", "Base", "Sell price", "Sell value", "Profit", "Net profit", "Api")
     for key in wallet:
         s_data = sell_data[key]
         res = wallet[key]
         if s_data is not None:
             value_sum += s_data["value"]
             profit_sum += s_data["profit"]
-            table += ("|{:>8}| {:>8}| {:>15.6f}| {:>12.4f}| {:>6}| {:>12.4f}| {:>12.2f}| {:>10.2f}|\n"
-                      .format(res["symbol"], res["type"], res["volume"], res["price"], res["base"], s_data["price"], s_data["value"], s_data["profit"]))
+            table += ("|{:>8}| {:>8}| {:>15.6f}| {:>12.4f}| {:>6}| {:>12.4f}| {:>12.2f}| {:>10.2f}| {:>10.2f}| {:>5}|\n"
+                      .format(res["symbol"], res["type"], res["volume"], res["price"], res["base"], s_data["price"], s_data["value"], s_data["profit"], s_data["net"], s_data["api"]))
         # No data for resource
         else:
-            table += ("|{:>8}| {:>8}| {:>15.6f}| {:>12.4f}| {:>6}| {:>12.2f}| {:>12.2f}| {:>10.2f}|\n"
-                      .format(res["symbol"], res["type"], res["volume"], res["price"], res["base"], 0.0, 0.0, 0.0))
-    table += "-" * 100
+            table += ("|{:>8}| {:>8}| {:>15.6f}| {:>12.4f}| {:>6}| {:>12.2f}| {:>12.2f}| {:>10.2f}| {:>10.2f}| {:>5}|\n"
+                      .format(res["symbol"], res["type"], res["volume"], res["price"], res["base"], 0.0, 0.0, 0.0, 0.0, s_data["api"]))
+    table += "-" * 118
     # table += "\nTotal value: {:.2f}\n".format(value_sum)
     # table += "Total profit: {:.2f}\n".format(profit_sum)
     table += "\n"
@@ -657,7 +657,6 @@ def main():
             print("Failed to save updated bittrex fees")
     else:
         print("Failed to update bittrex fees")
-    #lab_4()
     wallet = read_wallet()
     if wallet is None:
         print("Unable to read config file {0}".format(DEFAULT_CONFIG_PATH))
