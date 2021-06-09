@@ -1,0 +1,40 @@
+{
+    "Foreign stocks": {
+        "AAPL" :  {"quantity": 20, "price": 125}
+    },
+    "Poland stocks": {
+        "CD Projekt": {
+            "quantity": 200,
+            "price": 60.50,
+            "currency": "PLN"
+        },
+        "ALE": {
+            "quantity": 20,
+            "price": 30,
+            "currency": "PLN"
+        }
+    },
+    "Cryptocurrencies": {
+        "BTC": {
+            "quantity": 0.00856,
+            "price": 25220
+        },
+        "LTC": {
+            "quantity": 20,
+            "price":  60
+        }
+
+    },
+    "Currencies": {
+        "EUR": {
+            "quantity": 200,
+            "price": 1.20
+        },
+        "GBP": {
+            "quantity": 50,
+                "price":  1.40
+        }
+    },
+    "Base currency":  "USD" 
+
+}
