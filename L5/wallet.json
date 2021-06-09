@@ -1,0 +1,47 @@
+{
+    "base": "USD",
+    "resources": [
+        {
+            "type": "crypto",
+            "name": "BTC",
+            "volume": 0.1,
+            "price": 31000.0
+        },
+        {
+            "type": "crypto",
+            "name": "ETH",
+            "volume": 0.4,
+            "price": 2401.2
+        },
+        {
+            "type": "stock",
+            "name": "TSLA",
+            "volume": 13,
+            "price": 605.66
+        },
+        {
+            "type": "stock",
+            "name": "NOK",
+            "volume": 146,
+            "price": 5.57
+        },
+        {
+            "type": "pl_stock",
+            "name": "ALE",
+            "volume": 122,
+            "price": 13.72
+        },
+        {
+            "type": "pl_stock",
+            "name": "PZU",
+            "volume": 200,
+            "price": 8.37
+        },
+        {
+            "type": "currency",
+            "name": "USD",
+            "volume": 10000,
+            "price": 1
+        }
+    ]
+}
