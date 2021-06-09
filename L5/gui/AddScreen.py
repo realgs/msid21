@@ -9,8 +9,11 @@ RED = (1, 0, 0, 0.8)
 WALLET_FILE = os.path.dirname(__file__) + "/../configs/wallet.json"
 
 
+# Resource adding screen
 class AddScreen(Screen):
     def add(self):
+
+        # User input basic data validation
         type = self.ids.type.text
         if type not in TYPES:
             self.ids.type.text = ""
@@ -46,12 +49,14 @@ class AddScreen(Screen):
             "base": base
         }
 
+        # Writing to wallet file
         with open(WALLET_FILE, "r+") as file:
             data = json.load(file)
             data.append(resource)
             file.seek(0)
             json.dump(data, file, indent=4)
 
+        # Clearing text inputs
         for ch in self.ids.add_layout.children:
             if isinstance(ch, TextInput):
                 ch.text = ""

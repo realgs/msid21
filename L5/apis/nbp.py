@@ -3,6 +3,7 @@ from apis import api
 URL = 'http://api.nbp.pl/api/exchangerates/rates/A/{}/?format=json'
 
 
+# Get rates for currencies
 def get_rate(code, base="PLN"):
     data = api.get_data(URL.format(code))
     data = data.json()

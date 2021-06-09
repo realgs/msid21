@@ -8,7 +8,7 @@ from gui.MainScreen import MainScreen
 
 class WalletApp(App):
     def build(self):
-        Window.size = (1100, 600)
+        Window.size = (1200, 700)
         self.sm = ScreenManager()
         self.sm.add_widget(MainScreen(name='main'))
         self.sm.add_widget(AddScreen(name='add'))

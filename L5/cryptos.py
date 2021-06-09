@@ -9,7 +9,7 @@ MARKETS = [Bitbay(), Bitfinex()]
 DEEP_FIND = 25
 ROUND = 4
 
-
+# Apraise given crypto
 def appraise(amount, code):
     appraise_list = []
 
@@ -151,6 +151,21 @@ def arbitrage(ask, bid, amount, fee_ask_taker, fee_bid_taker, fee_ask_transfer):
     sell_fee = sell * fee_bid_taker
     fee = buy_fee + sell_fee
     return profit - fee
+
+
+def arbitrage_for_pair(pair):
+    if not read_fees():
+        print("Cant find fees file")
+        sys.exit(1)
+
+    pair = [pair]
+
+    ticker1 = MARKETS[0].get_ticker_data(pair)
+    ticker2 = MARKETS[1].get_ticker_data(pair)
+
+    pairs = analyze_pairs(ticker1, ticker2)
+
+    return pairs
 
 
 if __name__ == '__main__':

@@ -18,11 +18,12 @@
             id: base
             size_hint: 1, 0.08
 
-        GridLayout:
+        BoxLayout:
             size_hint: 1, 0.85
-            cols: 8
             padding: 10
             spacing: 5
+            orientation: "horizontal"
+            id: table
 
             StackLayout:
                 canvas:
@@ -130,6 +131,20 @@
                     text: "[b]Recommended\nmarket[/b]"
                     size_hint: 1, 0.08
 
+            StackLayout:
+                canvas:
+                    Color:
+                        rgb: TABLE
+                    Rectangle:
+                        pos: self.pos
+                        size: self.size
+                id: arbitrage
+                Label:
+                    markup: True
+                    halign: 'center'
+                    text: "[b]Arbitrage[/b]"
+                    size_hint: 1, 0.08
+
         BoxLayout:
             orientation: "horizontal"
             size_hint: 1, 0.07
@@ -143,7 +158,8 @@
 
             Button:
                 text: "Appraise wallet"
-                on_press: root.appraise_wallet()
+                on_press:
+                    root.appraise_wallet()
 
             TextInput:
                 id: percent_input

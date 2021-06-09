@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 
 URL = 'https://stooq.pl/q/?s={}'
 
-
+# Get stocks rate from stooq site
 def get_rate(code):
     data = api.get_data(URL.format(code)).text
     soup = BeautifulSoup(data, 'html.parser')
