@@ -361,7 +361,7 @@ def sell_currency(api, currency, amount=1.0):
             "buy_cost": buy_cost,
             "profit": profit,
             "api": api["name"][:4],
-            "net": 0
+            "net": net
         }
         return sell_data
     # Api not supported
