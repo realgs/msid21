@@ -1,4 +1,5 @@
-from PyQt6.QtWidgets import QHBoxLayout, QPushButton, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget
+from Data.TableData import TableData
+from PyQt6.QtWidgets import QAbstractItemView, QHBoxLayout, QPushButton, QTableWidget, QTableWidgetItem, QVBoxLayout
 from Views.View import View
 
 
@@ -8,6 +9,8 @@ class PortfolioView(View):
         self.table = QTableWidget(1, 6)
         self.table.resizeColumnsToContents()
         self.table.resizeRowsToContents()
+        self.table.setEditTriggers(
+            QAbstractItemView.EditTrigger.NoEditTriggers)
 
         self.loadButton = QPushButton('Load')
 
@@ -15,9 +18,12 @@ class PortfolioView(View):
 
         self.addButton = QPushButton('Add')
 
+        self.refreshButton = QPushButton('Refresh')
+
         buttonsBar = QHBoxLayout()
         buttonsBar.addWidget(self.loadButton)
         buttonsBar.addWidget(self.saveButton)
+        buttonsBar.addWidget(self.refreshButton)
         buttonsBar.addWidget(self.addButton)
 
         mainLayout = QVBoxLayout()
@@ -27,6 +33,7 @@ class PortfolioView(View):
         self.widget.setLayout(mainLayout)
 
     def updateTable(self, tableData):
+        self.table.clear()
         columnsCount = len(tableData.headers)
         rowsCount = len(tableData.rows)
 
@@ -35,8 +42,10 @@ class PortfolioView(View):
         self.table.setHorizontalHeaderLabels(tableData.headers)
 
         for i in range(len(tableData.rows)):
-            valuesCount = len(tableData.rows[i].values)
-            for j in range(min(columnsCount, valuesCount)):
-                self.setItem(i, j, QTableWidgetItem(
-                    tableData.rows[i].values[j]
-                ))
+            values = tableData.rows[i].values
+            for j in range(min(columnsCount, len(values))):
+                item = QTableWidgetItem(values[j])
+                self.table.setItem(i, j, item)
+
+        self.table.resizeColumnsToContents()
+        self.table.resizeRowsToContents()
