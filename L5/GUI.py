@@ -125,15 +125,17 @@ class MainView(Screen):
         file = open("wallet.json")
         self.wallet = json.load(file)
         for item in self.wallet["resources"]:
-            append = self.checkProfit(item, 0.81)
+            append = self.checkProfit(item, 1)
             tempItem = item
             tempItem["volume"] = self.percentage * item["volume"]
             print(tempItem["volume"])
-            sellPrice = self.checkProfit(tempItem, 0.81)
+            sellPrice = self.checkProfit(tempItem, 1)
             reccomended = ""
             if item["type"] == "crypto":
                 reccomended = "reccomended: " + self.reccomended
             sellVal = round(float(append) - float(item["price"]) * float(item["volume"]), 2)
+            if sellVal > 0:
+                sellVal *= 0.89
             layout = GridLayout(rows = 1)
             layout.add_widget(Label(text = str(item["type"])))
             layout.add_widget(Label(text=str(item["name"])))
@@ -141,7 +143,7 @@ class MainView(Screen):
             layout.add_widget(Label(text=str(item["price"])))
             layout.add_widget(Label(text="sell price now: " + str(append)))
             layout.add_widget(Label(text="sell %: " + str(sellPrice)))
-            layout.add_widget(Label(text="profit: " + str(sellVal)))
+            layout.add_widget(Label(text="profit: " + str(round(sellVal, 2))))
             layout.add_widget(Label(text=reccomended))
             self.ids.resources.add_widget(layout)
 
@@ -181,7 +183,7 @@ class MainView(Screen):
             tempItem = item
             tempItem["volume"] = percentage * item["volume"]
             print(tempItem["volume"])
-            sellPrice = self.checkProfit(tempItem, 0.81)
+            sellPrice = self.checkProfit(tempItem, 1)
             val += sellPrice
 
         file = open("wallet.json")
