@@ -1,0 +1,237 @@
+#:kivy 2.0
+
+#:set BACKGROUND 0.3, 0.3, 0.3
+#:set TABLE 0.2, 0.2, 0.2
+
+<MainScreen>:
+    canvas:
+        Color:
+            rgb: BACKGROUND
+        Rectangle:
+            pos: root.pos
+            size: root.size
+    BoxLayout:
+        orientation: "vertical"
+        Label:
+            markup: True
+            text: ""
+            id: base
+            size_hint: 1, 0.08
+
+        BoxLayout:
+            size_hint: 1, 0.85
+            padding: 10
+            spacing: 5
+            orientation: "horizontal"
+            id: table
+
+            StackLayout:
+                canvas:
+                    Color:
+                        rgb: TABLE
+                    Rectangle:
+                        pos: self.pos
+                        size: self.size
+                id: type
+                Label:
+                    markup: True
+                    text: "[b]Type[/b]"
+                    size_hint: 1, 0.08
+
+            StackLayout:
+                canvas:
+                    Color:
+                        rgb: TABLE
+                    Rectangle:
+                        pos: self.pos
+                        size: self.size
+                id: symbol
+                Label:
+                    markup: True
+                    text: "[b]Symbol[/b]"
+                    size_hint: 1, 0.08
+
+            StackLayout:
+                canvas:
+                    Color:
+                        rgb: TABLE
+                    Rectangle:
+                        pos: self.pos
+                        size: self.size
+                id: price
+                Label:
+                    markup: True
+                    text: "[b]Price[/b]"
+                    size_hint: 1, 0.08
+
+            StackLayout:
+                canvas:
+                    Color:
+                        rgb: TABLE
+                    Rectangle:
+                        pos: self.pos
+                        size: self.size
+                id: quantity
+                Label:
+                    markup: True
+                    text: "[b]Quantity[/b]"
+                    size_hint: 1, 0.08
+
+            StackLayout:
+                canvas:
+                    Color:
+                        rgb: TABLE
+                    Rectangle:
+                        pos: self.pos
+                        size: self.size
+                id: sell_rate
+                Label:
+                    markup: True
+                    text: "[b]Sell rate[/b]"
+                    size_hint: 1, 0.08
+
+            StackLayout:
+                canvas:
+                    Color:
+                        rgb: TABLE
+                    Rectangle:
+                        pos: self.pos
+                        size: self.size
+                id: sell_value
+                Label:
+                    markup: True
+                    text: "[b]Sell value[/b]"
+                    size_hint: 1, 0.08
+
+            StackLayout:
+                canvas:
+                    Color:
+                        rgb: TABLE
+                    Rectangle:
+                        pos: self.pos
+                        size: self.size
+                id: sell_profit
+                Label:
+                    markup: True
+                    halign: 'center'
+                    text: "[b]Profit\n(post-tax)[/b]"
+                    size_hint: 1, 0.08
+
+            StackLayout:
+                canvas:
+                    Color:
+                        rgb: TABLE
+                    Rectangle:
+                        pos: self.pos
+                        size: self.size
+                id: market
+                Label:
+                    markup: True
+                    halign: 'center'
+                    text: "[b]Recommended\nmarket[/b]"
+                    size_hint: 1, 0.08
+
+            StackLayout:
+                canvas:
+                    Color:
+                        rgb: TABLE
+                    Rectangle:
+                        pos: self.pos
+                        size: self.size
+                id: arbitrage
+                Label:
+                    markup: True
+                    halign: 'center'
+                    text: "[b]Arbitrage[/b]"
+                    size_hint: 1, 0.08
+
+        BoxLayout:
+            orientation: "horizontal"
+            size_hint: 1, 0.07
+            spacing: 5
+            padding: 5
+            Button:
+                text: "Add new resource"
+                on_press:
+                    root.manager.transition.direction = 'right'
+                    root.manager.current = 'add'
+
+            Button:
+                text: "Appraise wallet"
+                on_press:
+                    root.appraise_wallet()
+
+            TextInput:
+                id: percent_input
+                hint_text: "%"
+
+<AddScreen>:
+    canvas:
+        Color:
+            rgb: BACKGROUND
+        Rectangle:
+            pos: root.pos
+            size: root.size
+
+    AnchorLayout:
+        anchor_x: 'center'
+        anchor_y: 'center'
+
+        GridLayout:
+            id: add_layout
+            canvas:
+                Color:
+                    rgb: TABLE
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+            size_hint: 0.7, 0.7
+            padding: 50
+            spacing: 20
+            cols: 2
+
+            Label:
+                text: "Type"
+
+            TextInput:
+                id: type
+                hint_text: "us_stock, pl_stock, crypto, currency"
+                write_tab: False
+
+            Label:
+                text: "Symbol"
+
+            TextInput:
+                id: symbol
+                write_tab: False
+
+            Label:
+                text: "Price"
+
+            TextInput:
+                id: price
+                write_tab: False
+
+            Label:
+                text: "Quantity"
+
+            TextInput:
+                id: quantity
+                write_tab: False
+
+            Label:
+                text: "Base currency"
+
+            TextInput:
+                id: base
+                write_tab: False
+
+            Button:
+                text: "Add"
+                on_press: root.add()
+
+            Button:
+                text: "Back"
+                on_press:
+                    root.manager.transition.direction = 'left'
+                    root.manager.current = 'main'
