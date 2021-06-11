@@ -51,14 +51,17 @@ def getBestSellBuy(currency_1, currency_2):
     best_sell_buy_list = []
     orders = getOrderbookData(currency_1, currency_2)
     if orders:
-        if len(orders['result']['sell']) < limit or len(orders['result']['buy']) < limit:
-            limit = min(len(orders['result']['sell']), len(orders['result']['buy']))
-        for i in range(0, limit):
-            sell = orders['result']['sell'][i]
-            buy = orders['result']['buy'][i]
-            sell_buy = sell, buy
-            best_sell_buy_list.append(sell_buy)
-        return best_sell_buy_list
+        if orders['result']['buy'] and orders['result']['buy']:
+            if len(orders['result']['sell']) < limit or len(orders['result']['buy']) < limit:
+                limit = min(len(orders['result']['sell']), len(orders['result']['buy']))
+            for i in range(0, limit):
+                sell = orders['result']['sell'][i]
+                buy = orders['result']['buy'][i]
+                sell_buy = sell, buy
+                best_sell_buy_list.append(sell_buy)
+            return best_sell_buy_list
+        else:
+            return None
     else:
         print("There was no data!")
         return None

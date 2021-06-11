@@ -4,7 +4,7 @@ from Finance_l4 import bitbay, bittrex
 from Finance_l4.apiCompare import getMarketsIntersection, getBuySellInfo, printArbitrageInfo, getArbitrageInfo
 
 REFRESH = 5
-RANKING = "\nRanking: "
+RANKING = "\nRanking: \nBuy\tSell\tAmount\tProfit\tCurrencies"
 
 
 def main():
@@ -31,16 +31,20 @@ def main():
 
         # task 3
         results_ranking = []
+        i = 0
+        j = 0
         for currency in currencies:
             sell_buy_info = getBuySellInfo(currency[0], currency[1])
-            result = getArbitrageInfo(sell_buy_info, currencies[0][0], currencies[0][1])
-            results_ranking.append(result[0])
-            results_ranking.append(result[1])
-
-        results_ranking.sort(key=lambda result: result[3], reverse=True)
+            if sell_buy_info is not None:
+                result = getArbitrageInfo(sell_buy_info, currencies[i][0], currencies[j][1])
+                results_ranking.append(result[0])
+                results_ranking.append(result[1])
+            i += 1
+            j += 1
+        results_ranking.sort(key=lambda result: result[5], reverse=True)
         print(RANKING)
         for value in results_ranking:
-            print(value)
+            print(f'{value[0]}\t{value[1]}\t{value[2]}\t{value[5]}\t{value[6]}-{value[7]}')
         time.sleep(REFRESH)
 
 
