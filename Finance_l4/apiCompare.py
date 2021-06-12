@@ -122,7 +122,7 @@ def getArbitrageInfo(buy_sell_info, currency_1, currency_2):
             quantity_info[1][sell_position] -= quantity_info[2][sell_position]
 
     # buy on bittrex, sell on bitbay
-    while sell_position < len(rate_info[0]) and buy_position < len (rate_info[3]) and \
+    while sell_position < len(rate_info[0]) and buy_position < len(rate_info[3]) and \
             calculateIncome(arbitrage_quantity_bittrex_bitbay, rate_info[0][sell_position], bitbay.BITBAY_FEES) > \
             calculateCost(arbitrage_quantity_bittrex_bitbay, rate_info[3][buy_position], bittrex.BITTREX_FEES, currency_1):
         if sell_position != 0:
