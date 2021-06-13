@@ -1,0 +1,31 @@
+{
+  "baseCurrency": "EUR",
+  "foreignStock": [
+        {
+          "symbol": "AAPL",
+          "quantity": 21,
+          "avgPrice": 102.35
+        }
+    ],
+    "plStock": [
+        {
+          "symbol": "KGH",
+          "quantity": 56,
+          "avgPrice": 40.66
+        }
+    ],
+    "crypto": [
+        {
+          "symbol": "BTC",
+          "quantity": 0.41985722,
+          "avgPrice": 38044.82
+        }
+    ],
+    "currencies": [
+        {
+          "symbol": "CHF",
+          "quantity": 2500,
+          "avgPrice": 0.92
+        }
+    ]
+}
