@@ -94,8 +94,9 @@ class BitbayApi(Api):
                 index += 1
             elif quantity < float(sell[index]['ca']):
                 value += quantity * float(sell[index]['ra'])
+                price = float(sell[index]['ra'])
                 quantity = 0
-        return value
+        return value, price
 
     def getLastBuyOfferPrice(self, symbol, base_currency):
         data = self.getBestSellBuy(symbol, base_currency)

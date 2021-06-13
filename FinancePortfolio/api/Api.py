@@ -34,9 +34,13 @@ class Api:
         return self._fees
 
     def getApiResponse(self, url, headers=None):
-        response = requests.request("GET", url, headers=headers)
-        if response.status_code == requests.codes.ok:
-            return response.json()
+        try:
+            response = requests.request("GET", url, headers=headers)
+        except ConnectionError:
+            print(f'Failed to establish connection with {url}')
         else:
-            print('Sorry, no data found: ', response.status_code, ' ', response.reason)
-            return None
+            if response.status_code == requests.codes.ok:
+                return response.json()
+            else:
+                print('Sorry, no data found: ', response.status_code, ' ', response.reason)
+                return None
