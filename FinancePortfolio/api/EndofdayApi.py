@@ -18,7 +18,7 @@ class Endofday(Api):
 
     def getRateInfo(self, symbol, exchange_id):
         url = f'{self.baseUrl}{symbol}.{exchange_id}?api_token={EOD_KEY}&fmt=json'
-        response = self.getApiResponse(url)
+        response = self.getApiResponse(url)['close']
         return response
 
 
