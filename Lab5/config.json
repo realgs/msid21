@@ -1,0 +1,21 @@
+{
+  "base_currency": "EUR",
+
+  "resources": {
+
+    "BTC": {
+      "volume": 0.002,
+      "price": 30900.0
+    },
+
+    "ETH": {
+      "volume": 1.002,
+      "price": 2000.52
+    },
+
+    "LTC": {
+      "volume": 15.2,
+      "price": 135.1
+    }
+  }
+}
