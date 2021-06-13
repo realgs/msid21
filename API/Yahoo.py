@@ -1,6 +1,7 @@
 import yfinance as yf
 
 from API.Api import Api
+from API.NBP import NBP
 
 
 class Yahoo(Api):
@@ -21,6 +22,9 @@ class Yahoo(Api):
 
     @classmethod
     def get_price(cls, stock_name, base_currency):
-        # TODO handle exception and check currency (info('currency'))
         ticker = yf.Ticker(stock_name)
-        return (ticker.info["dayLow"] + ticker.info["dayHigh"]) / 2
+        price = (ticker.info["dayLow"] + ticker.info["dayHigh"]) / 2
+        if ticker.info['currency'] == base_currency:
+            return price
+        else:
+            return NBP().convert(ticker.info['currency'], price, base_currency)

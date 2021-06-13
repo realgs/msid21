@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="input-group mb-3 percentage">
+    <form id="percentage_form" method="post" action="/pricing">
+        <input type="text" class="form-control" placeholder="Depth in percentage" aria-label="Depth in percentage"
+               aria-describedby="basic-addon2" name="depth">
+        <div class="input-group-append">
+            <button class="btn btn-outline-secondary" type="submit">SEARCH</button>
+        </div>
+    </form>
+</div>
+
+{% if base_currency %}
+<h3> Base currency: {{ base_currency }}</h3>
+{% endif %}
+<table id="table-pricing" class="table">
+    <!-- table header -->
+    {% if markings_list %}
+    <thead class="table-dark">
+    <th> Name</th>
+    <th> Quantity</th>
+    <th> Rate</th>
+    <th> Brutto</th>
+    <th>{{ percentage }}% brutto</th>
+    <th> Netto</th>
+    <th>{{ percentage }}% netto</th>
+    <th>Exchange name</th>
+    </thead>
+    {% endif %}
+
+    <!-- table rows -->
+    <tbody>
+    {% for dict_item in markings_list %}
+    <tr>
+        {% for value in dict_item.values() %}
+        <td> {{ value }}</td>
+        {% endfor %}
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

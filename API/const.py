@@ -8,4 +8,6 @@ transfer = {
     "XTZ": 0.1, "ZEC": 0.004, "ZRX": 56.0
 }
 
-EOD_TOKEN = "60af85057712e4.51092124"
+EOD_TOKEN = '60af85057712e4.51092124'
+
+service = None

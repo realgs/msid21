@@ -22,10 +22,10 @@ class NBP(Api):
             return quantity
         if cur_from == 'PLN':
             json = request(f'{self.url}{cur_to}')
-            return quantity / float(json['rates'][0]['ask'])
+            return round(quantity / float(json['rates'][0]['ask']), 2)
         elif cur_to == 'PLN':
             json = request(f'{self.url}' + f'{cur_from}')
-            return quantity * float(json['rates'][0]['bid'])
+            return round(quantity * float(json['rates'][0]['bid']), 2)
 
         conv_value = self.convert(cur_from, quantity, 'PLN')
         return self.convert('PLN', conv_value, cur_to)

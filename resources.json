@@ -15,21 +15,11 @@
   "crypto_currency": [
     {
       "name": "BTC",
-      "quantity": 0.0045,
+      "quantity": 0.045,
       "rate": 33827.6
     }
   ],
   "polish_stock": [
-    {
-      "name": "PZU",
-      "quantity": 2.57,
-      "rate": 9.8415
-    },
-    {
-      "name": "CDR",
-      "quantity": 3.128,
-      "rate": 47.547
-    }
   ],
   "foreign_stock": [
     {
