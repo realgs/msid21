@@ -9,7 +9,7 @@ NAME = 'EOD'
 BASE_URL = 'https://eodhistoricaldata.com/api/real-time/'
 
 
-class Endofday(Api):
+class EndofdayApi(Api):
 
     def __init__(self):
         super().__init__(name=NAME,
@@ -18,12 +18,19 @@ class Endofday(Api):
 
     def getRateInfo(self, symbol, exchange_id):
         url = f'{self.baseUrl}{symbol}.{exchange_id}?api_token={EOD_KEY}&fmt=json'
-        response = self.getApiResponse(url)['close']
-        return response
+        response = self.getApiResponse(url)
+        if response:
+            data = response['close']
+            if data == 'NA':
+                return None
+            else:
+                return data
+        else:
+            return None
 
 
 # test
 if __name__ == "__main__":
-    test_eod = Endofday()
-    print(test_eod.getRateInfo('AAPL', 'US'))
-    print(test_eod.getRateInfo('PKO', 'WAR'))
+    test_eod = EndofdayApi()
+    #print(test_eod.getRateInfo('AAPL', 'US'))
+    print(test_eod.getRateInfo('JSW', 'WAR'))

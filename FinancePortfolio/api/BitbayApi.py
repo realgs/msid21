@@ -78,11 +78,38 @@ class BitbayApi(Api):
             print("There was no data!")
             return None
 
+    #task 2
+    def getResourceValue(self, symbol, base_currency,  quantity):
+        data = self.getBestSellBuy(symbol, base_currency)
+        sell = []
+        for info in data:
+            sell.append(info[1])
+
+        value = 0
+        index = 0
+        while quantity > 0:
+            if quantity >= float(sell[index]['ca']):
+                value += float(sell[index]['ca']) * float(sell[index]['ra'])
+                quantity = quantity - float(sell[index]['ca'])
+                index += 1
+            elif quantity < float(sell[index]['ca']):
+                value += quantity * float(sell[index]['ra'])
+                quantity = 0
+        return value
+
+    def getLastBuyOfferPrice(self, symbol, base_currency):
+        data = self.getBestSellBuy(symbol, base_currency)
+        best_sell = data[0][1]['ra']
+        return best_sell
+
 
 # test
 if __name__ == "__main__":
     test_bitbay = BitbayApi()
-    print(test_bitbay.getMarketsData())
-    print(test_bitbay.createMarketsList())
-    print(test_bitbay.getOrderbookData('BTC', 'USD'))
-    print(test_bitbay.getOrderbookData('ABC', 'USD'))
+    #print(test_bitbay.getMarketsData())
+    #print(test_bitbay.createMarketsList())
+    #print(test_bitbay.getOrderbookData('BTC', 'USD'))
+    #print(test_bitbay.getOrderbookData('ABC', 'USD'))
+    print(test_bitbay.getBestSellBuy('BTC', 'USD'))
+    #print(test_bitbay.getResourceValue('BTC', 'USD', 0.022))
+    test_bitbay.getLastBuyOfferPrice('BTC', 'USD')

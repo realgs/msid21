@@ -56,12 +56,12 @@ class BittrexApi(Api):
         best_sell_buy_list = []
         orders = self.getOrderbookData(currency_1, currency_2)
         if orders:
-            if orders['result']['buy'] and orders['result']['buy']:
-                if len(orders['result']['sell']) < self.limit or len(orders['result']['buy']) < self.limit:
-                    limit = min(len(orders['result']['sell']), len(orders['result']['buy']))
+            if orders['bid'] and orders['ask']:
+                if len(orders['ask']) < self.limit or len(orders['bid']) < self.limit:
+                    limit = min(len(orders['ask']), len(orders['bid']))
                 for i in range(0, limit):
-                    sell = orders['result']['sell'][i]
-                    buy = orders['result']['buy'][i]
+                    sell = orders['ask'][i]
+                    buy = orders['bid'][i]
                     sell_buy = sell, buy
                     best_sell_buy_list.append(sell_buy)
                 return best_sell_buy_list
@@ -71,12 +71,39 @@ class BittrexApi(Api):
             print("There was no data!")
             return None
 
+    def getResourceValue(self, symbol, base_currency,  quantity):
+        data = self.getBestSellBuy(symbol, base_currency)
+        sell = []
+        for info in data:
+            sell.append(info[1])
+
+        value = 0
+        index = 0
+        while quantity > 0:
+            if quantity >= float(sell[index]['quantity']):
+                value += float(sell[index]['quantity']) * float(sell[index]['rate'])
+                quantity = quantity - float(sell[index]['quantity'])
+                index += 1
+            elif quantity < float(sell[index]['quantity']):
+                value += quantity * float(sell[index]['rate'])
+                quantity = 0
+        return value
+
+    def getLastBuyOfferPrice(self, symbol, base_currency):
+        data = self.getBestSellBuy(symbol, base_currency)
+        best_sell = data[0][1]['rate']
+        return best_sell
+
 
 # test
 if __name__ == "__main__":
     test_bittrex = BittrexApi()
-    print(test_bittrex.fees)
-    print(test_bittrex.getMarketsData())
-    print(test_bittrex.createMarketsList())
-    print(test_bittrex.getOrderbookData('BTC', 'USD'))
-    test_bittrex.getOrderbookData('ABC', 'USD')
+    #print(test_bittrex.fees)
+    #print(test_bittrex.getMarketsData())
+    #print(test_bittrex.createMarketsList())
+    #print(test_bittrex.getOrderbookData('BTC', 'USD'))
+    #test_bittrex.getOrderbookData('ABC', 'USD')
+    print(test_bittrex.getBestSellBuy('BTC', 'USD'))
+    #print(test_bittrex.getResourceValue('BTC', 'USD', 0.04))
+    print(test_bittrex.getLastBuyOfferPrice('BTC', 'USD'))
+

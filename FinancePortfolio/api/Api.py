@@ -38,5 +38,5 @@ class Api:
         if response.status_code == requests.codes.ok:
             return response.json()
         else:
-            print(response.status_code, ' ', response.reason)
+            print('Sorry, no data found: ', response.status_code, ' ', response.reason)
             return None
