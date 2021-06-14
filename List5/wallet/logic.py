@@ -40,7 +40,7 @@ def add_transaction(symbol: str, base_currency: str, rate: float, volume: float,
     # as tax calculation relies on weighted avg prices
 
 
-def read_wallet(path: Union[str, os.PathLike] = TRANSACTIONS_PATH) -> pd.DataFrame:
+def transactions_to_wallet(path: Union[str, os.PathLike] = TRANSACTIONS_PATH) -> pd.DataFrame:
     """Reads wallet state from list of transactions"""
     df = pd.read_csv(path, parse_dates=["date"])
     df = total_volumes(df).to_frame().reset_index()

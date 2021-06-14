@@ -4,19 +4,26 @@ import market_daemon as md
 import pandas as pd
 import yfinance as yf
 
-crypto_daemon = md.MarketDaemon.build_from_config("bitbay")
+bitbay = md.MarketDaemon.build_from_config("bitbay")
+bittrex = md.MarketDaemon.build_from_config("bittrex")
 
 STOOQ_URL = "https://stooq.pl/q/?s="
 
 
 def crypto_valuation(series: pd.Series):
     """Uses MarketDaemon for precise valuation of crypto assets"""
-    return crypto_daemon.valuation(series["instrument"], series["volume"], base="USD")
+    bitbay_price = bitbay.valuation(series["instrument"], series["volume"], base="USD")
+    bittrex_price = bittrex.valuation(series["instrument"], series["volume"], base="USD")
+
+    if bittrex_price >= bitbay_price:
+        return bittrex_price
+    else:
+        series["bestMarket"] = "bitbay"
+        return bittrex_price
 
 
 def get_price(symbol: str):
     if symbol.endswith(".WSE"):
-        # assume pln currency
         pln_price = get_stooq_price(symbol)
         usd_price = get_stooq_price("PLNUSD") * pln_price
         return usd_price
@@ -30,6 +37,16 @@ def get_yahoo_price(symbol: str):
         ticker = yf.Ticker(symbol)
         today_data = ticker.history(period="1d")
         return today_data["Close"][0]
+    except IndexError as e:
+        print(f"W Invalid symbol '{symbol}' at Yahoo")
+        return 0.0
+
+
+def get_yahoo_market_name(symbol: str):
+    """Fetches instrument price from Yahoo API"""
+    try:
+        ticker = yf.Ticker(symbol)
+        print(ticker.info)
     except IndexError as e:
         print(f"W Invalid symbol '{symbol}' at Yahoo")
         return 0.0

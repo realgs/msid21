@@ -1,9 +1,10 @@
+import numpy as np
 import pandas as pd
 
-from wallet.logic import read_transactions, total_volumes, read_wallet
+from wallet.logic import transactions_to_wallet
 from wallet.tax import tax_estimate
 
-from wallet.valuation import get_price, crypto_valuation, get_stooq_price
+from wallet.valuation import get_price, crypto_valuation
 
 
 def target_valuation(series: pd.Series):
@@ -35,7 +36,7 @@ def map_to_net_value(series: pd.Series):
 
 
 def wallet_valuation(target_currency: str = "USD"):
-    df = read_wallet()
+    df = transactions_to_wallet()
     # df: pd.DataFrame = total_volumes(wallet).to_frame().reset_index()
     return _valuation(df, target_currency)
 
@@ -44,8 +45,7 @@ def wallet_partial_valuation(fraction: float, target_currency: str = "USD"):
     if not 0.0 < fraction <= 1.0:
         raise ValueError(f"Invalid wallet partial valuation fraction '{fraction}'")
 
-    df = read_wallet()
-    # df: pd.DataFrame = total_volumes(wallet).to_frame().reset_index()
+    df = transactions_to_wallet()
     df["volume"] = df["volume"] * fraction
 
     df = _valuation(df, target_currency)
@@ -55,6 +55,8 @@ def wallet_partial_valuation(fraction: float, target_currency: str = "USD"):
 
 def _valuation(df: pd.DataFrame, target_currency: str) -> pd.DataFrame:
     print("I Calculating wallet valuation with wallet...")
+
+    df["bestMarket"] = np.NAN
 
     df["rateUsd"] = df["instrument"].apply(get_price)
     df["yahooValuationUsd"] = df["rateUsd"] * df["volume"]
@@ -73,4 +75,6 @@ def _valuation(df: pd.DataFrame, target_currency: str) -> pd.DataFrame:
             convert_from_usd, dest_currency=target_currency)
         valuation_column = target_column_name
 
-    return df[["instrument", "base", "volume", "rateUsd", valuation_column, "netValuationUsd"]]
+    print(df)
+
+    return df[["instrument", "base", "volume", "rateUsd", valuation_column, "netValuationUsd", "bestMarket"]]

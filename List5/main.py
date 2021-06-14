@@ -1,4 +1,4 @@
-from wallet.logic import read_wallet
+from wallet.logic import transactions_to_wallet
 from wallet.markets import wallet_valuation, wallet_partial_valuation
 
 from wallet.tax import tax_estimate
@@ -12,7 +12,7 @@ if __name__ == "__main__":
     # add_transaction("BTC", "USD", 18997, 3.98, datetime.datetime.today())
     # add_transaction("AAPL", "USD", 104, 3, datetime.datetime.today())
 
-    wallet = read_wallet()
+    wallet = transactions_to_wallet()
     print(wallet)
 
     ww = wallet_valuation()
