@@ -7,7 +7,7 @@ from market_daemon import optimizers
 from market_daemon.parsers import *
 from wallet.logic import add_instrument
 
-from wallet.markets import wallet_valuation
+from wallet.markets import wallet_valuation, wallet_partial_valuation
 
 CONFIG_PATH = "api_config.json"
 
@@ -38,8 +38,11 @@ if __name__ == "__main__":
     x = bitbay.valuation("BTC", 2, base="USD")
     print(x)
 
-    add_instrument("AAPL", "USD", 993.232, 4, datetime.datetime.today())
-    add_instrument("TSLA", "USD", 609, 2, datetime.datetime.today())
+    # add_instrument("BTC", "USD", 3434.232, 1, datetime.datetime.today())
+    # add_instrument("ETH", "USD", 6343409, 3, datetime.datetime.today())
 
     df = wallet_valuation()
+    print(df)
+
+    df = wallet_partial_valuation(fraction=0.05)
     print(df)

@@ -38,11 +38,6 @@ def convert_from_usd(amount: float, dest_currency: str):
     return price * amount
 
 
-def wallet_valuation(target_currency: str = "USD"):
-    wallet = read_wallet()
-    return _valuation(wallet, target_currency)
-
-
 def map_to_joint_rate(series: pd.Series):
     if series["cryptoValuationUsd"] > 0.0:
         return series["cryptoValuationUsd"] / series["volume"]
@@ -50,9 +45,26 @@ def map_to_joint_rate(series: pd.Series):
         return series["rateUsd"]
 
 
-def _valuation(wallet: pd.DataFrame, target_currency: str):
+def wallet_valuation(target_currency: str = "USD"):
+    wallet = read_wallet()
     df: pd.DataFrame = total_volumes(wallet).to_frame().reset_index()
+    return _valuation(df, target_currency)
 
+
+def wallet_partial_valuation(fraction: float, target_currency: str = "USD"):
+    if not 0.0 < fraction <= 1.0:
+        raise ValueError(f"Invalid wallet partial valuation fraction '{fraction}'")
+
+    wallet = read_wallet()
+    df: pd.DataFrame = total_volumes(wallet).to_frame().reset_index()
+    df["volume"] = df["volume"] * fraction
+
+    df = _valuation(df, target_currency)
+    df.rename(columns={"volume": "volume" + "_" + str(fraction)}, inplace=True)
+    return df
+
+
+def _valuation(df: pd.DataFrame, target_currency: str) -> pd.DataFrame:
     df["rateUsd"] = df["instrument"].apply(get_current_price)
     df["yahooValuationUsd"] = df["rateUsd"] * df["volume"]
     df["cryptoValuationUsd"] = df[["instrument", "volume"]].apply(crypto_valuation, axis=1)
