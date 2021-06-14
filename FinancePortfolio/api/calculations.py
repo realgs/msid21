@@ -18,7 +18,6 @@ def getDataFromConfigFile():
     return data
 
 
-# task 2
 def calculateValue(base_currency, resource_type, symbol, quantity, depth):
     quantity = quantity * depth / 100
 
@@ -69,34 +68,67 @@ def calculateValue(base_currency, resource_type, symbol, quantity, depth):
         return symbol, quantity, price, value
 
 
-# test task 2,3
-if __name__ == "__main__":
+def calculateProfit(current_value, cost):
+    profit = current_value - cost
+    return profit
+
+
+def calculateNetProfit(profit):
+    net_profit = 0.19 * profit  # for polish tax
+    return net_profit
+
+
+def calculateNetValue(average_price, quantity, value, depth):
+    quantity = quantity * depth / 100
+    cost = average_price * quantity
+    net_value = value - calculateNetProfit(calculateProfit(value, cost))
+    return net_value
+
+
+def displayTable():
     data = getDataFromConfigFile()
-    resources = list(data.items())
-    del resources[0] # deleting base_currency field
-    #del resources[0] # deleting pl_stock
-    #del resources[0] # deleting us_stock
-    #print(resources)
-
     base_currency = data['base_currency']
-    #depth = int(input('Enter percentage to calculate: '))
-    depth = 10
 
-    print("{:<8} {:<30} {:<30} {:<30} {:<15}".format('Name', 'Quantity', 'Price (last transaction)', 'Value', f'Value {depth}%'))
-    print('-' * 150)
+    resources = list(data.items())
+    del resources[0]  # deleting base_currency field
+    del resources[0]  # deleting pl_stock
+    del resources[0]  # deleting us_stock
+
+    #depth = int(input('Enter percentage to calculate: '))
+    depth = 10  # value for testing
+
+    print("{:<8} {:<30} {:<30} {:<30} {:<30} {:<30} {:<30}".format('Name', 'Quantity', 'Price (last transaction)',
+                                                     'Value', 'Net value', f'Value {depth}%', f'Net value {depth}%'))
+    print('-' * 200)
 
     total_value_all = 0
+    total_net_value_all = 0
     total_value_depth = 0
+    total_net_value_depth = 0
 
     for resource in resources:
         for item in resource[1]:
             value_all = calculateValue(base_currency, resource[0], item['symbol'], item['quantity'], 100)
+            net_value_all = calculateNetValue(item['average_price'], item['quantity'], value_all[3], 100)
             value_depth = calculateValue(base_currency, resource[0], item['symbol'], item['quantity'], depth)
+            net_value_depth = calculateNetValue(item['average_price'], item['quantity'], value_depth[3], depth)
+
             if value_all[3] != "-":
                 total_value_all += value_all[3]
+            total_net_value_all += net_value_all
             if value_depth[3] != "-":
                 total_value_depth += value_depth[3]
-            print("{:<8} {:<30} {:<30} {:<30}".format(value_all[0], value_all[1], value_all[2], value_all[3]),
-                  value_depth[3])
+            total_net_value_depth += net_value_depth
+            print("{:<8} {:<30} {:<30} {:<30} {:<30} {:<30} {:<30}".format(value_all[0], value_all[1], value_all[2],
+                                                        value_all[3], net_value_all, value_depth[3], net_value_depth))
     print("{:<71} {:<5}".format('\nTotal value of owned resources:', total_value_all))
-    print("{:<101} {:<5}".format(f'Total value of {depth}% of owned resources:', total_value_depth))
+    print("{:<101} {:<5}".format('Total net value of owned resources:', total_net_value_all))
+    print("{:<132} {:<5}".format(f'Total value of {depth}% of owned resources:', total_value_depth))
+    print("{:<163} {:<5}".format(f'Total net value of {depth}% of owned resources:', total_net_value_depth))
+
+
+# test task 2,3,4
+if __name__ == "__main__":
+    displayTable()
+
+
