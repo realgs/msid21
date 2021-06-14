@@ -1,7 +1,7 @@
 from FinancePortfolio.api.Api import Api, API_TYPES
 
 NAME = 'Bittrex'
-SHORT_NAME = 'BT'
+SHORT_NAME = 'BTX'
 BASE_URL = 'https://api.bittrex.com/v3/'
 HEADERS = {'content-type': 'application/json'}
 BITTREX_FEES = {
@@ -24,7 +24,7 @@ class BittrexApi(Api):
 
         currencies = self.getApiResponse(f'{self.baseUrl}currencies', HEADERS)
         for currency in currencies:
-            BITTREX_FEES['transfer_fee'][currency['symbol']] = currency['txFee']
+            BITTREX_FEES['transfer_fee'][currency['symbol']] = float(currency['txFee'])
 
     def takerFee(self):
         return BITTREX_FEES['taker_fee']

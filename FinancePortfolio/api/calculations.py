@@ -1,3 +1,4 @@
+import itertools
 import json
 
 from FinancePortfolio.api.BitbayApi import BitbayApi
@@ -93,15 +94,18 @@ def displayTable():
 
     resources = list(data.items())
     del resources[0]  # deleting base_currency field
-    del resources[0]  # deleting pl_stock
-    del resources[0]  # deleting us_stock
+    #del resources[0]  # deleting pl_stock
+    #del resources[0]  # deleting us_stock
 
     #depth = int(input('Enter percentage to calculate: '))
     depth = 10  # value for testing
 
-    print("{:<8} {:<30} {:<30} {:<30} {:<30} {:<30} {:<30} {:<30} {:<30}".format('Name', 'Quantity', 'Price (last transaction)',
-        'Value', 'Net value', 'Recommended exchange', f'Value {depth}%', f'Net value {depth}%', 'Recommended exchange'))
-    print('-' * 250)
+    print("{:<8} {:<15} {:<30} {:<15} {:<15} {:<15} {:<15} {:<15} {:<15} {:<15}".format(
+        'Name', 'Quantity', 'Price(last transaction)', 'Value', 'Net value', 'Best exchange', f'Value {depth}%',
+        f'Net value {depth}%', 'Best exchange', 'Arbitrage'))
+    print('-' * 200)
+
+    owned_cryptocurrencies = []
 
     total_value_all = 0
     total_net_value_all = 0
@@ -109,6 +113,20 @@ def displayTable():
     total_net_value_depth = 0
 
     for resource in resources:
+        print()
+        if resource[0] == 'cryptocurrencies':
+            for item in resource[1]:
+                owned_cryptocurrencies.append(item['symbol'])
+            pairs = list(itertools.permutations(owned_cryptocurrencies, 2))
+            markets_intersection = getMarketsIntersection(BITBAY.createMarketsList(), BITTREX.createMarketsList())
+            for pair in pairs:
+                if f'{pair[0]}-{pair[1]}' in markets_intersection:
+                    sell_buy_info = getBuySellInfo(pair[0], pair[1])
+                    arbitrage_info = getArbitrageInfo(sell_buy_info, pair[0], pair[1])
+                    for i in range(0, len(arbitrage_info)):
+                        print("{:>182}".format(f'{arbitrage_info[i][0]}-{arbitrage_info[i][1]}, '
+                                               f'{arbitrage_info[i][3]}-{arbitrage_info[i][4]},'
+                                             f' {round(arbitrage_info[i][2], 6)} {arbitrage_info[i][4]}'))
         for item in resource[1]:
             value_all = calculateValue(base_currency, resource[0], item['symbol'], item['quantity'], 100)
             net_value_all = calculateNetValue(item['average_price'], item['quantity'], value_all[3], 100)
@@ -116,21 +134,166 @@ def displayTable():
             net_value_depth = calculateNetValue(item['average_price'], item['quantity'], value_depth[3], depth)
 
             if value_all[3] != "-":
-                total_value_all += value_all[3]
-            total_net_value_all += net_value_all
+                total_value_all += round(value_all[3], 2)
+            total_net_value_all += round(net_value_all, 2)
             if value_depth[3] != "-":
-                total_value_depth += value_depth[3]
-            total_net_value_depth += net_value_depth
-            print("{:<8} {:<30} {:<30} {:<30} {:<30} {:<30} {:<30} {:<30} {:<30}".format(value_all[0], value_all[1],
-            value_all[2], value_all[3], net_value_all, value_depth[4], value_depth[3], net_value_depth, value_all[4]))
-    print("{:<71} {:<5}".format('\nTotal value of owned resources:', total_value_all))
-    print("{:<101} {:<5}".format('Total net value of owned resources:', total_net_value_all))
-    print("{:<163} {:<5}".format(f'Total value of {depth}% of owned resources:', total_value_depth))
-    print("{:<194} {:<5}".format(f'Total net value of {depth}% of owned resources:', total_net_value_depth))
+                total_value_depth += round(value_depth[3], 2)
+            total_net_value_depth += round(net_value_depth, 2)
+            print("{:<8} {:<15} {:<30} {:<15} {:<15} {:<15} {:<15} {:<15} {:<15}".format(value_all[0], value_all[1],
+                            round(value_all[2], 2), round(value_all[3], 2), round(net_value_all, 2), value_depth[4],
+                            round(value_depth[3], 2), round(net_value_depth, 2), value_all[4]))
+    print("{:<56} {:<15} {:<30} {:<15} {:<15}".format('\nTotal value:', '%.2f'%total_value_all,
+        '%.2f'%total_net_value_all, '%.2f'%total_value_depth, '%.2f'%total_net_value_depth))
+
+
+def getMarketsIntersection(markets_1, markets_2):
+    intersection = []
+    for market in markets_1:
+        if market in markets_2:
+            intersection.append(market)
+    return intersection
+
+
+def calculateDifference(value_1, value_2):
+    result = value_1 - value_2 / value_2
+    return result
+
+
+def calculateCost(quantity, rate, fees, currency):
+    cost = rate * (quantity + fees['transfer_fee'][currency] + quantity * fees['taker_fee'])
+    return cost
+
+
+def calculateIncome(quantity, rate, fees):
+    income = rate * quantity * (1 - fees['taker_fee'])
+    return income
+
+
+def getBuySellInfo(currency_1, currency_2):
+    bitbay_info = BITBAY.getBestSellBuy(currency_1, currency_2)
+    bittrex_info = BITTREX.getBestSellBuy(currency_1, currency_2)
+    if bitbay_info and bittrex_info is not None:
+        sell_buy_info = bitbay_info, bittrex_info
+        return sell_buy_info
+    else:
+        return None
+
+
+def getRateInfo(sell_buy_info):
+    bitbay_buy_rate = []
+    bitbay_sell_rate = []
+    bittrex_buy_rate = []
+    bittrex_sell_rate = []
+
+    for element in sell_buy_info[0]:
+        bitbay_buy_rate.append(float(element[1]['ra']))
+        bitbay_sell_rate.append(float(element[0]['ra']))
+    for element in sell_buy_info[1]:
+        bittrex_buy_rate.append(float(element[1]['rate']))
+        bittrex_sell_rate.append(float(element[0]['rate']))
+
+    return bitbay_buy_rate, bitbay_sell_rate, bittrex_buy_rate, bittrex_sell_rate
+
+
+def getQuantityInfo(sell_buy_info):
+    bitbay_buy_quantity = []
+    bitbay_sell_quantity = []
+    bittrex_buy_quantity = []
+    bittrex_sell_quantity = []
+
+    for element in sell_buy_info[0]:
+        bitbay_buy_quantity.append(float(element[1]['ca']))
+        bitbay_sell_quantity.append(float(element[0]['ca']))
+    for element in sell_buy_info[1]:
+        bittrex_buy_quantity.append(float(element[1]['quantity']))
+        bittrex_sell_quantity.append(float(element[0]['quantity']))
+    return bitbay_buy_quantity, bitbay_sell_quantity, bittrex_buy_quantity, bittrex_sell_quantity
+
+
+def getArbitrageInfo(buy_sell_info, currency_1, currency_2):
+    rate_info = getRateInfo(buy_sell_info)
+    quantity_info = getQuantityInfo(buy_sell_info)
+
+    arbitrage_quantity_bitbay_bittrex = min(quantity_info[1][0], quantity_info[2][0])
+    arbitrage_quantity_bittrex_bitbay = min(quantity_info[3][0], quantity_info[0][0])
+
+    sell_position = 0
+    buy_position = 0
+
+    arbitrage_profit_bitbay_bittrex = 0
+    arbitrage_profit_bittrex_bitbay = 0
+
+    income_bitbay_bittrex = 0
+    income_bittrex_bitbay = 0
+
+    cost_bitbay_bittrex = 0
+    cost_bittrex_bitbay = 0
+
+    # buy on bitbay, sell on bittrex
+    while sell_position < len(rate_info[2]) and buy_position < len(rate_info[1]) and\
+            calculateIncome(arbitrage_quantity_bitbay_bittrex, rate_info[2][sell_position], BITTREX.fees) > \
+            calculateCost(arbitrage_quantity_bitbay_bittrex, rate_info[1][buy_position], BITBAY.fees, currency_1):
+        if sell_position != 0:
+            arbitrage_quantity_bitbay_bittrex += min(quantity_info[1][sell_position], quantity_info[2][sell_position])
+        arbitrage_profit_bitbay_bittrex += \
+            calculateIncome(arbitrage_quantity_bitbay_bittrex, rate_info[2][sell_position], BITTREX.fees) -\
+            calculateCost(arbitrage_quantity_bitbay_bittrex, rate_info[1][buy_position], BITBAY.fees, currency_1)
+        income_bitbay_bittrex += \
+            calculateIncome(arbitrage_quantity_bitbay_bittrex, rate_info[2][sell_position], BITTREX.fees)
+        cost_bitbay_bittrex += \
+            calculateCost(arbitrage_quantity_bitbay_bittrex, rate_info[1][buy_position], BITBAY.fees, currency_1)
+        if quantity_info[1][sell_position] == quantity_info[2][sell_position]:
+            sell_position += 1
+            buy_position += 1
+        elif quantity_info[1][sell_position] < quantity_info[2][sell_position]:
+            buy_position += 1
+            quantity_info[2][sell_position] -= quantity_info[1][sell_position]
+        elif quantity_info[1][sell_position] > quantity_info[2][sell_position]:
+            sell_position += 1
+            quantity_info[1][sell_position] -= quantity_info[2][sell_position]
+
+    # buy on bittrex, sell on bitbay
+    while sell_position < len(rate_info[0]) and buy_position < len(rate_info[3]) and \
+            calculateIncome(arbitrage_quantity_bittrex_bitbay, rate_info[0][sell_position], BITBAY.fees) > \
+            calculateCost(arbitrage_quantity_bittrex_bitbay, rate_info[3][buy_position], BITTREX.fees, currency_1):
+        if sell_position != 0:
+            arbitrage_quantity_bitbay_bittrex += min(quantity_info[3][sell_position], quantity_info[0][sell_position])
+        arbitrage_profit_bittrex_bitbay += \
+            calculateIncome(arbitrage_quantity_bitbay_bittrex, rate_info[0][sell_position], BITTREX.fees) -\
+            calculateCost(arbitrage_quantity_bitbay_bittrex, rate_info[3][buy_position], BITBAY.fees, currency_1)
+        income_bittrex_bitbay += \
+            calculateIncome(arbitrage_quantity_bitbay_bittrex, rate_info[0][sell_position], BITTREX.fees)
+        cost_bittrex_bitbay += \
+            calculateCost(arbitrage_quantity_bitbay_bittrex, rate_info[3][buy_position], BITBAY.fees, currency_1)
+        if quantity_info[3][sell_position] == quantity_info[0][sell_position]:
+            sell_position += 1
+            buy_position += 1
+        elif quantity_info[3][sell_position] < quantity_info[0][sell_position]:
+            buy_position += 1
+            quantity_info[0][sell_position] -= quantity_info[3][sell_position]
+        elif quantity_info[3][sell_position] > quantity_info[0][sell_position]:
+            sell_position += 1
+            quantity_info[3][sell_position] -= quantity_info[0][sell_position]
+
+    if arbitrage_profit_bitbay_bittrex == 0:
+        income_bitbay_bittrex = calculateIncome(arbitrage_quantity_bitbay_bittrex, rate_info[2][0], BITTREX.fees)
+        cost_bitbay_bittrex = calculateCost(arbitrage_quantity_bitbay_bittrex, rate_info[1][0], BITBAY.fees, currency_1)
+        arbitrage_profit_bitbay_bittrex = income_bitbay_bittrex - cost_bitbay_bittrex
+
+    if arbitrage_profit_bittrex_bitbay == 0:
+        income_bittrex_bitbay = calculateIncome(arbitrage_quantity_bittrex_bitbay, rate_info[0][0], BITBAY.fees)
+        cost_bittrex_bitbay = calculateCost(arbitrage_quantity_bittrex_bitbay, rate_info[3][0], BITTREX.fees, currency_1)
+        arbitrage_profit_bittrex_bitbay = income_bittrex_bitbay - cost_bittrex_bitbay
+
+    info_bitbay_bittrex = BITBAY.shortName, BITTREX.shortName, arbitrage_profit_bitbay_bittrex, currency_1, currency_2
+    info_bittrex_bitbay = BITTREX.shortName, BITBAY.shortName, arbitrage_profit_bittrex_bitbay, currency_1, currency_2
+    return info_bitbay_bittrex, info_bittrex_bitbay
 
 
 # test
 if __name__ == "__main__":
     displayTable()
+
+
 
 

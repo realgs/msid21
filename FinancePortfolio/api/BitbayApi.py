@@ -1,7 +1,7 @@
 from FinancePortfolio.api.Api import Api, API_TYPES
 
 NAME = 'BitBay'
-SHORT_NAME = 'BB'
+SHORT_NAME = 'BTB'
 BASE_URL = 'https://api.bitbay.net/rest/trading/'
 HEADERS = {'content-type': 'application/json'}
 BITBAY_FEES = {
