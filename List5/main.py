@@ -5,9 +5,10 @@ import pandas as pd
 import market_daemon as md
 from market_daemon import optimizers
 from market_daemon.parsers import *
-from wallet.logic import add_instrument
+from wallet.logic import add_instrument, read_wallet
 
 from wallet.markets import wallet_valuation, wallet_partial_valuation
+from wallet.tax import tax_estimate
 
 CONFIG_PATH = "api_config.json"
 
@@ -35,14 +36,10 @@ if __name__ == "__main__":
     # data = yf.download(tickers="BTC-USD", start=datetime.datetime.today().date())
     # print(data)
 
-    x = bitbay.valuation("BTC", 2, base="USD")
-    print(x)
-
     # add_instrument("BTC", "USD", 3434.232, 1, datetime.datetime.today())
     # add_instrument("ETH", "USD", 6343409, 3, datetime.datetime.today())
 
     df = wallet_valuation()
-    print(df)
+    # print(df)
 
-    df = wallet_partial_valuation(fraction=0.05)
-    print(df)
+    res = tax_estimate(read_wallet(), period_start=datetime.datetime(2020, 1, 1), period_end=datetime.datetime.today())
