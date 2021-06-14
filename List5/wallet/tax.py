@@ -1,6 +1,6 @@
-from datetime import datetime
-
 import pandas as pd
+
+from wallet.logic import load_config
 
 
 def taxable_transactions(df: pd.DataFrame, symbol: str, kind: str = "buy") -> pd.DataFrame:
@@ -15,14 +15,15 @@ def taxable_transactions(df: pd.DataFrame, symbol: str, kind: str = "buy") -> pd
         return pd.DataFrame()
 
 
-def tax_estimate(df: pd.DataFrame, symbol, tax_rate: float = 0.19, period_start: datetime = None,
-                 period_end: datetime = None):
-    if period_start and period_end:
-        mask = (df["date"] >= period_start) & (df["date"] <= period_end)
-        df = df.loc[mask]
+def tax_estimate(symbol, volume: float, current_rate: float, tax_rate: float = 0.19):
+    """Estimates income tax on selling an asset based on weightedAvgRate for which the asset was acquired"""
+    wallet = load_config()["wallet"]
 
-    expenses_df = taxable_transactions(df, symbol, kind="buy")
-    profits_df = taxable_transactions(df, symbol, kind="sell")
-
-    for order_acquire in expenses_df.iterrows():
-        print(order_acquire)
+    try:
+        old_rate = wallet[symbol]["weightedAvgRate"]
+        expenses = old_rate * volume
+        income = current_rate * volume
+        profit = income - expenses
+        return max(0.0, profit * tax_rate)
+    except KeyError:
+        print(f"No such symbol '{symbol}'")
