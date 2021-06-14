@@ -19,7 +19,7 @@ def find_online_markets(API1, API2):
     return online_markets
 
 
-def get_value_in_user_currency(init_currency: str, target_currency: str, money: float):
+def get_value_user_curr(init_currency: str, target_currency: str, money: float):
     if init_currency == target_currency:
         return money
     target_currency_value_of_money = money
@@ -32,8 +32,8 @@ def get_value_in_user_currency(init_currency: str, target_currency: str, money: 
     return target_currency_value_of_money
 
 
-def sell_currency_on_api(init_val_user_amount_of_currency: float, currency_to_sell: str,
-                         init_val_user_overall_volume_on_api: float, user_default_currency: str, API_SELL):
+def sell_currency(init_val_user_amount_of_currency: float, currency_to_sell: str,
+                  init_val_user_overall_volume_on_api: float, user_default_currency: str, API_SELL):
     user_volume_on_api = init_val_user_overall_volume_on_api
     user_amount_of_currency = init_val_user_amount_of_currency
     user_money_earned = 0
@@ -57,8 +57,8 @@ def sell_currency_on_api(init_val_user_amount_of_currency: float, currency_to_se
 
     earned_money = user_money_earned
     if API_SELL.get_fee_currency() != user_default_currency:
-        earned_money = get_value_in_user_currency(API_SELL.get_fee_currency, user_default_currency,
-                                                  user_money_earned)
+        earned_money = get_value_user_curr(API_SELL.get_fee_currency, user_default_currency,
+                                           user_money_earned)
     return earned_money
 
 
@@ -82,11 +82,11 @@ def find_arbitrage(API_BUY, init_user_volume_on_api1: float, API_SELL, init_user
     if market_quote_curr != API_BUY_fee_currency and market_quote_curr not in fee_currencies:
         volume_api_buy_multiplier = API_BUY.get_best_bid_offer(market_quote_curr)
     elif market_quote_curr != API_BUY_fee_currency and market_quote_curr in fee_currencies:
-        volume_api_buy_multiplier = get_value_in_user_currency(market_quote_curr, API_BUY_fee_currency, 1)
+        volume_api_buy_multiplier = get_value_user_curr(market_quote_curr, API_BUY_fee_currency, 1)
     if market_quote_curr != API_SELL_fee_currency and market_quote_curr not in fee_currencies:
         volume_api_sell_multiplier = API_SELL.get_best_bid_offer(market_quote_curr)
     elif market_quote_curr != API_SELL_fee_currency and market_quote_curr in fee_currencies:
-        volume_api_sell_multiplier = get_value_in_user_currency(market_quote_curr, API_SELL_fee_currency, 1)
+        volume_api_sell_multiplier = get_value_user_curr(market_quote_curr, API_SELL_fee_currency, 1)
 
     for sell_offer in sell_offers:
         fees_buy = API_BUY.get_maker_taker_fee(user_volume_on_api1)

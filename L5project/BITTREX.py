@@ -1,4 +1,4 @@
-import ApiRequest
+import API_REQUEST
 import re
 import API_OPERATIONS
 
@@ -10,8 +10,8 @@ class Bittrex:
             "URL": "https://api.bittrex.com/v3/markets/",
             "market_info_URL": "https://api.bittrex.com/v3/markets",
             "withdrawal_fees_endpoint": "https://api.bittrex.com/v3/currencies",
-            "orderbook_endpoint": "orderbook",
-            "rates_endpoint": "ticker"
+            "orderbook_endp": "orderbook",
+            "rates_endp": "ticker"
         }
 
         self.__fee_currency = "USD"
@@ -538,40 +538,38 @@ class Bittrex:
         possible_currencies = [self.__fee_currency, "EUR", "PLN"]
         for curr in possible_currencies:
             trading_pair = f'{currency}-{curr}'
-            market = ApiRequest.make_request(
-                f'{self.__URL_BUILD["market_info_URL"]}/{trading_pair}/{self.__URL_BUILD["rates_endpoint"]}')
+            market = API_REQUEST.make_request(
+                f'{self.__URL_BUILD["market_info_URL"]}/{trading_pair}/{self.__URL_BUILD["rates_endp"]}')
             if market is not None:
-                return API_OPERATIONS.get_value_in_user_currency(curr, self.__fee_currency,
-                                                                 float(market["bidRate"]))
+                return API_OPERATIONS.get_value_user_curr(curr, self.__fee_currency, float(market["bidRate"]))
         raise Exception(f"There is no highest bid in BITTREX API for {currency} to calculate fee")
 
     def get_maker_taker_fee(self, user_money_spent_on_api: float):
         i = 0
         length = len(self.get_maker_taker_list())
+        fees = self.get_maker_taker_list()
         while i < length - 2:
-            if user_money_spent_on_api > self.get_maker_taker_list()[i]["upper_bound"]:
+            if user_money_spent_on_api > fees[i]["upper_bound"]:
                 i += 1
             else:
-                return {"taker_fee": self.get_maker_taker_list()[i]["takerFee"],
-                        "maker_fee": self.get_maker_taker_list()[i]["makerFee"]}
+                return {"taker_fee": fees[i]["takerFee"], "maker_fee": fees[i]["makerFee"]}
         if i == length - 2:
-            return {"taker_fee": self.get_maker_taker_list()[length - 1]["takerFee"],
-                    "maker_fee": self.get_maker_taker_list()[length - 1]["makerFee"]}
+            return {"taker_fee": fees[length - 1]["takerFee"], "maker_fee": fees[length - 1]["makerFee"]}
 
     def get_withdrawal_fee(self, currency: str):
         return self.__withdrawal_fees[currency]
 
     def request_bids_and_asks(self, currencies: tuple[str, str]):
         trading_pair = f'{currencies[0]}-{currencies[1]}'
-        offers = ApiRequest.make_request(
-            f'{self.__URL_BUILD["URL"]}{trading_pair}/{self.__URL_BUILD["orderbook_endpoint"]}')
+        offers = API_REQUEST.make_request(
+            f'{self.__URL_BUILD["URL"]}{trading_pair}/{self.__URL_BUILD["orderbook_endp"]}')
         if offers is not None:
             return offers
         else:
             raise Exception(f"Empty bids and asks list in BITTREX for ({currencies[0]},{currencies[1]})")
 
     def request_market_data(self):
-        markets = ApiRequest.make_request(f'{self.__URL_BUILD["market_info_URL"]}')
+        markets = API_REQUEST.make_request(f'{self.__URL_BUILD["market_info_URL"]}')
         markets_list = []
         if markets is not None:
             for market in markets:
