@@ -1,27 +1,8 @@
 import pandas as pd
 
-from wallet.logic import read_wallet, total_volumes
-import yfinance as yf
+from wallet.logic import read_transactions, total_volumes, read_wallet
 
-import market_daemon as md
-
-crypto_daemon = md.MarketDaemon.build_from_config("bitbay")
-
-
-def crypto_valuation(series: pd.Series):
-    """Uses MarketDaemon for precise valuation of crypto assets"""
-    return crypto_daemon.valuation(series["instrument"], series["volume"], base="USD")
-
-
-def get_current_price(symbol: str):
-    """Fetches instrument price from Yahoo API"""
-    try:
-        ticker = yf.Ticker(symbol)
-        today_data = ticker.history(period="1d")
-        return today_data["Close"][0]
-    except IndexError as e:
-        print("W Invalid symbol '{symbol}'")
-        return 0.0
+from wallet.valuation import get_price, crypto_valuation
 
 
 def target_valuation(series: pd.Series):
@@ -34,7 +15,7 @@ def target_valuation(series: pd.Series):
 
 def convert_from_usd(amount: float, dest_currency: str):
     """Converts given amount of USD to dest_currency"""
-    price = get_current_price(f"{dest_currency}=X")
+    price = get_price(f"{dest_currency}=X")
     return price * amount
 
 
@@ -46,8 +27,8 @@ def map_to_joint_rate(series: pd.Series):
 
 
 def wallet_valuation(target_currency: str = "USD"):
-    wallet = read_wallet()
-    df: pd.DataFrame = total_volumes(wallet).to_frame().reset_index()
+    df = read_wallet()
+    # df: pd.DataFrame = total_volumes(wallet).to_frame().reset_index()
     return _valuation(df, target_currency)
 
 
@@ -55,8 +36,8 @@ def wallet_partial_valuation(fraction: float, target_currency: str = "USD"):
     if not 0.0 < fraction <= 1.0:
         raise ValueError(f"Invalid wallet partial valuation fraction '{fraction}'")
 
-    wallet = read_wallet()
-    df: pd.DataFrame = total_volumes(wallet).to_frame().reset_index()
+    df = read_wallet()
+    # df: pd.DataFrame = total_volumes(wallet).to_frame().reset_index()
     df["volume"] = df["volume"] * fraction
 
     df = _valuation(df, target_currency)
@@ -65,7 +46,10 @@ def wallet_partial_valuation(fraction: float, target_currency: str = "USD"):
 
 
 def _valuation(df: pd.DataFrame, target_currency: str) -> pd.DataFrame:
-    df["rateUsd"] = df["instrument"].apply(get_current_price)
+    print("Calculating wallet valuation with wallet")
+    print(df)
+
+    df["rateUsd"] = df["instrument"].apply(get_price)
     df["yahooValuationUsd"] = df["rateUsd"] * df["volume"]
     df["cryptoValuationUsd"] = df[["instrument", "volume"]].apply(crypto_valuation, axis=1)
     df["valuationUsd"] = df.apply(target_valuation, axis=1)
@@ -80,4 +64,4 @@ def _valuation(df: pd.DataFrame, target_currency: str) -> pd.DataFrame:
             convert_from_usd, dest_currency=target_currency)
         valuation_column = target_column_name
 
-    return df[["instrument", "volume", "rateUsd", valuation_column]]
+    return df[["instrument", "base", "volume", "rateUsd", valuation_column]]

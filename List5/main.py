@@ -1,14 +1,12 @@
 import datetime
 
-import pandas as pd
-
 import market_daemon as md
 from market_daemon import optimizers
 from market_daemon.parsers import *
-from wallet.logic import add_instrument, read_wallet
+from wallet.logic import add_transaction, read_transactions, read_wallet
 
 from wallet.markets import wallet_valuation, wallet_partial_valuation
-from wallet.tax import tax_estimate
+from wallet.tax import tax_estimate, taxable_transactions
 
 CONFIG_PATH = "api_config.json"
 
@@ -36,10 +34,16 @@ if __name__ == "__main__":
     # data = yf.download(tickers="BTC-USD", start=datetime.datetime.today().date())
     # print(data)
 
-    # add_instrument("BTC", "USD", 3434.232, 1, datetime.datetime.today())
-    # add_instrument("ETH", "USD", 6343409, 3, datetime.datetime.today())
+    # add_transaction("KGH.WSE", "PLN", 187, -0.755, datetime.datetime.today())
+    # add_transaction("CDR.WSE", "PLN", 54454, 16.45, datetime.datetime.today())
 
-    df = wallet_valuation()
-    # print(df)
+    # add_transaction("BTC", "USD", 18997, 3.98, datetime.datetime.today())
+    # add_transaction("AAPL", "USD", 104, 3, datetime.datetime.today())
 
-    res = tax_estimate(read_wallet(), period_start=datetime.datetime(2020, 1, 1), period_end=datetime.datetime.today())
+    wallet = read_wallet()
+    print(wallet)
+
+    # res = taxable_transactions(df, "KGH.WSE", kind="sell")
+    # print(res)
+
+    # tax_estimate(df, "AAPL")

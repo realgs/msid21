@@ -1,3 +1,11 @@
 {
-  "baseCurrency": "USD"
+  "base": "USD",
+  "apis": {
+    "crypto": ["bitbay", "bittrex"],
+    "polish": ["stooq"],
+    "foreign": ["yahoo"]
+  },
+  "wallet": {
+
+  }
 }
