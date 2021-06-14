@@ -5,6 +5,6 @@ NBP_COMMANDS = {
 }
 
 
-def exchange_rate_average(currency: str):
+def get_avg_exchange_rate(currency: str):
     info = ApiRequest.make_request(NBP_COMMANDS["exchange_rate_currency"].replace('{code}', currency))
     return info["rates"][0]["mid"]

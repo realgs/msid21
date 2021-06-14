@@ -6,13 +6,13 @@ import API_OPERATIONS
 class Bitbay:
     def __init__(self):
         self.__name = "BITBAY"
-        self.__URL_BUILD_CONTAINER = {
+        self.__URL_BUILD = {
             "URL": "https://bitbay.net/API/Public/",
             "market_info_URL": "https://api.bitbay.net/rest/trading/ticker",
             "orderbook_endpoint": "orderbook.json",
         }
 
-        self.__upper_bound_currency = "EUR"
+        self.__fee_currency = "EUR"
         self.__maker_taker_fees = [{"upper_bound": 1250, "takerFee": 0.0043, "makerFee": 0.003},
                                    {"upper_bound": 3750, "takerFee": 0.0042, "makerFee": 0.0029},
                                    {"upper_bound": 7500, "takerFee": 0.0041, "makerFee": 0.0028},
@@ -85,44 +85,46 @@ class Bitbay:
     def get_name(self):
         return self.__name
 
-    def get_upper_bound_currency(self):
-        return self.__upper_bound_currency
+    def get_fee_currency(self):
+        return self.__fee_currency
 
-    def get_maker_taker_fees_list(self):
+    def get_maker_taker_list(self):
         return self.__maker_taker_fees
 
-    def get_withdrawal_fees_list(self):
+    def get_withdrawal_list(self):
         return self.__withdrawal_fees
 
-    def get_best_bid_offer_in_api_currency(self, currency: str):
-        possible_currencies = [self.__upper_bound_currency, "USD", "PLN"]
+    def get_best_bid_offer(self, currency: str):
+        possible_currencies = [self.__fee_currency, "USD", "PLN"]
         for curr in possible_currencies:
+            trading_pair = f'{currency}-{curr}'
             market = ApiRequest.make_request(
-                f'{self.__URL_BUILD_CONTAINER["market_info_URL"]}/{currency}-{curr}')
+                f'{self.__URL_BUILD["market_info_URL"]}/{trading_pair}')
             if market is not None and market["status"] == "Ok":
-                return API_OPERATIONS.get_value_in_user_currency(curr, self.__upper_bound_currency,
+                return API_OPERATIONS.get_value_in_user_currency(curr, self.__fee_currency,
                                                                  float(market["ticker"]["highestBid"]))
         raise Exception(f"There is no highest bid in BITBAY API for {currency} to calculate fee")
 
     def get_maker_taker_fee(self, user_money_spent_on_api: float):
         i = 0
-        length = len(self.get_maker_taker_fees_list())
+        length = len(self.get_maker_taker_list())
         while i < length - 2:
-            if user_money_spent_on_api > self.get_maker_taker_fees_list()[i]["upper_bound"]:
+            if user_money_spent_on_api > self.get_maker_taker_list()[i]["upper_bound"]:
                 i += 1
             else:
-                return {"taker_fee": self.get_maker_taker_fees_list()[i]["takerFee"],
-                        "maker_fee": self.get_maker_taker_fees_list()[i]["makerFee"]}
+                return {"taker_fee": self.get_maker_taker_list()[i]["takerFee"],
+                        "maker_fee": self.get_maker_taker_list()[i]["makerFee"]}
         if i == length - 2:
-            return {"taker_fee": self.get_maker_taker_fees_list()[length - 1]["takerFee"],
-                    "maker_fee": self.get_maker_taker_fees_list()[length - 1]["makerFee"]}
+            return {"taker_fee": self.get_maker_taker_list()[length - 1]["takerFee"],
+                    "maker_fee": self.get_maker_taker_list()[length - 1]["makerFee"]}
 
     def get_withdrawal_fee(self, currency: str):
         return self.__withdrawal_fees[currency]
 
     def request_bids_and_asks(self, currencies: tuple[str, str]):
+        trading_pair = f'{currencies[0]}{currencies[1]}'
         offers = ApiRequest.make_request(
-            f'{self.__URL_BUILD_CONTAINER["URL"]}{currencies[0]}{currencies[1]}/{self.__URL_BUILD_CONTAINER["orderbook_endpoint"]}')
+            f'{self.__URL_BUILD["URL"]}{trading_pair}/{self.__URL_BUILD["orderbook_endpoint"]}')
 
         if offers is not None:
             bids = offers["bids"]
@@ -145,7 +147,7 @@ class Bitbay:
             raise Exception(f"Empty bids and asks list in BITBAY for ({currencies[0]},{currencies[1]})")
 
     def request_market_data(self):
-        markets = ApiRequest.make_request(f'{self.__URL_BUILD_CONTAINER["market_info_URL"]}')
+        markets = ApiRequest.make_request(f'{self.__URL_BUILD["market_info_URL"]}')
         markets_list = []
         if markets is not None and markets["status"] == "Ok":
             for market in markets["items"].keys():
