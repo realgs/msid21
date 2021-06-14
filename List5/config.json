@@ -1,11 +1,42 @@
 {
   "base": "USD",
   "apis": {
-    "crypto": ["bitbay", "bittrex"],
-    "polish": ["stooq"],
-    "foreign": ["yahoo"]
+    "crypto": [
+      "bitbay",
+      "bittrex"
+    ],
+    "polish": [
+      "stooq"
+    ],
+    "foreign": [
+      "yahoo"
+    ]
   },
   "wallet": {
-
+    "AAPL": {
+      "base": "USD",
+      "volume": 7.0,
+      "weightedAvgRate": 612.1325714286
+    },
+    "BTC": {
+      "base": "USD",
+      "volume": 3.9688,
+      "weightedAvgRate": 18997.0
+    },
+    "CDR.WSE": {
+      "base": "PLN",
+      "volume": 16.45,
+      "weightedAvgRate": 54454.0
+    },
+    "KGH.WSE": {
+      "base": "PLN",
+      "volume": 0.245,
+      "weightedAvgRate": 187.0
+    },
+    "TSLA": {
+      "base": "USD",
+      "volume": 2.0,
+      "weightedAvgRate": 609.0
+    }
   }
 }

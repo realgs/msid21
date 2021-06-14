@@ -3,7 +3,7 @@ import datetime
 import market_daemon as md
 from market_daemon import optimizers
 from market_daemon.parsers import *
-from wallet.logic import add_transaction, read_transactions, read_wallet
+from wallet.logic import add_transaction, read_transactions, read_wallet, update_wallet
 
 from wallet.markets import wallet_valuation, wallet_partial_valuation
 from wallet.tax import tax_estimate, taxable_transactions
@@ -42,6 +42,8 @@ if __name__ == "__main__":
 
     wallet = read_wallet()
     print(wallet)
+
+    update_wallet()
 
     # res = taxable_transactions(df, "KGH.WSE", kind="sell")
     # print(res)
