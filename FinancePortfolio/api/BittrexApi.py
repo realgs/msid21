@@ -1,6 +1,7 @@
 from FinancePortfolio.api.Api import Api, API_TYPES
 
 NAME = 'Bittrex'
+SHORT_NAME = 'BT'
 BASE_URL = 'https://api.bittrex.com/v3/'
 HEADERS = {'content-type': 'application/json'}
 BITTREX_FEES = {
@@ -15,6 +16,7 @@ class BittrexApi(Api):
     def __init__(self):
         super().__init__(
             name=NAME,
+            short_name=SHORT_NAME,
             base_url=BASE_URL,
             api_type=API_TYPES[1],
             fees=BITTREX_FEES

@@ -1,6 +1,7 @@
 from FinancePortfolio.api.Api import Api, API_TYPES
 
 NAME = 'BitBay'
+SHORT_NAME = 'BB'
 BASE_URL = 'https://api.bitbay.net/rest/trading/'
 HEADERS = {'content-type': 'application/json'}
 BITBAY_FEES = {
@@ -22,6 +23,7 @@ class BitbayApi(Api):
     def __init__(self):
         super().__init__(
             name=NAME,
+            short_name=SHORT_NAME,
             base_url=BASE_URL,
             api_type=API_TYPES[1],
             fees=BITBAY_FEES

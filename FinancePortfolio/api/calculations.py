@@ -20,18 +20,18 @@ def getDataFromConfigFile():
 
 def calculateValue(base_currency, resource_type, symbol, quantity, depth):
     quantity = quantity * depth / 100
-
+    best_exchange = ''
     if resource_type == 'pl_stock':
         price = EOD.getRateInfo(symbol, 'WAR')
         if price is not None:
             if base_currency != 'PLN':
                 price = NBP.convertCurrency('PLN', base_currency, price)
             value = quantity * price
-            return symbol, quantity, price, value
+            return symbol, quantity, price, value, best_exchange
         else:
             price = "-"
             value = "-"
-            return symbol, quantity, price, value
+            return symbol, quantity, price, value, best_exchange
 
     elif resource_type == 'us_stock':
         price = EOD.getRateInfo(symbol, 'US')
@@ -39,11 +39,11 @@ def calculateValue(base_currency, resource_type, symbol, quantity, depth):
             if base_currency != 'USD':
                 price = NBP.convertCurrency('USD', base_currency, price)
             value = quantity * price
-            return symbol, quantity, price, value
+            return symbol, quantity, price, value, best_exchange
         else:
             price = "-"
             value = "-"
-            return symbol, quantity, price, value
+            return symbol, quantity, price, value, best_exchange
 
     elif resource_type == 'cryptocurrencies':
         result_bitbay = BITBAY.getResourceValue(symbol, base_currency, quantity)
@@ -58,14 +58,16 @@ def calculateValue(base_currency, resource_type, symbol, quantity, depth):
 
         if value == value_bitbay:
             price = price_bitbay
+            best_exchange = BITBAY.shortName
         else:
             price = price_bittrex
-        return symbol, quantity, price, value
+            best_exchange = BITTREX.shortName
+        return symbol, quantity, price, value, best_exchange
 
     elif resource_type == 'currencies':
         value = NBP.convertCurrency(symbol, base_currency, quantity)
         price = value / quantity
-        return symbol, quantity, price, value
+        return symbol, quantity, price, value, best_exchange
 
 
 def calculateProfit(current_value, cost):
@@ -97,9 +99,9 @@ def displayTable():
     #depth = int(input('Enter percentage to calculate: '))
     depth = 10  # value for testing
 
-    print("{:<8} {:<30} {:<30} {:<30} {:<30} {:<30} {:<30}".format('Name', 'Quantity', 'Price (last transaction)',
-                                                     'Value', 'Net value', f'Value {depth}%', f'Net value {depth}%'))
-    print('-' * 200)
+    print("{:<8} {:<30} {:<30} {:<30} {:<30} {:<30} {:<30} {:<30} {:<30}".format('Name', 'Quantity', 'Price (last transaction)',
+        'Value', 'Net value', 'Recommended exchange', f'Value {depth}%', f'Net value {depth}%', 'Recommended exchange'))
+    print('-' * 250)
 
     total_value_all = 0
     total_net_value_all = 0
@@ -119,15 +121,15 @@ def displayTable():
             if value_depth[3] != "-":
                 total_value_depth += value_depth[3]
             total_net_value_depth += net_value_depth
-            print("{:<8} {:<30} {:<30} {:<30} {:<30} {:<30} {:<30}".format(value_all[0], value_all[1], value_all[2],
-                                                        value_all[3], net_value_all, value_depth[3], net_value_depth))
+            print("{:<8} {:<30} {:<30} {:<30} {:<30} {:<30} {:<30} {:<30} {:<30}".format(value_all[0], value_all[1],
+            value_all[2], value_all[3], net_value_all, value_depth[4], value_depth[3], net_value_depth, value_all[4]))
     print("{:<71} {:<5}".format('\nTotal value of owned resources:', total_value_all))
     print("{:<101} {:<5}".format('Total net value of owned resources:', total_net_value_all))
-    print("{:<132} {:<5}".format(f'Total value of {depth}% of owned resources:', total_value_depth))
-    print("{:<163} {:<5}".format(f'Total net value of {depth}% of owned resources:', total_net_value_depth))
+    print("{:<163} {:<5}".format(f'Total value of {depth}% of owned resources:', total_value_depth))
+    print("{:<194} {:<5}".format(f'Total net value of {depth}% of owned resources:', total_net_value_depth))
 
 
-# test task 2,3,4
+# test
 if __name__ == "__main__":
     displayTable()
 

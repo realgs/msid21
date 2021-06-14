@@ -5,7 +5,8 @@ from FinancePortfolio.api.credentials import EOD_KEY
 # live (delayed) stock prices
 # 15-20 minutes delay
 
-NAME = 'EOD'
+NAME = 'End Of Day'
+SHORT_NAME = 'EOD'
 BASE_URL = 'https://eodhistoricaldata.com/api/real-time/'
 
 
@@ -13,6 +14,7 @@ class EndofdayApi(Api):
 
     def __init__(self):
         super().__init__(name=NAME,
+                         short_name=SHORT_NAME,
                          base_url=BASE_URL,
                          api_type=API_TYPES[0])
 

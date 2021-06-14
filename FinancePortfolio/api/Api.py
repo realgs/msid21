@@ -6,8 +6,9 @@ API_TYPES = ['stock', 'cryptocurrency', 'currency']
 
 class Api:
 
-    def __init__(self, name, base_url, api_type, limit=DEFAULT_LIMIT, fees=None):
+    def __init__(self, name, short_name, base_url, api_type, limit=DEFAULT_LIMIT, fees=None):
         self._name = name
+        self._short_name = short_name
         self._base_url = base_url
         self._api_type = api_type
         self._limit = limit
@@ -16,6 +17,10 @@ class Api:
     @property
     def name(self):
         return self._name
+
+    @property
+    def shortName(self):
+        return self._short_name
 
     @property
     def baseUrl(self):

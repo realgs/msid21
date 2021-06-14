@@ -1,6 +1,7 @@
 from FinancePortfolio.api.Api import Api, API_TYPES
 
-NAME = 'NBP'
+NAME = 'Narodowy Bank Polski'
+SHORT_NAME = 'NBP'
 BASE_URL = 'http://api.nbp.pl/api/exchangerates/rates/'
 
 
@@ -9,6 +10,7 @@ class NbpApi(Api):
     def __init__(self):
         super().__init__(
             name=NAME,
+            short_name=SHORT_NAME,
             base_url=BASE_URL,
             api_type=API_TYPES[2]
         )
