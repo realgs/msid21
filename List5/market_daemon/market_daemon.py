@@ -13,11 +13,11 @@ import bcolors
 import requests
 from tqdm import tqdm
 
-from market_daemon import optimizers
+from market_daemon import optimizers, parsers
 
 OrderList = list[tuple[float, float]]
 
-CONFIG_PATH: str = "config.json"
+CONFIG_PATH: str = "api_config.json"
 
 BASE_CURRENCY: str = "USD"
 DEFAULT_ORDER_NUM: int = 3
@@ -47,7 +47,7 @@ SAMPLE_CONFIG: dict = {
 }
 
 
-def load_config(path="config.json"):
+def load_config(path="api_config.json"):
     try:
         with open(path, 'r') as f:
             result = dict(json.load(f))
@@ -85,9 +85,16 @@ class MarketDaemon:
         self._orderbook_parser: Callable[[list], OrderList] = lambda x: x
         self._market_parser: Callable[[requests.Response], set[str]] = lambda x: set()
 
+        if self.name == "bittrex":
+            self.market_parser = parsers.bittrex_request_to_pairs
+        elif self.name == "bitbay":
+            self.market_parser = parsers.bitbay_request_to_pairs
+
+        self._available_pairs_estimate = self._get_available_pairs(self.market_parser)
+
     @staticmethod
-    def build_from_config(api_identifier: str, config_path: str = "config.json"):
-        """Builds a MarketDaemon with a given identifier from specified config.json file
+    def build_from_config(api_identifier: str, config_path: str = "api_config.json"):
+        """Builds a MarketDaemon with a given identifier from specified api_config.json file
         Args:
             api_identifier: name of the API for which config is provided
             config_path: relative path to config file
@@ -170,6 +177,40 @@ class MarketDaemon:
             print(f"Settings for market {self} do not have information about taker_fee "
                   f"for {instrument}. Returning bare order value.")
             return price * quantity
+
+    def valuation(self, instrument: str, quantity: float, base: str = BASE_CURRENCY):
+        to_sell = quantity
+        profit = 0.0
+
+        symbol = f"{instrument}{self.settings['instrument_sep']}{base}"
+
+        if symbol not in self._available_pairs_estimate:
+            return 0.0
+        else:
+            _, sells = self.get_orders(instrument, base, -1, verbose=False, raw=True)
+
+            try:
+                i = 0
+                while to_sell > 0.0:
+                    price = sells[i][0]
+                    volume = sells[i][1]
+
+                    sell_quantity = min(to_sell, volume)
+                    to_sell -= sell_quantity
+                    sells[i][1] -= sell_quantity
+
+                    profit += price * sell_quantity
+
+                    if sells[i][1] <= 0.0:
+                        i += 1
+
+                return profit
+            except IndexError:
+                print(f"W Could not sell total amount of product due to market saturation")
+                return profit
+            except KeyError:
+                print(f"W could not fetch {instrument} from API {self}")
+                return 0.0
 
     def _make_request(self, url: str, verbose: bool = True) -> Optional[requests.Response]:
         try:
