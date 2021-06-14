@@ -29,7 +29,7 @@ def target_valuation(series: pd.Series):
     if series["cryptoValuationUsd"] > 0.0:
         return series["cryptoValuationUsd"]
     else:
-        return series["instrumentRateUsd"]
+        return series["yahooValuationUsd"]
 
 
 def convert_from_usd(amount: float, dest_currency: str):
@@ -43,12 +43,22 @@ def wallet_valuation(target_currency: str = "USD"):
     return _valuation(wallet, target_currency)
 
 
+def map_to_joint_rate(series: pd.Series):
+    if series["cryptoValuationUsd"] > 0.0:
+        return series["cryptoValuationUsd"] / series["volume"]
+    else:
+        return series["rateUsd"]
+
+
 def _valuation(wallet: pd.DataFrame, target_currency: str):
     df: pd.DataFrame = total_volumes(wallet).to_frame().reset_index()
 
-    df["instrumentRateUsd"] = df["instrument"].apply(get_current_price)
+    df["rateUsd"] = df["instrument"].apply(get_current_price)
+    df["yahooValuationUsd"] = df["rateUsd"] * df["volume"]
     df["cryptoValuationUsd"] = df[["instrument", "volume"]].apply(crypto_valuation, axis=1)
     df["valuationUsd"] = df.apply(target_valuation, axis=1)
+
+    df["rateUsd"] = df.apply(map_to_joint_rate, axis=1)
 
     valuation_column = "valuationUsd"
 
@@ -58,4 +68,4 @@ def _valuation(wallet: pd.DataFrame, target_currency: str):
             convert_from_usd, dest_currency=target_currency)
         valuation_column = target_column_name
 
-    return df[["instrument", "volume", valuation_column]]
+    return df[["instrument", "volume", "rateUsd", valuation_column]]

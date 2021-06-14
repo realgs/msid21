@@ -5,6 +5,7 @@ import pandas as pd
 import market_daemon as md
 from market_daemon import optimizers
 from market_daemon.parsers import *
+from wallet.logic import add_instrument
 
 from wallet.markets import wallet_valuation
 
@@ -37,8 +38,8 @@ if __name__ == "__main__":
     x = bitbay.valuation("BTC", 2, base="USD")
     print(x)
 
-    # add_instrument("AAPL", "USD", 993.232, 4, datetime.datetime.today())
-    # add_instrument("TSLA", "USD", 609, 2, datetime.datetime.today())
+    add_instrument("AAPL", "USD", 993.232, 4, datetime.datetime.today())
+    add_instrument("TSLA", "USD", 609, 2, datetime.datetime.today())
 
-    df = wallet_valuation("PLN")
+    df = wallet_valuation()
     print(df)
