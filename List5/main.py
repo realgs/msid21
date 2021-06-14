@@ -1,4 +1,5 @@
 from wallet.logic import read_wallet
+from wallet.markets import wallet_valuation, wallet_partial_valuation
 
 from wallet.tax import tax_estimate
 
@@ -14,5 +15,5 @@ if __name__ == "__main__":
     wallet = read_wallet()
     print(wallet)
 
-    tax = tax_estimate("BTC", 1.2, 18999)
-    print(tax)
+    ww = wallet_valuation()
+    print(ww)

@@ -1,8 +1,9 @@
 import pandas as pd
 
 from wallet.logic import read_transactions, total_volumes, read_wallet
+from wallet.tax import tax_estimate
 
-from wallet.valuation import get_price, crypto_valuation
+from wallet.valuation import get_price, crypto_valuation, get_stooq_price
 
 
 def target_valuation(series: pd.Series):
@@ -26,6 +27,13 @@ def map_to_joint_rate(series: pd.Series):
         return series["rateUsd"]
 
 
+def map_to_net_value(series: pd.Series):
+    symbol = series["instrument"]
+    volume = series["volume"]
+    current_rate = series["rateUsd"]
+    return series["valuationUsd"] - tax_estimate(symbol, volume, current_rate)
+
+
 def wallet_valuation(target_currency: str = "USD"):
     df = read_wallet()
     # df: pd.DataFrame = total_volumes(wallet).to_frame().reset_index()
@@ -46,8 +54,7 @@ def wallet_partial_valuation(fraction: float, target_currency: str = "USD"):
 
 
 def _valuation(df: pd.DataFrame, target_currency: str) -> pd.DataFrame:
-    print("Calculating wallet valuation with wallet")
-    print(df)
+    print("I Calculating wallet valuation with wallet...")
 
     df["rateUsd"] = df["instrument"].apply(get_price)
     df["yahooValuationUsd"] = df["rateUsd"] * df["volume"]
@@ -55,13 +62,15 @@ def _valuation(df: pd.DataFrame, target_currency: str) -> pd.DataFrame:
     df["valuationUsd"] = df.apply(target_valuation, axis=1)
 
     df["rateUsd"] = df.apply(map_to_joint_rate, axis=1)
+    df["netValuationUsd"] = df.apply(map_to_net_value, axis=1)
 
     valuation_column = "valuationUsd"
 
+    # TODO Move this out
     if target_currency != "USD":
         target_column_name = "valuation" + target_currency.capitalize()
         df[target_column_name] = df["valuationUsd"].apply(
             convert_from_usd, dest_currency=target_currency)
         valuation_column = target_column_name
 
-    return df[["instrument", "base", "volume", "rateUsd", valuation_column]]
+    return df[["instrument", "base", "volume", "rateUsd", valuation_column, "netValuationUsd"]]
