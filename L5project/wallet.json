@@ -4,24 +4,15 @@
   "currencies": {
     "BTC": {
       "quantity": "0.234",
-      "rate": "3892.62",
-      "value": "9341.354848684601",
-      "cost": "910.8730800000001",
-      "where_sell": "BITBAY"
+      "rate": "3892.62"
     },
     "LTC": {
       "quantity": "3.54",
-      "rate": "178.62",
-      "value": "619.0068400564895",
-      "cost": "632.3148",
-      "where_sell": "BITBAY"
+      "rate": "178.62"
     },
     "ETH": {
       "quantity": "8.23",
-      "rate": "2564.62",
-      "value": "21186.21406773023",
-      "cost": "21106.8226",
-      "where_sell": "BITBAY"
+      "rate": "2564.62"
     }
   },
   "apis": {
@@ -31,10 +22,5 @@
     "BITTREX": {
       "volume": "175.23"
     }
-  },
-  "user_data": {
-    "total_value": "31146.57575647132",
-    "total_cost": "22650.01048",
-    "belka_tax": "1614.3474025295507"
   }
 }
