@@ -1,5 +1,5 @@
 {
-  "base_currency": "USD",
+  "base_currency": "EUR",
 
   "resources": {
 
@@ -16,6 +16,11 @@
     "LTC": {
       "volume": 15.2,
       "price": 135.1
+    },
+
+    "BAT": {
+      "volume": 1.2,
+      "price": 15.1
     }
   }
 }

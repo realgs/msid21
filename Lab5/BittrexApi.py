@@ -33,6 +33,7 @@ class BittrexApi(Api):
             c1 = item["baseCurrencySymbol"]
             c2 = item["quoteCurrencySymbol"]
             if marketsRange and (c1 not in marketsRange or c2 not in marketsRange):
+                # print((c1, c2))
                 continue
             self._markets.add((c1, c2))
 
@@ -41,6 +42,9 @@ class BittrexApi(Api):
 
         response = Api.request(self._url + "markets/{0}-{1}/orderbook".format(market[0], market[1]))
         items = response.json()
+
+        if 'code' in items.keys() and items['code'] == "MARKET_DOES_NOT_EXIST":
+            return None
 
         asks = items["ask"]
 

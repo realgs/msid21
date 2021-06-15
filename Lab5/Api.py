@@ -46,9 +46,11 @@ class Api(ABC):
             response.raise_for_status()
 
         except HTTPError as http_err:
-            print(f'HTTP error occurred: {http_err}')
+            # print(f'HTTP error occurred: {http_err}')
+            pass
         except Exception as err:
-            print(f'Other error occurred: {err}')
+            # print(f'Other error occurred: {err}')
+            pass
 
         return response
 

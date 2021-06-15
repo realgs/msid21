@@ -5,9 +5,10 @@ from tabulate import tabulate
 
 
 class Portfolio:
-    def __init__(self, apiClasses, configFile):
+    def __init__(self, apiClasses, configFile, tax):
         self.__apiClasses = apiClasses
         self.__configFile = configFile
+        self.__tax = tax
         self.__baseCurrency = None
         self.__resources = None
         self.__resourcesSigns = None
@@ -35,12 +36,12 @@ class Portfolio:
         if not self.__baseCurrency or not self.__resources:
             exit()
 
-        print("base_currency: {}\nresources: {}".format(self.__baseCurrency, self.__resources))
+        # print("base_currency: {}\nresources: {}".format(self.__baseCurrency, self.__resources))
 
         # TODO czy '__resourcesSigns' jako pole? czy jest gdzies jeszcze potrzebne?
         self.__resourcesSigns = list(self.__resources.keys())
 
-        print("\nResources signs: {}".format(self.__resourcesSigns))
+        # print("\nResources signs: {}".format(self.__resourcesSigns))
 
         self.__apis = []
 
@@ -54,22 +55,123 @@ class Portfolio:
         #         print("- {}: {}".format(resourceSign + "-" + self.__baseCurrency,
         #                                 api.getOrderbook((resourceSign, self.__baseCurrency))['bids']))
 
-        self.__percent = float(input("% you want to calculate: "))
-
-        # TODO zmiana EUR na USD - nazwa, ceny; arbitraz ma dotyczyc woluminu z zasobow oraz nalezy dodac cene wplaty i wyplaty z gieldy - przerobic funkcje liczaca arbitraz
+        self.__percent = float(input("Percent you want to calculate: "))
 
     def calculate(self):
         self.__calculateSaleProfits()
         self.__calculateArbitrages()
 
     def __calculateSaleProfits(self):
-        test_sale_profits = [("BTC", 0.0003, 30000.03, 125225.01, 21312.3, 2131213.24, 1232.12, "BB"),
-                             ("LTC", 0.01, 200.03, 225.01, 2.3, 13.24, 0.12, "BITT"),
-                             ("BTC", 0.0003, 30000.03, 125225.01, 21312.3, 2131213.24, 1232.12, "BB"),
-                             ("BTC", 0.0003, 30000.03, 125225.01, 21312.3, 2131213.24, 1232.12, "BB"),
-                             ("BTC", 0.0003, 30000.03, 125225.01, 21312.3, 2131213.24, 1232.12, "BB")]
+        # test_sale_profits = [("BTC", 0.0003, 30000.03, 125225.01, 21312.3, 2131213.24, 1232.12, "BB"),
+        #                      ("LTC", 0.01, 200.03, 225.01, 2.3, 13.24, 0.12, "BITT"),
+        #                      ("BTC", 0.0003, 30000.03, 125225.01, 21312.3, 2131213.24, 1232.12, "BB"),
+        #                      ("BTC", 0.0003, 30000.03, 125225.01, 21312.3, 2131213.24, 1232.12, "BB"),
+        #                      ("BTC", 0.0003, 30000.03, 125225.01, 21312.3, 2131213.24, 1232.12, "BB")]
 
-        self.__saleProfits = test_sale_profits
+        sale_profits = {}
+        apis_profits = {}
+
+        for resource_name in self.__resources.keys():
+            apis_profits[resource_name] = {}
+            sale_profits[resource_name] = [resource_name,
+                                           self.__resources[resource_name]['volume'],
+                                           0, 0, 0, 0, 0, None]
+
+        for api in self.__apis:
+            self.__calculateApiSaleProfits(api, apis_profits)
+
+        for resource_name in self.__resources.keys():
+            offers = sorted(list(apis_profits[resource_name].items()), key=lambda x: x[1][1], reverse=True)
+
+            if not offers:
+                sale_profits.pop(resource_name)
+                continue
+
+            best_offer = offers[0]
+            sale_profits[resource_name][1:8] = best_offer[1] + [best_offer[0].sign]
+
+        self.__saleProfits = sorted(list(sale_profits.values()), key=lambda x: x[0])
+
+    def __calculateApiSaleProfits(self, api, apisProfits):
+        for resource_name in self.__resources.keys():
+            orderbook = api.getOrderbook((resource_name, self.__baseCurrency))
+
+            if not orderbook:
+                continue
+
+            bids = orderbook['bids']
+
+            volume_for_sale = self.__resources[resource_name]['volume']
+            average_price = self.__resources[resource_name]['price']
+
+            sale = Portfolio.__calculateSale(bids, volume_for_sale, api)
+
+            volume = sale['volume']
+
+            if volume <= 0:
+                continue
+
+            price = sale['price']
+            offers = sale['offers']
+
+            value = Portfolio.__calculateValue(offers, api, resource_name)
+
+            if value <= 0:
+                continue
+
+            api_profits = apisProfits[resource_name][api] = []
+
+            api_profits += [volume, price, value]
+
+            percent_sale = Portfolio.__calculateSale(bids, volume_for_sale, api, percent=self.__percent)
+            percent_offers = percent_sale['offers']
+            percent_volume = percent_sale['volume']
+
+            percent_value = Portfolio.__calculateValue(percent_offers, api, resource_name)
+
+            api_profits.append(percent_value)
+
+            value_netto = value - (value - volume * average_price) * self.__tax
+            percent_value_netto = percent_value - (percent_value - percent_volume * average_price) * self.__tax
+
+            api_profits += [value_netto, percent_value_netto]
+
+    @staticmethod
+    def __calculateSale(bids, volumeForSale, api, percent=100):
+        volumeForSale = volumeForSale * percent * 0.01
+        result = {}
+        offers = []
+        bids_volume = 0
+        price_sum = 0
+        value = 0
+
+        for bid in bids:
+            if bids_volume + bid[0] >= volumeForSale:
+                offers.append((volumeForSale - bids_volume, bid[1]))
+                bids_volume = volumeForSale
+                price_sum += bid[1]
+                break
+
+            bids_volume += bid[0]
+            price_sum += bid[1]
+            offers.append(bid)
+
+        result['volume'] = bids_volume
+        result['price'] = price_sum / len(offers)
+        result['offers'] = offers
+
+        return result
+
+    @staticmethod
+    def __calculateValue(offers, api, resourceName):
+        value = 0
+
+        for offer in offers:
+            value += offer[0] * offer[1] * (1 - api.fees['taker'])
+
+        value -= api.fees['transfer'][resourceName]
+
+        return value
 
     def __calculateArbitrages(self):
         self.__arbitrages = set()
@@ -82,8 +184,8 @@ class Portfolio:
             for market in markets:
                 arbitrage = Portfolio.__calculateArbitrage(api1, api2, market)
 
-                if arbitrage[1] > 0:
-                    self.__arbitrages.add(arbitrage)
+                # if arbitrage[1] > 0:
+                self.__arbitrages.add(arbitrage)
 
         self.__arbitrages = sorted(self.__arbitrages, key=lambda x: float(x[1]), reverse=True)
 
@@ -202,8 +304,6 @@ class Portfolio:
 
         rows_number = max(sale_profits_size, arbitrages_size)
 
-        volume_sum = 0
-        price_sum = 0
         value_sum = 0
         percent_value_sum = 0
         netto_value_sum = 0
@@ -228,8 +328,6 @@ class Portfolio:
                 resource_name, volume, price, value, percent_value, netto_value, netto_percent_value, exchange \
                     = self.__saleProfits[i]
 
-                volume_sum += volume
-                price_sum += price
                 value_sum += value
                 percent_value_sum += percent_value
                 netto_value_sum += netto_value
@@ -244,7 +342,7 @@ class Portfolio:
                                                              arbitrage_difference,
                                                              arbitrage_market[0])
 
-            if value:
+            if resource_name:
                 table.append([resource_name,
                               "{0:.8f}".format(volume),
                               "{0:.2f}".format(price),
@@ -270,8 +368,8 @@ class Portfolio:
         table.append([" ", " ", " ", " ", " ", " ", " ", " ", " ", " "])
 
         table.append(["SUMA",
-                      "{0:.8f}".format(volume_sum),
-                      "{0:.2f}".format(price_sum),
+                      None,
+                      None,
                       "{0:.2f}".format(value_sum),
                       "{0:.2f}".format(percent_value_sum),
                       "{0:.2f}".format(netto_value_sum),
@@ -284,12 +382,7 @@ class Portfolio:
 
     def printTable(self):
         table = self.__createTable()
-        print(tabulate(table, headers='firstrow', tablefmt='fancy_grid',
-                       colalign=["center", "right", "right", "right", "right", "right", "right", "center", "center",
-                                 "left"]))
+        print('\n' + tabulate(table, headers='firstrow', tablefmt='fancy_grid',
+                              colalign=["center", "right", "right", "right", "right", "right", "right", "center",
+                                        "center", "left"]))
         print()
-
-        # print("\n# ARBITRAGES")
-        # for arbitrage in self.__arbitrages:
-        #     print(
-        #         "{} | {} | {}".format(arbitrage[1], arbitrage[0], (str(arbitrage[2][0]) + "-" + str(arbitrage[2][1]))))

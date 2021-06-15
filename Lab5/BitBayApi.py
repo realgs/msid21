@@ -27,6 +27,7 @@ class BitBayApi(Api):
             c1 = value["market"]["first"]["currency"]
             c2 = value["market"]["second"]["currency"]
             if c1 not in fees_symbols or c2 not in fees_symbols or (marketsRange and (c1 not in marketsRange or c2 not in marketsRange)):
+                # print((c1, c2))
                 continue
             self._markets.add((c1, c2))
 
@@ -35,6 +36,9 @@ class BitBayApi(Api):
 
         response = Api.request(self._url + "orderbook/{0}-{1}".format(market[0], market[1]))
         items = response.json()
+
+        if 'code' in items.keys() and items['code'] == "MARKET_DOES_NOT_EXIST":
+            return None
 
         asks = items["sell"]
 
