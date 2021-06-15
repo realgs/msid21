@@ -11,7 +11,6 @@ class Bitbay:
             "market_info_URL": "https://api.bitbay.net/rest/trading/ticker",
             "orderbook_endp": "orderbook.json",
         }
-
         self.__fee_currency = "EUR"
         self.__maker_taker_fees = [
             {"upper_bound": 1250, "takerFee": 0.0043, "makerFee": 0.003},
@@ -95,15 +94,13 @@ class Bitbay:
     def get_withdrawal_list(self):
         return self.__withdrawal_fees
 
-    def get_best_bid_offer(self, currency: str):
+    def value_of_curr_in_api_curr(self, currency: str):
         possible_currencies = [self.__fee_currency, "USD", "PLN"]
         for curr in possible_currencies:
             trading_pair = f'{currency}-{curr}'
-            market = API_REQUEST.make_request(
-                f'{self.__URL_BUILD["market_info_URL"]}/{trading_pair}')
+            market = API_REQUEST.make_request(f'{self.__URL_BUILD["market_info_URL"]}/{trading_pair}')
             if market is not None and market["status"] == "Ok":
-                return API_OPERATIONS.get_value_user_curr(curr, self.__fee_currency,
-                                                          float(market["ticker"]["highestBid"]))
+                return API_OPERATIONS.get_value_user_curr(curr, self.__fee_currency, float(market["ticker"]["highestBid"]))
         raise Exception(f"There is no highest bid in BITBAY API for {currency} to calculate fee")
 
     def get_maker_taker_fee(self, user_money_spent_on_api: float):

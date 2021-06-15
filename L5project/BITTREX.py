@@ -13,16 +13,16 @@ class Bittrex:
             "orderbook_endp": "orderbook",
             "rates_endp": "ticker"
         }
-
         self.__fee_currency = "USD"
-        self.__maker_taker_fees = [{"upper_bound": 5000, "takerFee": 0.0075, "makerFee": 0.0075},
-                                   {"upper_bound": 10000, "takerFee": 0.0050, "makerFee": 0.0050},
-                                   {"upper_bound": 25000, "takerFee": 0.0035, "makerFee": 0.0035},
-                                   {"upper_bound": 50000, "takerFee": 0.0020, "makerFee": 0.0025},
-                                   {"upper_bound": 1000000, "takerFee": 0.0012, "makerFee": 0.0018},
-                                   {"upper_bound": 10000000, "takerFee": 0.0005, "makerFee": 0.0015},
-                                   {"upper_bound": 60000000, "takerFee": 0, "makerFee": 0.0008},
-                                   {"takerFee": 0, "makerFee": 0.0005}]
+        self.__maker_taker_fees = [
+            {"upper_bound": 5000, "takerFee": 0.0075, "makerFee": 0.0075},
+            {"upper_bound": 10000, "takerFee": 0.0050, "makerFee": 0.0050},
+            {"upper_bound": 25000, "takerFee": 0.0035, "makerFee": 0.0035},
+            {"upper_bound": 50000, "takerFee": 0.0020, "makerFee": 0.0025},
+            {"upper_bound": 1000000, "takerFee": 0.0012, "makerFee": 0.0018},
+            {"upper_bound": 10000000, "takerFee": 0.0005, "makerFee": 0.0015},
+            {"upper_bound": 60000000, "takerFee": 0, "makerFee": 0.0008},
+            {"takerFee": 0, "makerFee": 0.0005}]
         self.__withdrawal_fees = {
             "1INCH": 3.50000000,
             "1ST": 4.50000000,
@@ -534,12 +534,11 @@ class Bittrex:
     def get_withdrawal_list(self):
         return self.__withdrawal_fees
 
-    def get_best_bid_offer(self, currency):
+    def value_of_curr_in_api_curr(self, currency):
         possible_currencies = [self.__fee_currency, "EUR", "PLN"]
         for curr in possible_currencies:
             trading_pair = f'{currency}-{curr}'
-            market = API_REQUEST.make_request(
-                f'{self.__URL_BUILD["market_info_URL"]}/{trading_pair}/{self.__URL_BUILD["rates_endp"]}')
+            market = API_REQUEST.make_request(f'{self.__URL_BUILD["market_info_URL"]}/{trading_pair}/{self.__URL_BUILD["rates_endp"]}')
             if market is not None:
                 return API_OPERATIONS.get_value_user_curr(curr, self.__fee_currency, float(market["bidRate"]))
         raise Exception(f"There is no highest bid in BITTREX API for {currency} to calculate fee")
