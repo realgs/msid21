@@ -2,20 +2,16 @@ import NBP
 
 
 def find_online_markets(API1, API2):
-    API1_markets = API1.request_market_data()
-    API2_markets = API2.request_market_data()
-    API_with_less_markets = API1_markets
-    API_with_more_markets = API2_markets
+    API_with_less_markets = API1.request_market_data()
+    API_with_more_markets = API2.request_market_data()
     online_markets = []
-
-    if len(API2_markets) < len(API1_markets):
-        API_with_less_markets = API2_markets
-        API_with_more_markets = API1_markets
-
+    if len(API_with_more_markets) < len(API_with_less_markets):
+        temp = API_with_less_markets
+        API_with_less_markets = API_with_more_markets
+        API_with_more_markets = temp
     for market in API_with_less_markets:
         if market in API_with_more_markets:
             online_markets.append(market)
-
     return online_markets
 
 
@@ -31,6 +27,7 @@ def get_value_user_curr(init_currency: str, target_currency: str, money: float):
         target_currency_value_of_money = money_in_target_currency
     return target_currency_value_of_money
 
+
 def get_multiplier(API, market_quote_curr: str):
     fee_currencies = ["PLN", "EUR", "USD"]
     API_fee_currency = API.get_fee_currency()
@@ -41,10 +38,12 @@ def get_multiplier(API, market_quote_curr: str):
     else:
         return 1
 
+
 def sell_currency(init_user_money: float, to_sell_currency: str, init_user_api_volume: float, user_currency: str, API):
     user_volume_on_api = init_user_api_volume
     user_amount_of_currency = init_user_money
     market = (to_sell_currency, API.get_fee_currency())
+    sell_multiplier = get_multiplier(API, market[1])
     buy_offers = API.request_bids_and_asks(market)["bid"]
     buy_offers.sort(key=lambda offer: offer["rate"], reverse=True)
     money_earned = 0
@@ -69,7 +68,8 @@ def sell_currency(init_user_money: float, to_sell_currency: str, init_user_api_v
     return earned_money
 
 
-def find_arbitrage(API_BUY, init_user_api1_volume: float, API_SELL, init_user_api2_volume: float, market: tuple[str, str]):
+def find_arbitrage(API_BUY, init_user_api1_volume: float, API_SELL, init_user_api2_volume: float,
+                   market: tuple[str, str]):
     user_volume_on_api1 = init_user_api1_volume
     user_volume_on_api2 = init_user_api2_volume
     api_buy_vol_multiplier = get_multiplier(API_BUY, market[1])

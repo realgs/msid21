@@ -1,0 +1,7 @@
+{
+ "user_currency": "USD",
+ "currencies": [
+ 	{"name": "BTC", "quantity": "0.234", "bought_rate": "38234.62"},
+ 	{"name": "LTC", "quantity": "3.54", "bought_rate": "175.23"},
+	{"name": "ETH", "quantity":  "8.23", "bought_rate":  "2534.83"}]
+}
