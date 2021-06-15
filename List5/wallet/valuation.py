@@ -1,3 +1,4 @@
+import numpy as np
 import requests
 from bs4 import BeautifulSoup
 import market_daemon as md
@@ -15,20 +16,32 @@ def crypto_valuation(series: pd.Series):
     bitbay_price = bitbay.valuation(series["instrument"], series["volume"], base="USD")
     bittrex_price = bittrex.valuation(series["instrument"], series["volume"], base="USD")
 
+    if bittrex_price == 0.0 and bitbay_price == 0.0:
+        series["cryptoValuationUsd"] = 0.0
+        return series
+
     if bittrex_price >= bitbay_price:
-        return bittrex_price
+        series["bestMarket"] = "bittrex"
+        series["cryptoValuationUsd"] = bittrex_price
+        return series
     else:
         series["bestMarket"] = "bitbay"
-        return bittrex_price
+        series["cryptoValuationUsd"] = bitbay_price
+        return series
 
 
-def get_price(symbol: str):
+def get_price(series: pd.Series):
+    symbol = series["instrument"]
     if symbol.endswith(".WSE"):
         pln_price = get_stooq_price(symbol)
         usd_price = get_stooq_price("PLNUSD") * pln_price
-        return usd_price
+        series["rateUsd"] = usd_price
+        series["bestMarket"] = "WSE"
+        return series
     else:
-        return get_yahoo_price(symbol)
+        series["rateUsd"] = get_yahoo_price(symbol)
+        series["bestMarket"] = "NMS"
+        return series
 
 
 def get_yahoo_price(symbol: str):

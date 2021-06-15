@@ -56,11 +56,10 @@ def wallet_partial_valuation(fraction: float, target_currency: str = "USD"):
 def _valuation(df: pd.DataFrame, target_currency: str) -> pd.DataFrame:
     print("I Calculating wallet valuation with wallet...")
 
-    df["bestMarket"] = np.NAN
-
-    df["rateUsd"] = df["instrument"].apply(get_price)
+    df = df.apply(get_price, axis=1)
     df["yahooValuationUsd"] = df["rateUsd"] * df["volume"]
-    df["cryptoValuationUsd"] = df[["instrument", "volume"]].apply(crypto_valuation, axis=1)
+    df = df.apply(crypto_valuation, axis=1)
+
     df["valuationUsd"] = df.apply(target_valuation, axis=1)
 
     df["rateUsd"] = df.apply(map_to_joint_rate, axis=1)
@@ -74,7 +73,5 @@ def _valuation(df: pd.DataFrame, target_currency: str) -> pd.DataFrame:
         df[target_column_name] = df["valuationUsd"].apply(
             convert_from_usd, dest_currency=target_currency)
         valuation_column = target_column_name
-
-    print(df)
 
     return df[["instrument", "base", "volume", "rateUsd", valuation_column, "netValuationUsd", "bestMarket"]]
