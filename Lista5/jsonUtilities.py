@@ -12,5 +12,5 @@ def load_data_from_json(path):
 
 def save_data_to_json(path, data):
     file = open(path, "w")
-    json.dump(data, file, indent=4, sort_keys=True)
+    json.dump(data, file, indent=4)
     file.close()

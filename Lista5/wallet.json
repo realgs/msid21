@@ -1,41 +1,41 @@
 {
-  "baseCurrency": "EUR",
-  "foreignStock": [
+    "baseCurrency": "EUR",
+    "foreignStock": [
         {
-          "symbol": "AAPL",
-          "quantity": 21,
-          "avgPrice": 102.35
+            "symbol": "AAPL",
+            "quantity": 21,
+            "avgPrice": 102.35
         }
     ],
     "plStock": [
         {
-          "symbol": "KGH",
-          "quantity": 56,
-          "avgPrice": 40.66
+            "symbol": "KGH",
+            "quantity": 56,
+            "avgPrice": 40.66
         }
     ],
     "crypto": [
         {
-          "symbol": "LTC",
-          "quantity": 150.654,
-          "avgPrice": 140.16
+            "symbol": "LTC",
+            "quantity": 150.654,
+            "avgPrice": 140.16
         },
-      {
-          "symbol": "BTC",
-          "quantity": 0.45356,
-          "avgPrice": 31141.56
-      }
+        {
+            "symbol": "BTC",
+            "quantity": 0.45356,
+            "avgPrice": 31141.56
+        }
     ],
     "currencies": [
         {
-          "symbol": "CHF",
-          "quantity": 2500,
-          "avgPrice": 0.92
+            "symbol": "CHF",
+            "quantity": 2500,
+            "avgPrice": 0.92
         },
-      {
-        "symbol": "NANANA",
-          "quantity": 5,
-          "avgPrice": 100.10
-      }
+        {
+            "symbol": "NANA",
+            "quantity": 5.1,
+            "avgPrice": 101.11
+        }
     ]
 }

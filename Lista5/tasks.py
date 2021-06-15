@@ -1,7 +1,7 @@
 from tabulate import tabulate
 from cryptoApis.bitbay import Bitbay
 from cryptoApis.bitrex import Bitrex
-from jsonUtilities import load_data_from_json
+from jsonUtilities import load_data_from_json, save_data_to_json
 from apisUtilities import find_common_currencies_pairs, get_current_foreign_stock_price, get_current_pl_stock_price, \
     get_currency_exchange_rate, NORMALIZED_OPERATIONS, include_taker_fee, zad6, get_transfer_fees
 
@@ -12,8 +12,23 @@ CRYPTO_APIS = [Bitbay(), Bitrex()]
 
 
 def add_item_to_wallet(category, name, quantity, avpPrice, walletData):
-    entry = {'name': name, 'quantity': quantity, 'avgPrice': avpPrice}
-    walletData[category].append(entry)
+    entry = {'symbol': name, 'quantity': quantity, 'avgPrice': avpPrice}
+    if category in CATEGORIES:
+        walletData[category].append(entry)
+    else:
+        print(f"Invalid category: {category}")
+
+
+def print_wallet(walletData):
+    print("----------------------------------------")
+    print("Wallet content:")
+    print(f"Base currency: {walletData['baseCurrency']}")
+    for cat in CATEGORIES:
+        print(cat)
+        for entry in walletData[cat]:
+            print(f"\tSymbol: {entry['symbol']}")
+            print(f"\tQuantity: {entry['quantity']}")
+            print(f"\tAverage buying price: {entry['avgPrice']}\n")
 
 
 def include_tax(profit):
@@ -166,7 +181,13 @@ def show_portfolio(portfolioData, depth):
 
 
 if __name__ == '__main__':
+
     data = load_data_from_json("wallet.json")
+    print_wallet(data)
+    add_item_to_wallet("Banana", "ACT", 345.89, 23.56, data)
+    add_item_to_wallet("currencies", "NANA", 5.1, 101.11, data)
+    print_wallet(data)
+
     part = input("Enter percentage value of your wallet content to be sold (eg. 25): ")
     try:
         partValue = float(part)
@@ -181,3 +202,5 @@ if __name__ == '__main__':
     show_portfolio(data, 100)
     print(f"\nSelling {partValue}% of wallet")
     show_portfolio(data, partValue)
+
+    save_data_to_json("wallet.json", data)

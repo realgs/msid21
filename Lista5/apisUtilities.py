@@ -32,7 +32,6 @@ def find_common_currencies_pairs(fstStockPairs, sndStockPairs):
         if pair in sndStockPairs:
             common.append(pair)
     return common
-# set(fstStockPairs).intersection(sndStockPairs)
 
 
 def exchange_base_currency(sourceCurrency, targetCurrency, quantity, apiInfo):
