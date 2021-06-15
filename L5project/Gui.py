@@ -4,6 +4,7 @@ from tkinter import ttk
 import Raport
 import Wallet
 
+
 def add_currency(entry1, entry2, entry3, label1):
     rate = entry1.get()
     amount = entry2.get()
@@ -11,9 +12,11 @@ def add_currency(entry1, entry2, entry3, label1):
     Wallet.add_currency_to_wallet(rate, amount, currency)
     label1['text'] = Wallet.get_money_info()
 
+
 def raport(entry, label):
     Raport.make_raport(float(entry.get()))
     label['text'] = Raport.get_raport_string()
+
 
 def create_arbitrage_table(label):
     possible_arbitrages = Wallet.check_arbitrage()

@@ -28,6 +28,7 @@ def sell_currency(curr: str, percentage: float, API):
     f.close()
     save_json(wallet, wallet_path)
 
+
 def get_money_info():
     with open(wallet_path) as f:
         wallet = json.load(f)
@@ -37,6 +38,7 @@ def get_money_info():
     f.close()
     return string_info
 
+
 def add_currency_to_wallet(rate: str, amount: str, currency: str):
     with open(wallet_path) as f:
         wallet = json.load(f)
@@ -45,6 +47,7 @@ def add_currency_to_wallet(rate: str, amount: str, currency: str):
         wallet["currencies"][currency]["rate"] = rate
     f.close()
     save_json(wallet, wallet_path)
+
 
 def set_quantity(quantity: float, currency: str):
     with open(wallet_path) as f:
@@ -86,7 +89,7 @@ def get_arbitrage_markets():
         markets = []
         for currency in currencies:
             for currency_cp in currencies_copy:
-                if (currency != currency_cp):
+                if currency != currency_cp:
                     markets.append((currency, currency_cp))
     f.close()
     return markets
@@ -113,6 +116,7 @@ def check_arbitrage():
         if arbitrage[1][0] > 0:
             successful_transactions.append((arbitrage[0], arbitrage[1][0], arbitrage[1][4], arbitrage[1][5]))
     return successful_transactions
+
 
 def get_wallet_string():
     with open(wallet_path) as f:

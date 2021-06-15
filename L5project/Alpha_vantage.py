@@ -5,11 +5,12 @@ import sys
 
 path = r"C:\Users\User\Desktop\STUDIA\SEMESTR4\MSiD\LABORATORIUM\repo\msid21\L5project\alpha_vantage_key.txt"
 
+
 class Alpha_vantage:
     def __init__(self):
         self.__name = "ALPHA_VANTAGE"
         self.__URL_BUILD = {
-            "URL": "https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={symbol}&interval=1min&apikey={key}",
+            "URL": "https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={}&interval=1min&apikey={}",
             "CSV_URL": 'https://www.alphavantage.co/query?function=LISTING_STATUS&apikey={key}'
         }
         self.__fee_currency = "USD"
@@ -33,12 +34,11 @@ class Alpha_vantage:
         return 0
 
     def request_bids_and_asks(self, currencies: tuple[str, str]):
-        trading_pair = f'{currencies[0]}{currencies[1]}'
         with open(path, 'r') as f:
             key = f.read()
         f.close()
         symbol = currencies[0]
-        offers = API_request.make_request(f'https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={symbol}&interval=1min&apikey={key}')
+        offers = API_request.make_request(self.__URL_BUILD['URL'].format(symbol, key))
         if offers is not None:
             offers_dict = dict()
             offers_dict["bid"] = []
@@ -52,7 +52,7 @@ class Alpha_vantage:
             raise Exception(f"Empty bids and asks list in ALPHA_VANTAGE for ({currencies[0]},{currencies[1]})")
 
     def request_market_data(self):
-        with open (path, 'r') as f:
+        with open(path, 'r') as f:
             key = f.read()
         f.close()
         with requests.Session() as s:
@@ -62,5 +62,5 @@ class Alpha_vantage:
             my_list = list(cr)
             markets = []
             for row in my_list:
-                markets.append((row[0],self.__fee_currency))
+                markets.append((row[0], self.__fee_currency))
         return markets
