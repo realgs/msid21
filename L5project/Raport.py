@@ -14,7 +14,6 @@ def calculate_curr_value_api(curr: str, API):
     with open(raport_path) as f:
         raport = json.load(f)
         curr_amount = float(raport["currencies"][curr]["quantity"])
-        print(f"curr amount: {curr_amount}")
         volume_on_api = float(raport["apis"][API.get_name()]["volume"])
         user_currency = raport["user_currency"]
         data = API_OPERATIONS.sell_currency(curr_amount, curr, volume_on_api, user_currency, API)
@@ -27,8 +26,6 @@ def calculate_curr_value(curr: str):
         data = calculate_curr_value_api(curr, API)
         api_earnings.append(data)
     api_earnings.sort(key=lambda earned: earned[0], reverse=True)
-    for item in api_earnings:
-        print(f"ZAROBKI {item[0]} NAZWA API {item[1]}\n")
     with open(raport_path) as f:
         raport = json.load(f)
         raport["currencies"][curr]["value"] = str(api_earnings[0][0])
@@ -45,9 +42,7 @@ def calculate_all_curr_values(percentage: float):
         raport = json.load(f)
         list_of_currencies = []
         for item in raport["currencies"].items():
-            print(item[0])
             raport["currencies"][item[0]]["quantity"] = str(percent * float(raport["currencies"][item[0]]["quantity"]))
-            print(raport["currencies"][item[0]]["quantity"])
             list_of_currencies.append(item[0])
     f.close()
     Wallet.save_json(raport, raport_path)
@@ -82,3 +77,9 @@ def make_raport(percentage: float):
     Wallet.save_json(wallet, raport_path)
     calculate_all_curr_values(percentage)
     calculate_user_data()
+
+def get_raport_string():
+    with open(raport_path) as f:
+        raport = json.load(f)
+    f.close()
+    return json.dumps(raport, indent=2)

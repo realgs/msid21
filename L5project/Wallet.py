@@ -28,6 +28,23 @@ def sell_currency(curr: str, percentage: float, API):
     f.close()
     save_json(wallet, wallet_path)
 
+def get_money_info():
+    with open(wallet_path) as f:
+        wallet = json.load(f)
+        string_info = ""
+        for item in wallet["currencies"].items():
+            string_info += f"CURRENCY: {item[0]} \t AMOUNT: {item[1]['quantity']} \t RATE: {item[1]['rate']}\n"
+    f.close()
+    return string_info
+
+def add_currency_to_wallet(rate: str, amount: str, currency: str):
+    with open(wallet_path) as f:
+        wallet = json.load(f)
+        wallet["currencies"][currency] = dict()
+        wallet["currencies"][currency]["quantity"] = amount
+        wallet["currencies"][currency]["rate"] = rate
+    f.close()
+    save_json(wallet, wallet_path)
 
 def set_quantity(quantity: float, currency: str):
     with open(wallet_path) as f:
@@ -97,4 +114,8 @@ def check_arbitrage():
             successful_transactions.append((arbitrage[0], arbitrage[1][0], arbitrage[1][4], arbitrage[1][5]))
     return successful_transactions
 
-
+def get_wallet_string():
+    with open(wallet_path) as f:
+        wallet = json.load(f)
+    f.close()
+    return json.dumps(wallet, indent=2)

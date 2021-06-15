@@ -5,7 +5,7 @@ import Wallet
 import Raport
 
 def main():
-    Wallet.check_arbitrage()
+    Raport.make_raport(20)
 
 if __name__ == "__main__":
     main()
