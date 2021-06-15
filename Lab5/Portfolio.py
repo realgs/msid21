@@ -47,6 +47,8 @@ class Portfolio:
         while True:
             try:
                 percent = float(input("Percent you want to calculate: "))
+                if 0 >= percent >= 100:
+                    continue
                 break
             except Exception:
                 continue

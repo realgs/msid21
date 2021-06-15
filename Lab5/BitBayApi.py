@@ -27,7 +27,6 @@ class BitBayApi(Api):
             c1 = value["market"]["first"]["currency"]
             c2 = value["market"]["second"]["currency"]
             if c1 not in fees_symbols or c2 not in fees_symbols or (marketsRange and (c1 not in marketsRange or c2 not in marketsRange)):
-                # print((c1, c2))
                 continue
             self._markets.add((c1, c2))
 
