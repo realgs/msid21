@@ -2,8 +2,6 @@ import API_request
 import csv
 import requests
 import sys
-import re
-import API_operations
 
 path = r"C:\Users\User\Desktop\STUDIA\SEMESTR4\MSiD\LABORATORIUM\repo\msid21\L5project\alpha_vantage_key.txt"
 
@@ -42,19 +40,13 @@ class Alpha_vantage:
         symbol = currencies[0]
         offers = API_request.make_request(f'https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={symbol}&interval=1min&apikey={key}')
         if offers is not None:
-            bids = offers["bids"]
-            asks = offers["asks"]
             offers_dict = dict()
             offers_dict["bid"] = []
             offers_dict["ask"] = []
             temp = list(offers.items())
             price_dict = list((temp[1][1]).items())[1][1]
-            if bids is not []:
-                for item in bids:
-                    offers_dict["bid"].append({"quantity": sys.maxsize, "rate": float(price_dict['3. low'])})
-            if asks is not []:
-                for item in asks:
-                    offers_dict["ask"].append({"quantity": sys.maxsize, "rate": float(price_dict['2. high'])})
+            offers_dict["bid"].append({"quantity": sys.maxsize, "rate": float(price_dict['3. low'])})
+            offers_dict["ask"].append({"quantity": sys.maxsize, "rate": float(price_dict['2. high'])})
             return offers_dict
         else:
             raise Exception(f"Empty bids and asks list in ALPHA_VANTAGE for ({currencies[0]},{currencies[1]})")
