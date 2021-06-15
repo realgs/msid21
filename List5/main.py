@@ -8,7 +8,7 @@ import StockData.dataKeys
 
 APIS = APIs.API_list.APIS
 PROFIT_TAX = 0.19
-PORTFOLIO_PATH = 'StockData/portfolio.json'
+PORTFOLIO_PATH = 'StockData/wallet.json'
 ASSET_TYPES = StockData.dataKeys.ASSET_TYPES
 DATA_KEYS = StockData.dataKeys.DATA_KEYS
 GUI = finalGui.Gui()
@@ -46,26 +46,32 @@ def calculateDifferenceInPercents(first, second):
     return difference
 
 
+def getMarketsForArbitrage(assetSymbol):
+    markets = []
+    for investment in WALLET['assets']['cryptocurrency']:
+        if investment['name'] == assetSymbol:
+            pass
+        else:
+            market = f'{assetSymbol}-{investment["name"]}'
+            markets.append(market)
+    return markets
+
+
 def calculateProfit(api, assetSymbol, currency, price, quantity):
-    conversionMultiplier = 1
-    if currency != 'PLN':
-        conversionMultiplier = convertToBaseCurrency(currency)
-        print(f'Conversion multiplier: {conversionMultiplier}')
+    conversionRate = 1
+    if currency != BASE_CURRENCY:
+        conversionRate = convertToBaseCurrency(currency)
     market = f"{assetSymbol.upper()}-{currency.upper()}"
-    print(f'Market: {market} Api: {api.name}')
 
     orderbook = api.orderbook(market)
-    print(f'Orderbook: {orderbook}')
     if orderbook is None:
         ticker = api.ticker(market)
-        print(f'Ticker: {ticker}')
         if ticker is None:
             return {}
-
         tickerPrice = ticker['rate']
-        print(f'Ticker price: {tickerPrice}')
-        return (tickerPrice - price) * quantity * conversionMultiplier
-    elif orderbook != 0:
+        return (tickerPrice - price) * quantity * conversionRate
+
+    if orderbook != 0:
         queue = deque(
             sorted(orderbook['bid'], key=lambda order1: order1[api.rate]))
         profit = 0
@@ -86,7 +92,9 @@ def calculateProfit(api, assetSymbol, currency, price, quantity):
                 profit += difference['rate'] * difference['quantity']
             quantity -= abs(min(float(quantity), float(order[api.quantity])))
 
-        return profit * conversionMultiplier
+        return profit * conversionRate
+    else:
+        return None
 
 
 def getBestProfit(apiType, assetSymbol, currency, price, quantity):
@@ -161,10 +169,10 @@ def calculateArbitrage(currency, api1, api2):
                     'profit': baseIncome.__round__(4)}
 
 
-def getBestArbitrage(assetSymbol, investments):
+def getBestArbitrage(assetSymbol):
     possibleArbitrage = [{'market': '---', 'fromTo': '---',
                           'profit': -math.inf}]
-    markets = getMarketsForArbitrage(assetSymbol, investments)
+    markets = getMarketsForArbitrage(assetSymbol)
     for market in markets:
         print(f'Market: {market}')
         for api_from in APIS['cryptocurrency']:
@@ -180,42 +188,28 @@ def getBestArbitrage(assetSymbol, investments):
     return possibleArbitrage[0]
 
 
-def getMarketsForArbitrage(assetSymbol, investments):
-    markets = []
-    for investment in investments['assets']['cryptocurrency']:
-        if investment['name'] == assetSymbol:
-            pass
-        else:
-            market = f'{assetSymbol}-{investment["name"]}'
-            markets.append(market)
-    return markets
-
-
-def getPortfolio(investments, percent=10):
-    toPrint = []
-    headers = ["Symbol", "Average price", "Volume", "Exchange",
+def getPortfolio(wallet, percent=10):
+    table = []
+    headers = ["Symbol", "Average price", "Volume", "API",
                "Profit", "Profit netto", f"Profit {percent}%", f"Profit {percent}% netto", "Arbitrage"]
+    sumOfProfits = ["Sum", "---", "---", "---", 0, 0, 0, 0, "---"]
 
-    sumToPrint = ["Sum", "---", "---", "---", 0, 0, 0, 0, "---"]
-
-    for assetType in investments['assets']:
-        for asset in investments['assets'][assetType]:
+    for assetType in wallet['assets']:
+        for asset in wallet['assets'][assetType]:
             bestProfit = getBestProfit(assetType, asset['name'], asset['currency'],
                                        float(asset['avg_price']), float(asset['volume']))
-
             bestProfitPercent = getBestProfit(assetType, asset['name'], asset['currency'],
                                               float(asset['avg_price']),
                                               float(asset['volume']) * 0.01 * percent)
 
             if assetType == 'cryptocurrency':
-                bestArbitrage = getBestArbitrage(asset['name'], investments)
-
+                bestArbitrage = getBestArbitrage(asset['name'])
                 arbitragePrint = f"{bestArbitrage['market']} : {bestArbitrage['fromTo']} : " \
                                  f"{bestArbitrage['profit']} {asset['name']}"
             else:
                 arbitragePrint = f'----------'
 
-            toPrint.append([
+            table.append([
                 asset['name'],
                 asset['avg_price'],
                 asset['volume'],
@@ -227,34 +221,32 @@ def getPortfolio(investments, percent=10):
                 arbitragePrint
             ])
 
-            sumToPrint[4] += float(bestProfit['profit'])
-            sumToPrint[5] += float(bestProfit['profit'] * 0.81)
-            sumToPrint[6] += float(bestProfitPercent['profit'])
-            sumToPrint[7] += float(bestProfitPercent['profit'] * 0.81)
+            sumOfProfits[4] += float(bestProfit['profit'])
+            sumOfProfits[5] += float(bestProfit['profit'] * 0.81)
+            sumOfProfits[6] += float(bestProfitPercent['profit'])
+            sumOfProfits[7] += float(bestProfitPercent['profit'] * 0.81)
 
-    toPrint.append([sumToPrint[0], sumToPrint[1], sumToPrint[2], sumToPrint[3],
-                    f"{sumToPrint[4]:.2f}zł", f"{sumToPrint[5]:.2f}zł", f"{sumToPrint[6]:.2f}zł",
-                    f"{sumToPrint[7]:.2f}zł", sumToPrint[8]])
+    table.append([sumOfProfits[0], sumOfProfits[1], sumOfProfits[2], sumOfProfits[3], f"{sumOfProfits[4]:.2f}zł",
+                  f"{sumOfProfits[5]:.2f}zł", f"{sumOfProfits[6]:.2f}zł", f"{sumOfProfits[7]:.2f}zł", sumOfProfits[8]])
 
-    print(tabulate(toPrint, headers=headers, tablefmt="github"))
-    return tabulate(toPrint, headers=headers, tablefmt="github")
+    print(tabulate(table, headers=headers, tablefmt="github"))
+    return tabulate(table, headers=headers, tablefmt="github")
 
 
-def updateResources(resource_type, name, quantity, avg_price, curr, path=PORTFOLIO_PATH):
-    old_resources = loadJsonFromFile(path)
-    new_resource = {DATA_KEYS[0]: name, DATA_KEYS[1]: quantity, DATA_KEYS[2]: avg_price, DATA_KEYS[3]: curr}
-    for resource in old_resources['assets'][resource_type]:
-        if resource[DATA_KEYS[0]] == name:
-            old_resources['assets'][resource_type].remove(resource)
+def updateResources(assetType, assetName, quantity, avg_price, currency, path=PORTFOLIO_PATH):
+    newAsset = {DATA_KEYS[0]: assetName, DATA_KEYS[1]: quantity, DATA_KEYS[2]: avg_price, DATA_KEYS[3]: currency}
+    for asset in WALLET['assets'][assetType]:
+        if asset[DATA_KEYS[0]] == assetName:
+            WALLET['assets'][assetType].remove(asset)
             break
-    if new_resource['volume'] > 0:
-        old_resources['assets'][resource_type].append(new_resource)
-    saveToJson(path, old_resources)
+    if newAsset['volume'] > 0:
+        WALLET['assets'][assetType].append(newAsset)
+    saveToJson(path, WALLET)
 
 
 def addAssetToWallet():
-    resource_type = GUI.asset_type.get()
-    name = GUI.asset.get()
+    assetType = GUI.asset_type.get()
+    assetName = GUI.asset.get()
     currency = GUI.currency.get()
     try:
         quantity = float(GUI.volume.get())
@@ -263,10 +255,10 @@ def addAssetToWallet():
         avg_price = float(GUI.price.get())
         if avg_price < 0:
             raise ValueError
-        updateResources(resource_type, name, quantity, avg_price, currency)
+        updateResources(assetType, assetName, quantity, avg_price, currency)
         pushWalletToGui()
     except ValueError:
-        finalGui.show_error('Error', 'Dane na temat zasobu są niepoprawne')
+        finalGui.show_error('Error', 'Wrong asset data!')
 
 
 def pushPortfolioToGui():
@@ -276,15 +268,14 @@ def pushPortfolioToGui():
         if not(0 < percent <= 100):
             raise ValueError
     except ValueError:
-        finalGui.show_error('Error', 'Podana wartość procentowa nie jest poprawna')
-        percent = 0.1
-    GUI.text.insert(1.0, 'Czekaj, trwa odświeżanie portfolio')
+        finalGui.show_error('Error', 'Wrong percent number!')
+        percent = 10
     try:
-        current_portfolio = getPortfolio(loadJsonFromFile(PORTFOLIO_PATH), percent)
+        portfolio = getPortfolio(WALLET, percent)
     except Exception:
-        current_portfolio = 'Portfolio nie mogło zostać zainicjalizowane'
+        portfolio = 'No access to portfolio'
     GUI.text.delete(1.0, 'end')
-    GUI.text.insert(1.0, current_portfolio)
+    GUI.text.insert(1.0, portfolio)
     GUI.button_show_portfolio['state'] = 'normal'
 
 
@@ -305,9 +296,14 @@ def getWallet(investments):
 
 
 def pushWalletToGui():
-    table = getWallet(WALLET)
+    GUI.button_show_wallet['state'] = 'disable'
+    try:
+        table = getWallet(WALLET)
+    except Exception:
+        table = 'No access to wallet!'
     GUI.text.delete(1.0, 'end')
     GUI.text.insert(1.0, table)
+    GUI.button_show_wallet['state'] = 'normal'
 
 
 def initializeGui():

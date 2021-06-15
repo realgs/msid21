@@ -33,7 +33,7 @@
             {
                 "name": "BTC",
                 "volume": 0.62,
-                "avg_price": 36781.059,
+                "avg_price": 37081.059,
                 "currency": "USD"
             },
             {
@@ -46,13 +46,13 @@
         "currency": [
             {
                 "name": "USD",
-                "volume": 500,
+                "volume": 672.5,
                 "avg_price": 3.73,
-                "currency": "PLN"
+                "currency": "EUR"
             },
             {
                 "name": "CHF",
-                "volume": 1544,
+                "volume": 1234,
                 "avg_price": 4.11,
                 "currency": "PLN"
             }

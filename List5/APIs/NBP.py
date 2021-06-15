@@ -21,6 +21,7 @@ class NBP(Api, ABC):
         rate, base_rate = 0, 1
         currency = currency.split('-')[0]
         if currency == base_currency:
+            print('1\n1\n')
             return 1
         if currency == 'PLN':
             for symbol in self._tableSymbol:
