@@ -2,10 +2,9 @@ import time
 import requests
 import yfinance as yf
 from bs4 import BeautifulSoup
-from common import load_data_from_json
 
 NORMALIZED_OPERATIONS = ['bids', 'asks']
-WAITING_TIME = 1
+WAITING_TIME = 2
 
 
 def get_api_response(url):
@@ -13,7 +12,7 @@ def get_api_response(url):
     if response.status_code == 200:
         return response.json()
     else:
-        print("Request not succesful: " + response.reason)
+        # print("Request not successful: " + response.reason)
         return None
 
 
@@ -28,26 +27,47 @@ def get_transfer_fees(stockFst, stockSnd, pairs):
 
 
 def find_common_currencies_pairs(fstStockPairs, sndStockPairs):
-    return set(fstStockPairs).intersection(sndStockPairs)
+    common = []
+    for pair in fstStockPairs:
+        if pair in sndStockPairs:
+            common.append(pair)
+    return common
+# set(fstStockPairs).intersection(sndStockPairs)
 
 
 def exchange_base_currency(sourceCurrency, targetCurrency, quantity, apiInfo):
+    exchangeRate = get_currency_exchange_rate(sourceCurrency, targetCurrency, apiInfo)
+    return exchangeRate * quantity
+
+
+def get_currency_exchange_rate(sourceCurrency, targetCurrency, apiInfo):
     if sourceCurrency == targetCurrency:
-        return quantity
+        return 1
     if sourceCurrency == 'PLN':
         url = f"{apiInfo['API']['nbp']['url_exchange']}{targetCurrency}/{apiInfo['API']['nbp']['json_format']}"
         response = get_api_response(url)
-        return quantity / float(response['rates'][0]['ask'])
+        if response is not None:
+            return 1 / float(response['rates'][0]['mid'])
+        else:
+            return None
     elif targetCurrency == 'PLN':
         url = f"{apiInfo['API']['nbp']['url_exchange']}{sourceCurrency}/{apiInfo['API']['nbp']['json_format']}"
         response = get_api_response(url)
-        return quantity * float(response['rates'][0]['bid'])
+        if response is not None:
+            return float(response['rates'][0]['mid'])
+        else:
+            return None
 
-    plnValue = exchange_base_currency(sourceCurrency, 'PLN', quantity, apiInfo)
-    return exchange_base_currency('PLN', targetCurrency, plnValue, apiInfo)
+    plnValue = get_currency_exchange_rate(sourceCurrency, 'PLN', apiInfo)
+    targetValue = get_currency_exchange_rate('PLN', targetCurrency, apiInfo)
+    if plnValue and targetValue:
+        return plnValue * targetValue
+    else:
+        return None
 
 
 def get_current_foreign_stock_price(stock, baseCurrency, apiInfo):
+    # foreign stock prices are checked using yahoo finance API replacement
     try:
         tickerInfo = yf.Ticker(stock).info
         currency = tickerInfo['currency'] if tickerInfo['currency'] else "USD"
@@ -58,26 +78,16 @@ def get_current_foreign_stock_price(stock, baseCurrency, apiInfo):
 
 
 def get_current_pl_stock_price(stock, baseCurrency, apiInfo):
+    # due to lack of free API for checking pl stock prices is resolved using HTML scrapping
     stooqUrl = apiInfo["API"]["stooq"]["url_stock"]
     try:
         response = requests.get(f"{stooqUrl}{stock.lower()}").text
         soup = BeautifulSoup(response, 'html.parser')
-        price = float(soup.find(id="t1").find('td').find('span').get_text())
+        price = float(soup.find(id="t1").find(id='f13').find('span').get_text())
         return exchange_base_currency("PLN", baseCurrency, price, apiInfo)
 
     except Exception:
         raise ValueError(f'Wrong symbol: {stock}')
-
-
-if __name__ == '__main__':
-    data = load_data_from_json("data.json")
-    apisInfo = load_data_from_json("apis.json")
-    print(exchange_base_currency(data['currencies'][0]["symbol"], data["baseCurrency"],
-                                 data['currencies'][0]["quantity"], apisInfo))
-
-    print(get_current_foreign_stock_price(data['foreignStock'][0]["symbol"], data['baseCurrency'], apisInfo))
-
-    print(get_current_pl_stock_price(data["plStock"][0]['symbol'], data['baseCurrency'], apisInfo))
 
 
 def calculate_percentage_difference(order1, order2):
@@ -96,8 +106,8 @@ def calculate_order_value(price, amount):
 
 
 def calculate_arbitrage(sourceStock, targetStock, currency, baseCurrency, fees):
-    offersToBuyFrom = sourceStock.get_offers()[NORMALIZED_OPERATIONS[1]]
-    offersToSellTo = targetStock.get_offers()[NORMALIZED_OPERATIONS[0]]
+    offersToBuyFrom = sourceStock.get_offers(currency, baseCurrency)[NORMALIZED_OPERATIONS[1]]
+    offersToSellTo = targetStock.get_offers(currency, baseCurrency)[NORMALIZED_OPERATIONS[0]]
     volume = 0.0
     spentMoney = 0.0
     gainedMoney = 0.0
@@ -156,41 +166,23 @@ def zad6(fstStock, sndStock, transferFees, currencyPairs):
     resultsFromSndToFst = []
     for currency in currencyPairs:
         crypto = currency[0]
-        base_currency = currency[1]
-        print(f"Cryptocurrency: {crypto}, base currency: {base_currency}")
-        offer1 = fstStock.get_offers()
-        offer2 = sndStock.get_offers()
+        baseCurrency = currency[1]
+        print(f"Checking arbitrage for Cryptocurrency: {crypto}, base currency: {baseCurrency}")
+        offer1 = fstStock.get_offers(crypto, baseCurrency)
+        offer2 = sndStock.get_offers(crypto, baseCurrency)
         if offer1 is not None and offer2 is not None:
             if offer1.get(NORMALIZED_OPERATIONS[0], None) and offer1.get(NORMALIZED_OPERATIONS[1], None) \
                     and offer2.get(NORMALIZED_OPERATIONS[0], None) and offer2.get(NORMALIZED_OPERATIONS[1], None):
-                print(f'{fstStock.get_name()} - selling offers: {offer1[NORMALIZED_OPERATIONS[1]]}\n'
-                      f'{fstStock.get_name()} - buying offers: {offer1[NORMALIZED_OPERATIONS[0]]}')
-                print(f'{sndStock.get_name()} - selling offer: {offer2[NORMALIZED_OPERATIONS[1]]}\n'
-                      f'{sndStock.get_name()} - buying offers: {offer2[NORMALIZED_OPERATIONS[0]]}')
-                resultFrom1To2 = calculate_arbitrage(fstStock, sndStock, crypto, base_currency, transferFees)
-                resultsFromFstToSnd.append((crypto, base_currency, resultFrom1To2))
-                if resultFrom1To2['profit'] <= 0:
-                    print(f"There are no profitable transactions buying in {fstStock.get_name()}"
-                          f" and selling in {sndStock.get_name()}")
-                else:
-                    print(f"Buying from {fstStock.get_name()}:\n "
-                          f"Volume: {resultFrom1To2['volume']} {crypto},"
-                          f" profit: {resultFrom1To2['profit']} {base_currency},"
-                          f" gain: {resultFrom1To2['profitability']}%")
-                resultFrom2To1 = calculate_arbitrage(sndStock, fstStock, crypto, base_currency, transferFees)
-                resultsFromSndToFst.append((crypto, base_currency, resultFrom2To1))
-                if resultFrom2To1['profit'] <= 0:
-                    print(f"There are no profitable transactions buying in {sndStock.get_name()}"
-                          f" and selling in {fstStock.get_name()}")
-                else:
-                    print(f"Buying from {sndStock.get_name()}:\n "
-                          f"Volume: {resultFrom2To1['volume']} {crypto},"
-                          f" profit: {resultFrom2To1['profit']} {base_currency},"
-                          f" gain: {resultFrom2To1['profitability']}%")
+                resultFrom1To2 = calculate_arbitrage(fstStock, sndStock, crypto, baseCurrency, transferFees)
+                resultsFromFstToSnd.append((fstStock.get_name(),
+                                            sndStock.get_name(), crypto, baseCurrency, resultFrom1To2))
+                resultFrom2To1 = calculate_arbitrage(sndStock, fstStock, crypto, baseCurrency, transferFees)
+                resultsFromSndToFst.append((sndStock.get_name(),
+                                            fstStock.get_name(), crypto, baseCurrency, resultFrom2To1))
             else:
                 print("Orderbooks do not contain buying and selling prices!")
         else:
             print("Something gone wrong during data acquisition")
         time.sleep(WAITING_TIME)
-        print()
-    return resultsFromFstToSnd, resultsFromSndToFst
+    print()
+    return resultsFromFstToSnd + resultsFromSndToFst

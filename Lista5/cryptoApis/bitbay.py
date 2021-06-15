@@ -1,4 +1,4 @@
-from common import load_data_from_json
+from jsonUtilities import load_data_from_json
 from apisUtilities import get_api_response
 
 
@@ -14,8 +14,8 @@ def parse_bitbay_currencies(jsonData):
 
 class Bitbay:
     def __init__(self):
-        self.__data = load_data_from_json("..apis.json")['API']['bitbay']
-        self.__fees = load_data_from_json("..apis.json")['FEES']["bitbay_fees"]
+        self.__data = load_data_from_json("apis.json")['API']['bitbay']
+        self.__fees = load_data_from_json("apis.json")['FEES']["bitbay_fees"]
 
     def get_offers(self, currency, baseCurrency):
         offers = get_api_response(f'{self.__data["url_orderbook"]}{currency}'

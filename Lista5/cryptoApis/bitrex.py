@@ -1,4 +1,4 @@
-from common import load_data_from_json
+from jsonUtilities import load_data_from_json
 from apisUtilities import NORMALIZED_OPERATIONS, get_api_response
 
 
@@ -38,7 +38,7 @@ def parse_bitrex_currencies(jsonData):
 
 class Bitrex:
     def __init__(self):
-        self.__data = load_data_from_json("..apis.json")['API']['bitrex']
+        self.__data = load_data_from_json("apis.json")['API']['bitrex']
 
     def get_offers(self, currency, baseCurrency):
         offers = get_api_response(f'{self.__data["url_orderbook"]}{baseCurrency}'

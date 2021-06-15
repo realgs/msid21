@@ -18,7 +18,7 @@
     },
     "nbp": {
       "name": "nbp",
-      "url_exchange": "http://api.nbp.pl/api/exchangerates/rates/c/",
+      "url_exchange": "http://api.nbp.pl/api/exchangerates/rates/a/",
       "json_format": "?format=json"
     },
     "stooq" : {

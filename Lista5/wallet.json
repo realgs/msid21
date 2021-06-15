@@ -16,16 +16,26 @@
     ],
     "crypto": [
         {
+          "symbol": "LTC",
+          "quantity": 150.654,
+          "avgPrice": 140.16
+        },
+      {
           "symbol": "BTC",
-          "quantity": 0.41985722,
-          "avgPrice": 38044.82
-        }
+          "quantity": 0.45356,
+          "avgPrice": 31141.56
+      }
     ],
     "currencies": [
         {
           "symbol": "CHF",
           "quantity": 2500,
           "avgPrice": 0.92
-        }
+        },
+      {
+        "symbol": "NANANA",
+          "quantity": 5,
+          "avgPrice": 100.10
+      }
     ]
 }
