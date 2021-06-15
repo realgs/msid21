@@ -1,8 +1,10 @@
+from AlphaVantageApi import AlphaVantageApi
 from BitBayApi import BitBayApi
 from BittrexApi import BittrexApi
 from Portfolio import Portfolio
 
 CONFIG_FILE = "config.json"
+# API_CLASSES = {BitBayApi, BittrexApi, AlphaVantageApi}
 API_CLASSES = {BitBayApi, BittrexApi}
 TAX = 0.19
 

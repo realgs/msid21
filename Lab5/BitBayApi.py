@@ -37,7 +37,7 @@ class BitBayApi(Api):
         response = Api.request(self._url + "orderbook/{0}-{1}".format(market[0], market[1]))
         items = response.json()
 
-        if 'code' in items.keys() and items['code'] == "MARKET_DOES_NOT_EXIST":
+        if items['status'] == "Fail":
             return None
 
         asks = items["sell"]

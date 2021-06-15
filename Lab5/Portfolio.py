@@ -11,7 +11,6 @@ class Portfolio:
         self.__tax = tax
         self.__baseCurrency = None
         self.__resources = None
-        self.__resourcesSigns = None
         self.__apis = None
         self.__arbitrages = None
         self.__saleProfits = None
@@ -36,38 +35,29 @@ class Portfolio:
         if not self.__baseCurrency or not self.__resources:
             exit()
 
-        # print("base_currency: {}\nresources: {}".format(self.__baseCurrency, self.__resources))
-
-        # TODO czy '__resourcesSigns' jako pole? czy jest gdzies jeszcze potrzebne?
-        self.__resourcesSigns = list(self.__resources.keys())
-
-        # print("\nResources signs: {}".format(self.__resourcesSigns))
+        resources_signs = list(self.__resources.keys())
 
         self.__apis = []
 
         for apiClass in self.__apiClasses:
-            self.__apis.append(apiClass(self.__resourcesSigns))
+            self.__apis.append(apiClass(resources_signs))
 
-        # for api in self.__apis:
-        #     print("\nAPI '{}': {}".format(api, api.markets))
-        #
-        #     for resourceSign in self.__resourcesSigns:
-        #         print("- {}: {}".format(resourceSign + "-" + self.__baseCurrency,
-        #                                 api.getOrderbook((resourceSign, self.__baseCurrency))['bids']))
+        percent = 10
 
-        self.__percent = float(input("Percent you want to calculate: "))
+        while True:
+            try:
+                percent = float(input("Percent you want to calculate: "))
+                break
+            except Exception:
+                continue
+
+        self.__percent = percent
 
     def calculate(self):
         self.__calculateSaleProfits()
         self.__calculateArbitrages()
 
     def __calculateSaleProfits(self):
-        # test_sale_profits = [("BTC", 0.0003, 30000.03, 125225.01, 21312.3, 2131213.24, 1232.12, "BB"),
-        #                      ("LTC", 0.01, 200.03, 225.01, 2.3, 13.24, 0.12, "BITT"),
-        #                      ("BTC", 0.0003, 30000.03, 125225.01, 21312.3, 2131213.24, 1232.12, "BB"),
-        #                      ("BTC", 0.0003, 30000.03, 125225.01, 21312.3, 2131213.24, 1232.12, "BB"),
-        #                      ("BTC", 0.0003, 30000.03, 125225.01, 21312.3, 2131213.24, 1232.12, "BB")]
-
         sale_profits = {}
         apis_profits = {}
 
@@ -165,11 +155,19 @@ class Portfolio:
     @staticmethod
     def __calculateValue(offers, api, resourceName):
         value = 0
+        fees = api.fees
+
+        if fees:
+            taker_fee = api.fees['taker']
+            transfer_fee = api.fees['transfer'][resourceName]
+        else:
+            taker_fee = 0
+            transfer_fee = 0
 
         for offer in offers:
-            value += offer[0] * offer[1] * (1 - api.fees['taker'])
+            value += offer[0] * offer[1] * (1 - taker_fee)
 
-        value -= api.fees['transfer'][resourceName]
+        value -= transfer_fee
 
         return value
 
@@ -184,8 +182,8 @@ class Portfolio:
             for market in markets:
                 arbitrage = Portfolio.__calculateArbitrage(api1, api2, market)
 
-                # if arbitrage[1] > 0:
-                self.__arbitrages.add(arbitrage)
+                if arbitrage[1] > 0:
+                    self.__arbitrages.add(arbitrage)
 
         self.__arbitrages = sorted(self.__arbitrages, key=lambda x: float(x[1]), reverse=True)
 

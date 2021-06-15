@@ -1,26 +1,46 @@
 {
-  "base_currency": "EUR",
+  "base_currency": "USD",
 
   "resources": {
 
     "BTC": {
-      "volume": 0.002,
-      "price": 30900.0
+      "volume": 0.5,
+      "price": 3800.0
     },
 
     "ETH": {
-      "volume": 1.002,
-      "price": 2000.52
+      "volume": 1.502,
+      "price": 2200.52
     },
 
     "LTC": {
-      "volume": 15.2,
-      "price": 135.1
+      "volume": 100.2,
+      "price": 130.1
     },
 
     "BAT": {
-      "volume": 1.2,
-      "price": 15.1
+      "volume": 15000.2,
+      "price": 0.023
+    },
+
+    "BSV": {
+      "volume": 100.2,
+      "price": 151.0
+    },
+
+    "TRX": {
+      "volume": 1620.2,
+      "price": 0.02
+    },
+
+    "VIVO": {
+      "volume": 1020,
+      "price": 15.99
+    },
+
+    "IBM": {
+      "volume": 50,
+      "price": 100.20
     }
   }
 }
