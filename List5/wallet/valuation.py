@@ -1,6 +1,7 @@
-import numpy as np
 import requests
 from bs4 import BeautifulSoup
+from currency_converter import CurrencyConverter
+
 import market_daemon as md
 import pandas as pd
 import yfinance as yf
@@ -9,6 +10,7 @@ bitbay = md.MarketDaemon.build_from_config("bitbay")
 bittrex = md.MarketDaemon.build_from_config("bittrex")
 
 STOOQ_URL = "https://stooq.pl/q/?s="
+NBP_URL = lambda table, code: f"http://api.nbp.pl/api/exchangerates/rates/{table}/{code}"
 
 
 def crypto_valuation(series: pd.Series):
@@ -34,7 +36,7 @@ def get_price(series: pd.Series):
     symbol = series["instrument"]
     if symbol.endswith(".WSE"):
         pln_price = get_stooq_price(symbol)
-        usd_price = get_stooq_price("PLNUSD") * pln_price
+        usd_price = CurrencyConverter().convert(pln_price, "PLN", "USD")
         series["rateUsd"] = usd_price
         series["bestMarket"] = "WSE"
         return series
@@ -50,7 +52,7 @@ def get_yahoo_price(symbol: str):
         ticker = yf.Ticker(symbol)
         today_data = ticker.history(period="1d")
         return today_data["Close"][0]
-    except IndexError as e:
+    except IndexError:
         print(f"W Invalid symbol '{symbol}' at Yahoo")
         return 0.0
 
@@ -60,18 +62,38 @@ def get_yahoo_market_name(symbol: str):
     try:
         ticker = yf.Ticker(symbol)
         print(ticker.info)
-    except IndexError as e:
+    except IndexError:
         print(f"W Invalid symbol '{symbol}' at Yahoo")
         return 0.0
 
 
 def get_stooq_price(symbol: str):
-    try:
+    if symbol.endswith(".WSE"):
         symbol = symbol.removesuffix(".WSE")
-        data = requests.get(f"{STOOQ_URL}{symbol}").content
-        soup = BeautifulSoup(data, "html.parser")
-        price = soup.find(id="t1").find(id="f13").find("span").text
-        return float(price)
-    except AttributeError:
-        print(f"W Cannot find {symbol} on Stooq market")
+
+    url = f"{STOOQ_URL}{symbol.lower()}"
+
+    data = requests.get(url).text
+
+    soup = BeautifulSoup(data, 'html.parser')
+    price = soup.find(id='t1').find(id='f13').find('span').text
+
+    return float(price)
+
+
+def get_nbp_rate_price(symbol: str):
+    try:
+        response = requests.request("GET", NBP_URL("A", symbol))
+        if response.status_code not in range(200, 300):
+            print(f"Your request for '{symbol}' didn't produce a valid response from NBP API")
+            return 0.0
+        else:
+            data = response.json()
+            rate = data["rates"][0]["mid"]
+            return rate
+    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
+        print(f"Your request for '{symbol}' at NBP API timed out")
+        return 0.0
+    except requests.exceptions.RequestException:
+        print(f"Your request for '{symbol}' at NBP API failed")
         return 0.0

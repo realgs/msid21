@@ -1,10 +1,10 @@
-import numpy as np
 import pandas as pd
 
-from wallet.logic import transactions_to_wallet
+from wallet.logic import transactions_to_wallet, load_config
 from wallet.tax import tax_estimate
+from currency_converter import CurrencyConverter
 
-from wallet.valuation import get_price, crypto_valuation
+from wallet.valuation import get_price, crypto_valuation, get_stooq_price
 
 
 def target_valuation(series: pd.Series):
@@ -17,8 +17,9 @@ def target_valuation(series: pd.Series):
 
 def convert_from_usd(amount: float, dest_currency: str):
     """Converts given amount of USD to dest_currency"""
-    price = get_price(f"{dest_currency}=X")
-    return price * amount
+    c = CurrencyConverter()
+    result = c.convert(amount, "USD", new_currency=dest_currency)
+    return result
 
 
 def map_to_joint_rate(series: pd.Series):
@@ -35,25 +36,28 @@ def map_to_net_value(series: pd.Series):
     return series["valuationUsd"] - tax_estimate(symbol, volume, current_rate)
 
 
-def wallet_valuation(target_currency: str = "USD"):
+def wallet_valuation():
     df = transactions_to_wallet()
-    # df: pd.DataFrame = total_volumes(wallet).to_frame().reset_index()
-    return _valuation(df, target_currency)
+    df = _valuation(df)
+    base_currency = load_config()["base"]
+    return convert_currency(df, base_currency)
 
 
-def wallet_partial_valuation(fraction: float, target_currency: str = "USD"):
+def wallet_partial_valuation(fraction: float):
     if not 0.0 < fraction <= 1.0:
         raise ValueError(f"Invalid wallet partial valuation fraction '{fraction}'")
 
     df = transactions_to_wallet()
     df["volume"] = df["volume"] * fraction
 
-    df = _valuation(df, target_currency)
+    df = _valuation(df)
     df.rename(columns={"volume": "volume" + "_" + str(fraction)}, inplace=True)
-    return df
+
+    base_currency = load_config()["base"]
+    return convert_currency(df, base_currency)
 
 
-def _valuation(df: pd.DataFrame, target_currency: str) -> pd.DataFrame:
+def _valuation(df: pd.DataFrame) -> pd.DataFrame:
     print("I Calculating wallet valuation with wallet...")
 
     df = df.apply(get_price, axis=1)
@@ -67,11 +71,24 @@ def _valuation(df: pd.DataFrame, target_currency: str) -> pd.DataFrame:
 
     valuation_column = "valuationUsd"
 
-    # TODO Move this out
-    if target_currency != "USD":
-        target_column_name = "valuation" + target_currency.capitalize()
-        df[target_column_name] = df["valuationUsd"].apply(
-            convert_from_usd, dest_currency=target_currency)
-        valuation_column = target_column_name
-
     return df[["instrument", "base", "volume", "rateUsd", valuation_column, "netValuationUsd", "bestMarket"]]
+
+
+def convert_currency(valuation_df: pd.DataFrame, target_currency: str) -> pd.DataFrame:
+    if target_currency == "USD":
+        return valuation_df
+
+    currency_columns = [c for c in valuation_df.columns if "Usd" in c]
+    target_columns = [c.replace("Usd", target_currency.capitalize()) for c in valuation_df.columns if "Usd" in c]
+
+    rename_scheme = {k: v for k, v in zip(currency_columns, target_columns)}
+
+    for col in currency_columns:
+        valuation_df[col] = valuation_df[col].apply(convert_from_usd, dest_currency=target_currency)
+
+    """
+    valuation_df[currency_columns] = valuation_df[[currency_columns] + [""]].apply(convert_from_usd,
+                                                                          dest_currency=target_currency.upper())
+                                                                          """
+
+    print(valuation_df)
