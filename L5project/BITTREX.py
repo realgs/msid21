@@ -576,3 +576,9 @@ class Bittrex:
                 symbols = re.split("-", market["symbol"])
                 markets_list.append((symbols[0], symbols[1]))
         return markets_list
+
+    def get_ticker_rate(self, currencies: tuple[str, str]):
+        trading_pair = f'{currencies[0]}-{currencies[1]}'
+        data = API_REQUEST.make_request(
+            f'{self.__URL_BUILD["URL"]}{trading_pair}/{self.__URL_BUILD["rates_endp"]}')
+        return data["bidRate"]

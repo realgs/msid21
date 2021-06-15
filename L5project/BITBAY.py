@@ -145,3 +145,9 @@ class Bitbay:
                 symbols = re.split("-", market)
                 markets_list.append((symbols[0], symbols[1]))
         return markets_list
+
+    def get_ticker_rate(self, currencies: tuple[str, str]):
+        trading_pair = f'{currencies[0]}-{currencies[1]}'
+        data = API_REQUEST.make_request(
+            f'{self.__URL_BUILD["market_info_URL"]}/{trading_pair}')
+        return data["ticker"]["highestBid"]
