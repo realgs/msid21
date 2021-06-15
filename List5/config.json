@@ -7,23 +7,28 @@
   "wallet": {
     "AAPL": {
       "base": "USD",
-      "volume": 7.0,
-      "weightedAvgRate": 612.1325714286
+      "volume": 86.6868,
+      "weightedAvgRate": 61.3944338165
     },
     "BTC": {
       "base": "USD",
-      "volume": 3.9688,
-      "weightedAvgRate": 18997.0
+      "volume": 3.9738,
+      "weightedAvgRate": 18985.5979180221
     },
     "CDR.WSE": {
       "base": "PLN",
       "volume": 16.45,
       "weightedAvgRate": 54454.0
     },
+    "ETH": {
+      "base": "USD",
+      "volume": 0.501,
+      "weightedAvgRate": 2634.4904742747
+    },
     "KGH.WSE": {
       "base": "PLN",
-      "volume": 0.245,
-      "weightedAvgRate": 187.0
+      "volume": 2.945,
+      "weightedAvgRate": 189.1515151515
     },
     "TSLA": {
       "base": "USD",

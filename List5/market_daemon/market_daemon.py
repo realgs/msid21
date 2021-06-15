@@ -207,7 +207,7 @@ class MarketDaemon:
 
                 return profit
             except IndexError:
-                print(f"W Could not sell total amount of product due to market saturation")
+                print(f"W Could not sell total amount of product at '{self}' due to market saturation for '{symbol}'")
                 return profit
             except KeyError:
                 print(f"W could not fetch {instrument} from API {self}")

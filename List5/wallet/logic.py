@@ -27,11 +27,20 @@ def read_transactions(path: Union[str, os.PathLike] = TRANSACTIONS_PATH) -> pd.D
     return df
 
 
-def add_transaction(symbol: str, base_currency: str, rate: float, volume: float, date: datetime.datetime) -> None:
+def add_transaction(symbol: str, base_currency: str, rate: float, volume: float, date: datetime.datetime,
+                    kind="deposit") -> None:
     """Saves instrument add transaction to transactions.csv, positive volume means acquiring the asset,
     negative - selling"""
+    if kind == "withdrawal":
+        wallet = load_config()["wallet"]
+        if symbol in wallet and wallet[symbol]["volume"] - volume >= 0.0:
+            volume *= -1
+        else:
+            raise ValueError(f"Cannot withdraw due to insufficient funds of '{symbol}'")
+
     data = {"instrument": [symbol], "base": [base_currency], "rate": [rate], "volume": [volume],
-            "value": [-1 * rate * volume], "date": [date]}
+            "value": [abs(rate * volume)], "date": [date]}
+
     df = pd.DataFrame(data)
     df.to_csv(TRANSACTIONS_PATH, mode="a", header=False, index=False)
 
@@ -73,9 +82,11 @@ def update_wallet():
     print(df)
 
 
-def read_wallet():
+def read_wallet() -> pd.DataFrame:
     wallet = load_config()["wallet"]
     df = pd.DataFrame(wallet).transpose()
+    df = df.reset_index()
+    df = df.rename(columns={"index": "instrument"})
     return df
 
 

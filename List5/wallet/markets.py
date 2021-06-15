@@ -7,7 +7,7 @@ from wallet.logic import transactions_to_wallet, load_config, read_wallet
 from wallet.tax import tax_estimate
 from currency_converter import CurrencyConverter
 
-from wallet.valuation import get_price, crypto_valuation, get_stooq_price
+from wallet.valuation import get_price, crypto_valuation
 
 
 def target_valuation(series: pd.Series):
@@ -42,6 +42,7 @@ def map_to_net_value(series: pd.Series):
 def wallet_valuation():
     df = transactions_to_wallet()
     df = _valuation(df)
+    df.drop(columns=["base"], inplace=True)
     base_currency = load_config()["base"]
     return convert_currency(df, base_currency)
 
@@ -100,7 +101,7 @@ def wallet_arbitrage_summary():
 
     daemon_pairs = list(itertools.permutations(daemons, 2))
 
-    base_currency_filer = list(read_wallet().index)
+    base_currency_filer = list(read_wallet()["instrument"])
 
     frames = []
     for p in daemon_pairs:
@@ -108,4 +109,8 @@ def wallet_arbitrage_summary():
         frames.append(df)
 
     result = pd.concat(frames)
+    result = result[["pair", "profitBase", "profitability", "srcMarket", "destMarket"]]
+    result.sort_values(by=["profitability"], inplace=True)
+    result.reset_index(drop=True, inplace=True)
+
     return result

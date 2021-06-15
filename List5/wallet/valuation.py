@@ -6,15 +6,15 @@ import market_daemon as md
 import pandas as pd
 import yfinance as yf
 
-bitbay = md.MarketDaemon.build_from_config("bitbay")
-bittrex = md.MarketDaemon.build_from_config("bittrex")
-
 STOOQ_URL = "https://stooq.pl/q/?s="
 NBP_URL = lambda table, code: f"http://api.nbp.pl/api/exchangerates/rates/{table}/{code}"
 
 
 def crypto_valuation(series: pd.Series):
     """Uses MarketDaemon for precise valuation of crypto assets"""
+    bitbay = md.MarketDaemon.build_from_config("bitbay")
+    bittrex = md.MarketDaemon.build_from_config("bittrex")
+
     bitbay_price = bitbay.valuation(series["instrument"], series["volume"], base="USD")
     bittrex_price = bittrex.valuation(series["instrument"], series["volume"], base="USD")
 

@@ -26,5 +26,8 @@ if __name__ == "__main__":
     wallet = read_wallet()
     print(wallet)
 
-    res = wallet_arbitrage_summary()
+    # res = wallet_arbitrage_summary()
+    # print(res)
+
+    res = wallet_valuation()
     print(res)
