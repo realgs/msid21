@@ -87,12 +87,14 @@ def check_arbitrage():
                 volume_1 = float(wallet["apis"][API.get_name()]["volume"])
                 volume_2 = float(wallet["apis"][API_cp.get_name()]["volume"])
                 arbitrage_apis_combinations.append(((API, volume_1), (API_cp, volume_2)))
+    arbitrage_output = []
     for comb in arbitrage_apis_combinations:
-        arbitrage_output = API_OPERATIONS.arbitrage_book(comb[0][0], comb[0][1], comb[1][0], comb[1][1], markets)
+        arbitrage_output.append(API_OPERATIONS.arbitrage_book(comb[0][0], comb[0][1], comb[1][0], comb[1][1], markets))
+    flattened_arbitrage_list = [item for sublist in arbitrage_output for item in sublist]
     successful_transactions = []
-    for arbitrage in arbitrage_output:
+    for arbitrage in flattened_arbitrage_list:
         if arbitrage[1][0] > 0:
-            successful_transactions.append((arbitrage[0], arbitrage[1][0]))
+            successful_transactions.append((arbitrage[0], arbitrage[1][0], arbitrage[1][4], arbitrage[1][5]))
     return successful_transactions
 
 

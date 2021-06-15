@@ -135,7 +135,7 @@ def find_arbitrage(API_BUY, init_api1_volume: float, API_SELL, init_api2_volume:
         else:
             # print(f"{transaction_profit} in {market[0]}-{market[1]}")
             break
-    return earned_money, volume_on_api1, volume_on_api2, avg_rate
+    return earned_money, volume_on_api1, volume_on_api2, avg_rate, API_BUY.get_name(), API_SELL.get_name()
 
 
 def arbitrage_book(API1, user_volume_on_API1, API2, user_volume_on_API2, markets):
