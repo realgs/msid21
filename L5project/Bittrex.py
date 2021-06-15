@@ -1,6 +1,6 @@
-import API_REQUEST
+import API_request
 import re
-import API_OPERATIONS
+import API_operations
 
 
 class Bittrex:
@@ -538,10 +538,10 @@ class Bittrex:
         possible_currencies = [self.__fee_currency, "EUR", "PLN"]
         for curr in possible_currencies:
             trading_pair = f'{currency}-{curr}'
-            market = API_REQUEST.make_request(
+            market = API_request.make_request(
                 f'{self.__URL_BUILD["market_info_URL"]}/{trading_pair}/{self.__URL_BUILD["rates_endp"]}')
             if market is not None:
-                return API_OPERATIONS.get_value_user_curr(curr, self.__fee_currency, float(market["bidRate"]))
+                return API_operations.get_value_user_curr(curr, self.__fee_currency, float(market["bidRate"]))
         raise Exception(f"There is no highest bid in BITTREX API for {currency} to calculate fee")
 
     def get_maker_taker_fee(self, user_money_spent_on_api: float):
@@ -561,7 +561,7 @@ class Bittrex:
 
     def request_bids_and_asks(self, currencies: tuple[str, str]):
         trading_pair = f'{currencies[0]}-{currencies[1]}'
-        offers = API_REQUEST.make_request(
+        offers = API_request.make_request(
             f'{self.__URL_BUILD["URL"]}{trading_pair}/{self.__URL_BUILD["orderbook_endp"]}')
         if offers is not None:
             return offers
@@ -569,7 +569,7 @@ class Bittrex:
             raise Exception(f"Empty bids and asks list in BITTREX for ({currencies[0]},{currencies[1]})")
 
     def request_market_data(self):
-        markets = API_REQUEST.make_request(f'{self.__URL_BUILD["market_info_URL"]}')
+        markets = API_request.make_request(f'{self.__URL_BUILD["market_info_URL"]}')
         markets_list = []
         if markets is not None:
             for market in markets:
@@ -579,6 +579,6 @@ class Bittrex:
 
     def get_ticker_rate(self, currencies: tuple[str, str]):
         trading_pair = f'{currencies[0]}-{currencies[1]}'
-        data = API_REQUEST.make_request(
+        data = API_request.make_request(
             f'{self.__URL_BUILD["URL"]}{trading_pair}/{self.__URL_BUILD["rates_endp"]}')
         return data["bidRate"]

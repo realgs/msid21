@@ -1,12 +1,12 @@
-import API_OPERATIONS
-import BITBAY
-import BITTREX
+import API_operations
+import Bitbay
+import Bittrex
 import json
 
 wallet_path = r"C:\Users\User\Desktop\STUDIA\SEMESTR4\MSiD\LABORATORIUM\repo\msid21\L5project\wallet.json"
 raport_path = r"C:\Users\User\Desktop\STUDIA\SEMESTR4\MSiD\LABORATORIUM\repo\msid21\L5project\sell_raport.json"
-bitbay = BITBAY.Bitbay()
-bittrex = BITTREX.Bittrex()
+bitbay = Bitbay.Bitbay()
+bittrex = Bittrex.Bittrex()
 API_list = [bitbay, bittrex]
 
 
@@ -17,7 +17,7 @@ def sell_currency(curr: str, percentage: float, API):
         curr_amount = percent * float(wallet["currencies"][curr]["quantity"])
         volume_on_api = float(wallet["apis"][API.get_name()]["volume"])
         user_currency = wallet["user_currency"]
-        data = API_OPERATIONS.sell_currency(curr_amount, curr, volume_on_api, user_currency, API)
+        data = API_operations.sell_currency(curr_amount, curr, volume_on_api, user_currency, API)
         wallet["user_money"] = str(float(wallet["user_money"]) + float(data[0]))
         if percent == 1:
             del wallet["currencies"][curr]
@@ -106,7 +106,7 @@ def check_arbitrage():
                 arbitrage_apis_combinations.append(((API, volume_1), (API_cp, volume_2)))
     arbitrage_output = []
     for comb in arbitrage_apis_combinations:
-        arbitrage_output.append(API_OPERATIONS.arbitrage_book(comb[0][0], comb[0][1], comb[1][0], comb[1][1], markets))
+        arbitrage_output.append(API_operations.arbitrage_book(comb[0][0], comb[0][1], comb[1][0], comb[1][1], markets))
     flattened_arbitrage_list = [item for sublist in arbitrage_output for item in sublist]
     successful_transactions = []
     for arbitrage in flattened_arbitrage_list:

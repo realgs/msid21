@@ -1,13 +1,13 @@
-import API_OPERATIONS
-import BITBAY
-import BITTREX
+import API_operations
+import Bitbay
+import Bittrex
 import json
 import Wallet
 
 wallet_path = r"C:\Users\User\Desktop\STUDIA\SEMESTR4\MSiD\LABORATORIUM\repo\msid21\L5project\wallet.json"
 raport_path = r"C:\Users\User\Desktop\STUDIA\SEMESTR4\MSiD\LABORATORIUM\repo\msid21\L5project\sell_raport.json"
-bitbay = BITBAY.Bitbay()
-bittrex = BITTREX.Bittrex()
+bitbay = Bitbay.Bitbay()
+bittrex = Bittrex.Bittrex()
 API_list = [bitbay, bittrex]
 
 def calculate_curr_value_api(curr: str, API):
@@ -16,7 +16,7 @@ def calculate_curr_value_api(curr: str, API):
         curr_amount = float(raport["currencies"][curr]["quantity"])
         volume_on_api = float(raport["apis"][API.get_name()]["volume"])
         user_currency = raport["user_currency"]
-        data = API_OPERATIONS.sell_currency(curr_amount, curr, volume_on_api, user_currency, API)
+        data = API_operations.sell_currency(curr_amount, curr, volume_on_api, user_currency, API)
         return data[0], API.get_name()
 
 
