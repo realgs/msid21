@@ -1,5 +1,6 @@
-from wallet.logic import transactions_to_wallet
-from wallet.markets import wallet_valuation, wallet_partial_valuation
+import market_daemon
+from wallet.logic import transactions_to_wallet, read_wallet
+from wallet.markets import wallet_valuation, wallet_partial_valuation, wallet_arbitrage_summary
 
 from wallet.tax import tax_estimate
 from wallet.valuation import get_price, get_stooq_price
@@ -16,5 +17,14 @@ if __name__ == "__main__":
     # wallet = transactions_to_wallet()
     # print(wallet)
 
-    ww = wallet_valuation()
-    print(ww)
+    # ww = wallet_partial_valuation(0.2)
+    # print(ww)
+
+    # bitbay = market_daemon.MarketDaemon.build_from_config("bitbay")
+     #bittrex = market_daemon.MarketDaemon.build_from_config("bittrex")
+
+    wallet = read_wallet()
+    print(wallet)
+
+    res = wallet_arbitrage_summary()
+    print(res)

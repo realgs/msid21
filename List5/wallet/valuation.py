@@ -68,17 +68,27 @@ def get_yahoo_market_name(symbol: str):
 
 
 def get_stooq_price(symbol: str):
-    if symbol.endswith(".WSE"):
-        symbol = symbol.removesuffix(".WSE")
+    try:
+        if symbol.endswith(".WSE"):
+            symbol = symbol.removesuffix(".WSE")
 
-    url = f"{STOOQ_URL}{symbol.lower()}"
+        headers = {
+            'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko)'
+                          ' Chrome/56.0.2924.87 Safari/537.36'
+        }
 
-    data = requests.get(url).text
+        url = f"{STOOQ_URL}{symbol.lower()}"
 
-    soup = BeautifulSoup(data, 'html.parser')
-    price = soup.find(id='t1').find(id='f13').find('span').text
+        data = requests.get(url, headers=headers).text
 
-    return float(price)
+        # Can stop working if too many requests are sent
+        soup = BeautifulSoup(data, 'html.parser')
+        price = soup.find(id='t1').find(id='f13').find('span').text
+
+        return float(price)
+    except AttributeError:
+        print(f"W Cannot scrap Stooq market for '{symbol}' because of calls / day limit")
+        return 0.0
 
 
 def get_nbp_rate_price(symbol: str):

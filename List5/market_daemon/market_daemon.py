@@ -87,6 +87,7 @@ class MarketDaemon:
 
         if self.name == "bittrex":
             self.market_parser = parsers.bittrex_request_to_pairs
+            self.orderbook_parser = parsers.bittrex_parser
         elif self.name == "bitbay":
             self.market_parser = parsers.bitbay_request_to_pairs
 
@@ -487,11 +488,16 @@ def check_3_random_pairs(src: MarketDaemon, dest: MarketDaemon):
     return df.sort_values(by="profitability", ascending=False)
 
 
-def arbitrage_summary(src: MarketDaemon, dest: MarketDaemon, solver=optimizers.LinprogArbitrage()):
+def arbitrage_summary(src: MarketDaemon, dest: MarketDaemon, filter_base: list[str] = None,
+                      solver=optimizers.LinprogArbitrage()):
     """Returns a dataframe containing pairs available at both src and dest markets and profits of
      arbitrage opportunities expressed in base currency"""
     joint_pairs = src.get_joint_pairs(dest)
-    data = {"pair": [], "instrument": [], "base": [], "profit": [], "profitability": [], "txFee": [], "time": []}
+    data = {"pair": [], "instrument": [], "base": [], "profitBase": [], "profitability": [], "srcMarket": [],
+            "destMarket": [], "txFeeBase": [], "time": []}
+
+    if filter_base:
+        joint_pairs = [p for p in joint_pairs if p.split("-")[1] in filter_base]
 
     print("Processing joint pairs...")
     for pair in tqdm(joint_pairs):
@@ -501,9 +507,11 @@ def arbitrage_summary(src: MarketDaemon, dest: MarketDaemon, solver=optimizers.L
         data["instrument"].append(instrument)
         data["base"].append(base)
         profit, profitability = next(ss)
-        data["profit"].append(profit)
+        data["profitBase"].append(profit)
         data["profitability"].append(profitability)
-        data["txFee"].append(src.transfer_fee(instrument, verbose=False))
+        data["srcMarket"] = str(src)
+        data["destMarket"] = str(dest)
+        data["txFeeBase"].append(src.transfer_fee(instrument, verbose=False))
         data["time"].append(datetime.now())
 
     df = pd.DataFrame(data)

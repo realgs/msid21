@@ -1,6 +1,9 @@
+import itertools
+
 import pandas as pd
 
-from wallet.logic import transactions_to_wallet, load_config
+import market_daemon as md
+from wallet.logic import transactions_to_wallet, load_config, read_wallet
 from wallet.tax import tax_estimate
 from currency_converter import CurrencyConverter
 
@@ -86,9 +89,23 @@ def convert_currency(valuation_df: pd.DataFrame, target_currency: str) -> pd.Dat
     for col in currency_columns:
         valuation_df[col] = valuation_df[col].apply(convert_from_usd, dest_currency=target_currency)
 
-    """
-    valuation_df[currency_columns] = valuation_df[[currency_columns] + [""]].apply(convert_from_usd,
-                                                                          dest_currency=target_currency.upper())
-                                                                          """
+    valuation_df.rename(columns=rename_scheme, inplace=True)
 
-    print(valuation_df)
+    return valuation_df
+
+
+def wallet_arbitrage_summary():
+    api_names = load_config()["api"]
+    daemons = [md.MarketDaemon.build_from_config(name) for name in api_names]
+
+    daemon_pairs = list(itertools.permutations(daemons, 2))
+
+    base_currency_filer = list(read_wallet().index)
+
+    frames = []
+    for p in daemon_pairs:
+        df = md.arbitrage_summary(src=p[0], dest=p[1], filter_base=base_currency_filer)
+        frames.append(df)
+
+    result = pd.concat(frames)
+    return result

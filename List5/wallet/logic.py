@@ -73,6 +73,12 @@ def update_wallet():
     print(df)
 
 
+def read_wallet():
+    wallet = load_config()["wallet"]
+    df = pd.DataFrame(wallet).transpose()
+    return df
+
+
 def total_volumes(wallet: pd.DataFrame) -> pd.DataFrame:
     """Current volume of each of the owned securities"""
     return wallet.groupby(by=["instrument", "base"]).sum()["volume"]

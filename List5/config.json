@@ -1,5 +1,9 @@
 {
-  "base": "USD",
+  "base": "PLN",
+  "api": [
+    "bittrex",
+    "bitbay"
+  ],
   "wallet": {
     "AAPL": {
       "base": "USD",
