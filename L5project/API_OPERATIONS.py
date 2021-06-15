@@ -25,7 +25,7 @@ def get_value_user_curr(init_currency: str, target_currency: str, money: float):
         money_in_PLN = NBP.get_avg_exchange_rate(init_currency) * money
         target_currency_value_of_money = money_in_PLN
     if target_currency != "PLN":
-        money_in_target_currency = money / NBP.get_avg_exchange_rate(target_currency)
+        money_in_target_currency = target_currency_value_of_money / NBP.get_avg_exchange_rate(target_currency)
         target_currency_value_of_money = money_in_target_currency
     return target_currency_value_of_money
 
@@ -65,10 +65,10 @@ def take_bid_offers(buy_offers, sell_offers, user_amount_of_curr, multiplier, AP
     return money_from_sell, user_volume_on_api, last_rate
 
 
-def sell_currency(init_user_money: float, to_sell_currency: str, init_user_api_volume: float, user_currency: str, API):
-    user_amount_of_currency = init_user_money
+def sell_currency(amount_of_currency: float, currency: str, init_user_api_volume: float, user_currency: str, API):
+    user_amount_of_currency = amount_of_currency
     user_volume_on_api = init_user_api_volume
-    market = (to_sell_currency, API.get_fee_currency())
+    market = (currency, API.get_fee_currency())
     online_markets = API.request_market_data()
     market_found = False
     if market in online_markets:
@@ -94,7 +94,7 @@ def sell_currency(init_user_money: float, to_sell_currency: str, init_user_api_v
     last_rate = sell_data[2]
     earned_money = money_from_sell * multiplier
     if API.get_fee_currency() != user_currency:
-        earned_money = get_value_user_curr(API.get_fee_currency, user_currency, money_from_sell)
+        earned_money = get_value_user_curr(API.get_fee_currency(), user_currency, money_from_sell)
     return earned_money, user_volume_on_api, last_rate
 
 

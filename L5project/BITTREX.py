@@ -538,7 +538,8 @@ class Bittrex:
         possible_currencies = [self.__fee_currency, "EUR", "PLN"]
         for curr in possible_currencies:
             trading_pair = f'{currency}-{curr}'
-            market = API_REQUEST.make_request(f'{self.__URL_BUILD["market_info_URL"]}/{trading_pair}/{self.__URL_BUILD["rates_endp"]}')
+            market = API_REQUEST.make_request(
+                f'{self.__URL_BUILD["market_info_URL"]}/{trading_pair}/{self.__URL_BUILD["rates_endp"]}')
             if market is not None:
                 return API_OPERATIONS.get_value_user_curr(curr, self.__fee_currency, float(market["bidRate"]))
         raise Exception(f"There is no highest bid in BITTREX API for {currency} to calculate fee")

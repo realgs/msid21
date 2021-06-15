@@ -1,10 +1,26 @@
 {
- "user_currency": "USD",
- "currencies": [
- 	{"name": "BTC", "quantity": "0.234", "bought_rate": "38234.62", "actual_rate": "389.62"},
- 	{"name": "LTC", "quantity": "3.54", "bought_rate": "175.23", "actual_rate": "178.62"},
-	{"name": "ETH", "quantity":  "8.23", "bought_rate":  "2534.83", "actual_rate": "2564.62"}],
- "apis": [
-    {"name": "Bitbay", "volume": "38234.62"},
- 	{"name": "Bittrex", "volume": "175.23"}]
+  "user_currency": "USD",
+  "user_money": "14067.135859537717",
+  "currencies": {
+    "BTC": {
+      "quantity": "0.117",
+      "rate": "33195.01"
+    },
+    "LTC": {
+      "quantity": "3.54",
+      "rate": "178.62"
+    },
+    "ETH": {
+      "quantity": "8.23",
+      "rate": "2564.62"
+    }
+  },
+  "apis": {
+    "BITBAY": {
+      "volume": "70273.35143480002"
+    },
+    "BITTREX": {
+      "volume": "175.23"
+    }
+  }
 }
