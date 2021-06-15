@@ -5,12 +5,7 @@ import Wallet
 import Raport
 
 def main():
-    """
-    bitbay = BITBAY.Bitbay()
-    bittrex = BITTREX.Bittrex()
-    Wallet.sell_currency("BTC", 50, bitbay)
-    """
-    Raport.make_raport(20)
+    Wallet.check_arbitrage()
 
 if __name__ == "__main__":
     main()

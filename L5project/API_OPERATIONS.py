@@ -138,10 +138,14 @@ def find_arbitrage(API_BUY, init_api1_volume: float, API_SELL, init_api2_volume:
     return earned_money, volume_on_api1, volume_on_api2, avg_rate
 
 
-def arbitrage_book(API1, user_volume_on_API1, API2, user_volume_on_API2):
+def arbitrage_book(API1, user_volume_on_API1, API2, user_volume_on_API2, markets):
     online_markets = find_online_markets(API1, API2)
+    wanted_markets = []
+    for market in markets:
+        if market in online_markets:
+            wanted_markets.append(market)
     arbitrage_dictionary = dict()
-    for market in online_markets:
+    for market in wanted_markets:
         arbitrage_dictionary[market] = find_arbitrage(API1, user_volume_on_API1, API2, user_volume_on_API2, market)
     arbitrage_list = sorted(arbitrage_dictionary.items(), key=lambda market_arb: market_arb[1], reverse=True)
     return arbitrage_list

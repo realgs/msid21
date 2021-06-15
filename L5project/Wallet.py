@@ -57,3 +57,42 @@ def save_json(data, path):
     with open(path, 'w') as f:
         json.dump(data, f, indent=2)
     f.close()
+
+
+def get_arbitrage_markets():
+    with open(wallet_path) as f:
+        wallet = json.load(f)
+        currencies = []
+        for item in wallet["currencies"].items():
+            currencies.append(item[0])
+        currencies_copy = list(currencies)
+        markets = []
+        for currency in currencies:
+            for currency_cp in currencies_copy:
+                if (currency != currency_cp):
+                    markets.append((currency, currency_cp))
+    f.close()
+    return markets
+
+
+def check_arbitrage():
+    with open(wallet_path) as f:
+        wallet = json.load(f)
+    markets = get_arbitrage_markets()
+    API_list_cp = list(API_list)
+    arbitrage_apis_combinations = []
+    for API in API_list:
+        for API_cp in API_list_cp:
+            if API != API_cp:
+                volume_1 = float(wallet["apis"][API.get_name()]["volume"])
+                volume_2 = float(wallet["apis"][API_cp.get_name()]["volume"])
+                arbitrage_apis_combinations.append(((API, volume_1), (API_cp, volume_2)))
+    for comb in arbitrage_apis_combinations:
+        arbitrage_output = API_OPERATIONS.arbitrage_book(comb[0][0], comb[0][1], comb[1][0], comb[1][1], markets)
+    successful_transactions = []
+    for arbitrage in arbitrage_output:
+        if arbitrage[1][0] > 0:
+            successful_transactions.append((arbitrage[0], arbitrage[1][0]))
+    return successful_transactions
+
+
