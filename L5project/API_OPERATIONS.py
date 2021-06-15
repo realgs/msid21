@@ -1,5 +1,7 @@
 import NBP
+
 fee_currencies = ["PLN", "EUR", "USD"]
+
 
 def find_online_markets(API1, API2):
     API_with_less_markets = API1.request_market_data()
@@ -37,6 +39,7 @@ def get_multiplier(API, market_quote_curr: str):
     else:
         return 1
 
+
 def take_bid_offers(buy_offers, sell_offers, user_amount_of_curr, multiplier, API, user_volume_on_api):
     money_from_sell = 0
     last_rate = 0
@@ -60,6 +63,7 @@ def take_bid_offers(buy_offers, sell_offers, user_amount_of_curr, multiplier, AP
         last_rate = buy_rate
         buy_offers.remove(buy_offer)
     return money_from_sell, user_volume_on_api, last_rate
+
 
 def sell_currency(init_user_money: float, to_sell_currency: str, init_user_api_volume: float, user_currency: str, API):
     user_amount_of_currency = init_user_money
@@ -113,7 +117,8 @@ def find_arbitrage(API_BUY, init_user_api1_volume: float, API_SELL, init_user_ap
         transaction_cost = fees_buy["taker_fee"] * sell_quantity
         withdrawn_crypto = sell_quantity - transaction_cost - API_BUY.get_withdrawal_list()[market[0]]
         remaining_money = withdrawn_crypto
-        sell_data = take_bid_offers(buy_offers, sell_offers, remaining_money, api_sell_vol_multiplier, API_SELL, user_volume_on_api2)
+        sell_data = take_bid_offers(buy_offers, sell_offers, remaining_money, api_sell_vol_multiplier, API_SELL,
+                                    user_volume_on_api2)
         money_from_sell = sell_data[0]
         transaction_profit = money_from_sell - buy_volume
         if transaction_profit > 0:
