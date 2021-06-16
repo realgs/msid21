@@ -48,4 +48,4 @@ class Api:
                 return response.json()
             else:
                 print('Sorry, no data found: ', response.status_code, ' ', response.reason)
-                return None
+                return response.status_code

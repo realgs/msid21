@@ -1,20 +1,24 @@
 import itertools
 import json
 
+from tabulate import tabulate
+
 from FinancePortfolio.api.BitbayApi import BitbayApi
 from FinancePortfolio.api.BittrexApi import BittrexApi
 from FinancePortfolio.api.NbpApi import NbpApi
 from FinancePortfolio.api.EndofdayApi import EndofdayApi
 
-CONFIG_FILE = 'config.json'
+CONFIG_FILE = '../config.json'
 BITBAY = BitbayApi()
 BITTREX = BittrexApi()
 NBP = NbpApi()
 EOD = EndofdayApi()
+RESOURCE_TYPES = ['cryptocurrencies', 'currencies', 'pl_stock', 'us_stock']
+BASE_CURRENCY = ['USD', 'EUR', 'PLN']
 
 
-def getDataFromConfigFile():
-    with open(CONFIG_FILE) as file:
+def getDataFromFile(file_name):
+    with open(file_name) as file:
         data = json.load(file)
     return data
 
@@ -30,8 +34,8 @@ def calculateValue(base_currency, resource_type, symbol, quantity, depth):
             value = quantity * price
             return symbol, quantity, price, value, best_exchange
         else:
-            price = "-"
-            value = "-"
+            price = 0
+            value = 0
             return symbol, quantity, price, value, best_exchange
 
     elif resource_type == 'us_stock':
@@ -42,8 +46,8 @@ def calculateValue(base_currency, resource_type, symbol, quantity, depth):
             value = quantity * price
             return symbol, quantity, price, value, best_exchange
         else:
-            price = "-"
-            value = "-"
+            price = 0
+            value = 0
             return symbol, quantity, price, value, best_exchange
 
     elif resource_type == 'cryptocurrencies':
@@ -82,28 +86,32 @@ def calculateNetProfit(profit):
 
 
 def calculateNetValue(average_price, quantity, value, depth):
-    quantity = quantity * depth / 100
-    cost = average_price * quantity
-    net_value = value - calculateNetProfit(calculateProfit(value, cost))
-    return net_value
+    if value != 0:
+        quantity = quantity * depth / 100
+        cost = average_price * quantity
+        net_value = value - calculateNetProfit(calculateProfit(value, cost))
+        return net_value
+    else:
+        return 0
 
 
-def displayTable():
-    data = getDataFromConfigFile()
+def getTable(file, depth):
+
+    table_lines = []
+
+    data = getDataFromFile(file)
     base_currency = data['base_currency']
 
     resources = list(data.items())
     del resources[0]  # deleting base_currency field
-    #del resources[0]  # deleting pl_stock
-    #del resources[0]  # deleting us_stock
+    del resources[0]  # deleting pl_stock
+    del resources[0]  # deleting us_stock
 
     #depth = int(input('Enter percentage to calculate: '))
-    depth = 10  # value for testing
+    #depth = 10  # value for testing
 
-    print("{:<8} {:<15} {:<30} {:<15} {:<15} {:<15} {:<15} {:<15} {:<15} {:<15}".format(
-        'Name', 'Quantity', 'Price(last transaction)', 'Value', 'Net value', 'Best exchange', f'Value {depth}%',
-        f'Net value {depth}%', 'Best exchange', 'Arbitrage'))
-    print('-' * 200)
+    #table_lines.append(['Name', 'Quantity', 'Price(last transaction)', 'Value', 'Net value', 'Best exchange',
+     #                   f'Value {depth}%', f'Net value {depth}%', 'Best exchange', 'Arbitrage'])
 
     owned_cryptocurrencies = []
 
@@ -113,7 +121,6 @@ def displayTable():
     total_net_value_depth = 0
 
     for resource in resources:
-        print()
         if resource[0] == 'cryptocurrencies':
             for item in resource[1]:
                 owned_cryptocurrencies.append(item['symbol'])
@@ -124,26 +131,32 @@ def displayTable():
                     sell_buy_info = getBuySellInfo(pair[0], pair[1])
                     arbitrage_info = getArbitrageInfo(sell_buy_info, pair[0], pair[1])
                     for i in range(0, len(arbitrage_info)):
-                        print("{:>182}".format(f'{arbitrage_info[i][0]}-{arbitrage_info[i][1]}, '
+                        table_lines.append(['', '', '', '', '', '', '', '', '',
+                                            f'{arbitrage_info[i][0]}-{arbitrage_info[i][1]}, '
                                                f'{arbitrage_info[i][3]}-{arbitrage_info[i][4]},'
-                                             f' {round(arbitrage_info[i][2], 6)} {arbitrage_info[i][4]}'))
+                                             f' {round(arbitrage_info[i][2], 6)} {arbitrage_info[i][4]}'])
         for item in resource[1]:
             value_all = calculateValue(base_currency, resource[0], item['symbol'], item['quantity'], 100)
             net_value_all = calculateNetValue(item['average_price'], item['quantity'], value_all[3], 100)
             value_depth = calculateValue(base_currency, resource[0], item['symbol'], item['quantity'], depth)
             net_value_depth = calculateNetValue(item['average_price'], item['quantity'], value_depth[3], depth)
 
-            if value_all[3] != "-":
-                total_value_all += round(value_all[3], 2)
+            #if value_all[3] != "-":
+            total_value_all += round(value_all[3], 2)
             total_net_value_all += round(net_value_all, 2)
-            if value_depth[3] != "-":
-                total_value_depth += round(value_depth[3], 2)
+            #if value_depth[3] != "-":
+            total_value_depth += round(value_depth[3], 2)
             total_net_value_depth += round(net_value_depth, 2)
-            print("{:<8} {:<15} {:<30} {:<15} {:<15} {:<15} {:<15} {:<15} {:<15}".format(value_all[0], value_all[1],
+            table_lines.append([value_all[0], value_all[1],
                             round(value_all[2], 2), round(value_all[3], 2), round(net_value_all, 2), value_depth[4],
-                            round(value_depth[3], 2), round(net_value_depth, 2), value_all[4]))
-    print("{:<56} {:<15} {:<30} {:<15} {:<15}".format('\nTotal value:', '%.2f'%total_value_all,
-        '%.2f'%total_net_value_all, '%.2f'%total_value_depth, '%.2f'%total_net_value_depth))
+                            round(value_depth[3], 2), round(net_value_depth, 2), value_all[4], ''])
+    table_lines.append(['Total:', '', '', '%.2f'%total_value_all, '%.2f'%total_net_value_all, '', '%.2f'%total_value_depth,
+                        '%.2f'%total_net_value_depth, '', ''])
+    #table_lines.append(['', '', '', '', '', '', '', '', '', ''])
+
+    return table_lines
+    #for line in table_lines:
+     #   print(line)
 
 
 def getMarketsIntersection(markets_1, markets_2):
@@ -292,8 +305,8 @@ def getArbitrageInfo(buy_sell_info, currency_1, currency_2):
 
 # test
 if __name__ == "__main__":
-    displayTable()
-
+    #displayTable(CONFIG_FILE, 10)
+    print(tabulate(getTable(CONFIG_FILE, 10)))
 
 
 

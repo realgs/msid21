@@ -1,4 +1,5 @@
 from FinancePortfolio.api.Api import Api, API_TYPES
+from FinancePortfolio.api.NbpApi import NbpApi
 
 NAME = 'Bittrex'
 SHORT_NAME = 'BTX'
@@ -57,7 +58,7 @@ class BittrexApi(Api):
         limit = self.limit
         best_sell_buy_list = []
         orders = self.getOrderbookData(currency_1, currency_2)
-        if orders:
+        if not isinstance(orders, int):
             if orders['bid'] and orders['ask']:
                 if len(orders['ask']) < self.limit or len(orders['bid']) < self.limit:
                     limit = min(len(orders['ask']), len(orders['bid']))
@@ -71,10 +72,14 @@ class BittrexApi(Api):
                 return None
         else:
             print("There was no data!")
-            return None
+            return orders
 
     def getResourceValue(self, symbol, base_currency,  quantity):
+        convert = False
         data = self.getBestSellBuy(symbol, base_currency)
+        if isinstance(data, int):
+            data = self.getBestSellBuy(symbol, 'USD')
+            convert = True
         sell = []
         for info in data:
             sell.append(info[1])
@@ -90,6 +95,9 @@ class BittrexApi(Api):
                 value += quantity * float(sell[index]['rate'])
                 price = float(sell[index]['rate'])
                 quantity = 0
+        if convert:
+            value = NbpApi().convertCurrency('USD', base_currency, value)
+            price = NbpApi().convertCurrency('USD', base_currency, price)
         return value, price
 
     def getLastBuyOfferPrice(self, symbol, base_currency):
@@ -106,7 +114,7 @@ if __name__ == "__main__":
     #print(test_bittrex.createMarketsList())
     #print(test_bittrex.getOrderbookData('BTC', 'USD'))
     #test_bittrex.getOrderbookData('ABC', 'USD')
-    print(test_bittrex.getBestSellBuy('BTC', 'USD'))
-    #print(test_bittrex.getResourceValue('BTC', 'USD', 0.04))
-    print(test_bittrex.getLastBuyOfferPrice('BTC', 'USD'))
+    #print(test_bittrex.getBestSellBuy('LTC', 'EUR'))
+    print(test_bittrex.getResourceValue('BTC', 'PLN', 0.04))
+    #print(test_bittrex.getLastBuyOfferPrice('BTC', 'USD'))
 

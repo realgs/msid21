@@ -1,4 +1,5 @@
 from FinancePortfolio.api.Api import Api, API_TYPES
+from FinancePortfolio.api.NbpApi import NbpApi
 
 NAME = 'BitBay'
 SHORT_NAME = 'BTB'
@@ -80,9 +81,12 @@ class BitbayApi(Api):
             print("There was no data!")
             return None
 
-    #task 2
     def getResourceValue(self, symbol, base_currency,  quantity):
+        convert = False
         data = self.getBestSellBuy(symbol, base_currency)
+        if isinstance(data, int):
+            data = self.getBestSellBuy(symbol, 'USD')
+            convert = True
         sell = []
         for info in data:
             sell.append(info[1])
@@ -98,6 +102,9 @@ class BitbayApi(Api):
                 value += quantity * float(sell[index]['ra'])
                 price = float(sell[index]['ra'])
                 quantity = 0
+        if convert:
+            value = NbpApi().convertCurrency('USD', base_currency, value)
+            price = NbpApi().convertCurrency('USD', base_currency, price)
         return value, price
 
     def getLastBuyOfferPrice(self, symbol, base_currency):
@@ -113,6 +120,6 @@ if __name__ == "__main__":
     #print(test_bitbay.createMarketsList())
     #print(test_bitbay.getOrderbookData('BTC', 'USD'))
     #print(test_bitbay.getOrderbookData('ABC', 'USD'))
-    print(test_bitbay.getBestSellBuy('BTC', 'USD'))
-    #print(test_bitbay.getResourceValue('BTC', 'USD', 0.022))
-    test_bitbay.getLastBuyOfferPrice('BTC', 'USD')
+    #print(test_bitbay.getBestSellBuy('BTC', 'USD'))
+    #print(test_bitbay.getResourceValue('LTC', 'PLN', 0.022))
+    #test_bitbay.getLastBuyOfferPrice('BTC', 'USD')
