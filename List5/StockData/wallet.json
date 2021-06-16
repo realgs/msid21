@@ -1,0 +1,61 @@
+{
+    "base_currency": "PLN",
+    "assets": {
+        "foreign_stock": [
+            {
+                "name": "AAPL",
+                "volume": 30,
+                "avg_price": 125.28,
+                "currency": "USD"
+            }
+        ],
+        "polish_stock": [
+            {
+                "name": "KGH",
+                "volume": 22,
+                "avg_price": 195.85,
+                "currency": "PLN"
+            },
+            {
+                "name": "CDR",
+                "volume": 20,
+                "avg_price": 168.72,
+                "currency": "PLN"
+            }
+        ],
+        "cryptocurrency": [
+            {
+                "name": "ETH",
+                "volume": 3.43,
+                "avg_price": 2392.405,
+                "currency": "USD"
+            },
+            {
+                "name": "BTC",
+                "volume": 0.62,
+                "avg_price": 37081.059,
+                "currency": "USD"
+            },
+            {
+                "name": "LTC",
+                "volume": 7.24,
+                "avg_price": 194.03,
+                "currency": "USD"
+            }
+        ],
+        "currency": [
+            {
+                "name": "USD",
+                "volume": 672.5,
+                "avg_price": 3.73,
+                "currency": "EUR"
+            },
+            {
+                "name": "CHF",
+                "volume": 1234,
+                "avg_price": 4.11,
+                "currency": "PLN"
+            }
+        ]
+    }
+}
