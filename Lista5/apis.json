@@ -1,0 +1,80 @@
+{
+  "API": {
+    "bitbay": {
+      "name": "bitbay",
+      "url_orderbook": "https://bitbay.net/API/Public/",
+      "url_markets": "https://api.bitbay.net/rest/trading/ticker",
+      "orderbook_ending": "/orderbook.json",
+      "taker_fee": 0.0043
+    },
+    "bitrex": {
+      "name": "bitrex",
+      "url_orderbook": "https://api.bittrex.com/api/v1.1/public/getorderbook?market=",
+      "url_markets": "https://api.bittrex.com/api/v1.1/public/getmarkets",
+      "url_currencies": "https://api.bittrex.com/api/v1.1/public/getcurrencies",
+      "orderbook_ending": "&type=both",
+      "orderbook_separator": "-",
+      "taker_fee": 0.0075
+    },
+    "nbp": {
+      "name": "nbp",
+      "url_exchange": "http://api.nbp.pl/api/exchangerates/rates/a/",
+      "json_format": "?format=json"
+    },
+    "stooq" : {
+      "name": "stooq",
+      "url_stock" : "https://stooq.pl/q/?s="
+    }
+  },
+  "FEES": {
+    "bitbay_fees": {
+      "AAVE": 0.54,
+      "ALG": 426,
+      "AMLT": 1743,
+      "BAT": 156,
+      "BCC": 0.001,
+      "BCP": 1237,
+      "BOB": 11645,
+      "BSV": 0.003,
+      "BTC": 0.0005,
+      "BTG": 0.001,
+      "COMP": 0.1,
+      "DAI": 81.0,
+      "DASH": 0.01,
+      "DOT": 0.1,
+      "EOS": 0.1,
+      "ETH": 0.006,
+      "EXY": 520,
+      "GAME": 479,
+      "GGC": 112,
+      "GNT": 403,
+      "GRT": 84,
+      "LINK": 2.7,
+      "LML": 1500,
+      "LSK": 0.3,
+      "LTC": 0.001,
+      "LUNA": 0.02,
+      "MANA": 100,
+      "MKR": 0.025,
+      "NEU": 572,
+      "NPXS": 17229.0,
+      "OMG": 14,
+      "PAY": 1523,
+      "QARK": 1019,
+      "REP": 3.2,
+      "SRN": 5717,
+      "SUSHI": 8.8,
+      "TRX": 1.0,
+      "UNI": 2.5,
+      "USDC": 125,
+      "USDT": 190,
+      "XBX": 5508,
+      "XIN": 5,
+      "XLM": 0.005,
+      "XRP": 0.1,
+      "XTZ": 0.1,
+      "ZEC": 0.004,
+      "ZRX": 56
+    }
+  }
+}
