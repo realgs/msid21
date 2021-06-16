@@ -81,13 +81,9 @@ def calculateProfit(api, assetSymbol, currency, avgPrice, currentVolume):
         takerFee = api.takerFee
         while currentVolume > 0 and len(queue) > 0:
             bidOffer = queue.pop()
-            difference = calculateMinRateQuantity(
+            minRateQuantity = calculateMinRateQuantity(
                 {'rate': avgPrice, 'quantity': float(currentVolume)}, bidOffer, transferFee, takerFee, api)
-
-            if difference['quantity'] < 0 and difference['rate'] < 0:
-                profit -= difference['rate'] * difference['quantity']
-            else:
-                profit += difference['rate'] * difference['quantity']
+            profit += minRateQuantity['rate'] * minRateQuantity['quantity']
             currentVolume -= abs(min(float(currentVolume), float(bidOffer[api.quantity])))
         return profit * conversionRate
     else:
@@ -185,19 +181,33 @@ def getBestArbitrage(assetSymbol):
     return possibleArbitrage[0]
 
 
+def getWallet(investments):
+    table = []
+    headers = ['Asset type', 'Name', 'Volume', 'Average price', 'Currency']
+    for investmentType in investments['assets']:
+        for investment in investments['assets'][investmentType]:
+            table.append([
+                investmentType,
+                investment['name'],
+                investment['avg_price'],
+                investment['volume'],
+                investment['currency'],
+            ])
+    print(tabulate(table, headers=headers, tablefmt="github"))
+    return tabulate(table, headers=headers, tablefmt="github")
+
+
 def getPortfolio(wallet, percent=10):
     table = []
-    headers = ["Symbol", "Average price", "Volume", "API",
-               "Profit", "Profit netto", f"Profit {percent}%", f"Profit {percent}% netto", "Arbitrage"]
-    sumOfProfits = ["Sum", "---", "---", "---", 0, 0, 0, 0, "---"]
+    headers = ["Symbol", "Average price", "Volume", "API", "Profit", "Profit netto", f"Profit {percent}%",
+               f"Profit {percent}% netto", "Arbitrage"]
     profitSum, profitSumPercent = 0, 0
 
     for assetType in wallet['assets']:
         for asset in wallet['assets'][assetType]:
-            bestProfit = getBestProfit(assetType, asset['name'], asset['currency'],
-                                       float(asset['avg_price']), float(asset['volume']))
-            bestProfitPercent = getBestProfit(assetType, asset['name'], asset['currency'],
-                                              float(asset['avg_price']),
+            bestProfit = getBestProfit(assetType, asset['name'], asset['currency'], float(asset['avg_price']),
+                                       float(asset['volume']))
+            bestProfitPercent = getBestProfit(assetType, asset['name'], asset['currency'], float(asset['avg_price']),
                                               float(asset['volume']) * 0.01 * percent)
 
             if assetType == 'cryptocurrency':
@@ -221,9 +231,8 @@ def getPortfolio(wallet, percent=10):
             profitSum += float(bestProfit['profit'])
             profitSumPercent += float(bestProfitPercent['profit'])
 
-    table.append(['Sum', '---', '---', sumOfProfits[3], f"{profitSum:.2f} {BASE_CURRENCY}",
-                  f"{(profitSum * (1 - PROFIT_TAX)):.2f} {BASE_CURRENCY}",
-                  f"{profitSumPercent:.2f} {BASE_CURRENCY}",
+    table.append(['Sum', '---', '---', '---', f"{profitSum:.2f} {BASE_CURRENCY}",
+                  f"{(profitSum * (1 - PROFIT_TAX)):.2f} {BASE_CURRENCY}", f"{profitSumPercent:.2f} {BASE_CURRENCY}",
                   f"{(profitSumPercent * (1 - PROFIT_TAX)):.2f} {BASE_CURRENCY}", '---'])
 
     print(tabulate(table, headers=headers, tablefmt="github"))
@@ -256,6 +265,18 @@ def addAssetToWallet():
         finalGui.throwError('Error', 'Wrong asset data!')
 
 
+def pushWalletToGui():
+    GUI.buttonShowWallet['state'] = 'disable'
+    try:
+        table = getWallet(WALLET)
+    except Exception:
+        table = 'No access to wallet!'
+    GUI.text.insert(END, '\n')
+    GUI.text.insert(END, table)
+    GUI.text.insert(END, '\n')
+    GUI.buttonShowWallet['state'] = 'normal'
+
+
 def pushPortfolioToGui():
     GUI.buttonShowPortfolio['state'] = 'disable'
     try:
@@ -275,34 +296,6 @@ def pushPortfolioToGui():
     GUI.buttonShowPortfolio['state'] = 'normal'
 
 
-def getWallet(investments):
-    table = []
-    headers = ['Asset type', 'Name', 'Volume', 'Average price', 'Currency']
-    for investmentType in investments['assets']:
-        for investment in investments['assets'][investmentType]:
-            table.append([
-                investmentType,
-                investment['name'],
-                investment['avg_price'],
-                investment['volume'],
-                investment['currency'],
-            ])
-    print(tabulate(table, headers=headers, tablefmt="github"))
-    return tabulate(table, headers=headers, tablefmt="github")
-
-
-def pushWalletToGui():
-    GUI.buttonShowWallet['state'] = 'disable'
-    try:
-        table = getWallet(WALLET)
-    except Exception:
-        table = 'No access to wallet!'
-    GUI.text.insert(END, '\n')
-    GUI.text.insert(END, table)
-    GUI.text.insert(END, '\n')
-    GUI.buttonShowWallet['state'] = 'normal'
-
-
 def initializeGui():
     finalGui.configButtonCommand(GUI.buttonAdd, addAssetToWallet)
     finalGui.configButtonCommand(GUI.buttonShowPortfolio, pushPortfolioToGui)
@@ -314,5 +307,4 @@ WALLET = loadJsonFromFile(PORTFOLIO_PATH)
 BASE_CURRENCY = WALLET['base_currency']
 
 if __name__ == '__main__':
-    # printInvestments(get_json_from_file(PORTFOLIO_PATH), 20)
     initializeGui()
