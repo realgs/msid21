@@ -1,0 +1,22 @@
+{
+"crypto": {
+    "BTC": {"quantity":  0.17, "avr_price": 33576.3},
+    "LTC": {"quantity":  5.92, "avr_price": 173.54}
+  },
+
+  "currencies": {
+    "EUR": {"quantity":  1223.43, "avr_price": 1.21},
+    "GBP": {"quantity":  4961.65, "avr_price": 1.41}
+  },
+
+  "foreignStock": {
+    "IBM": {"quantity":  12, "avr_price": 151.27}
+  },
+
+  "plStock": {
+    "CDR": {"quantity":  19, "avr_price": 19.8}
+  },
+
+  "baseCurrency": "USD"
+
+}
