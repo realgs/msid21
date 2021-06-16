@@ -1,0 +1,37 @@
+{
+    "base_currency": "USD",
+    "stocks": {
+        "TSLA": {
+            "quantity": 4.0,
+            "price": 622.21
+        },
+        "IBM": {
+            "quantity": 8,
+            "price": 141.25
+        }
+    },
+    "currencies": {
+        "PLN": {
+            "quantity": 512.41,
+            "price": 0.25
+        },
+        "CHF": {
+            "quantity": 304.21,
+            "price": 1.25
+        }
+    },
+    "cryptocurrencies": {
+        "BTC": {
+            "quantity": 0.4212,
+            "price": 21021.31
+        },
+        "ETH": {
+            "quantity": 1.421,
+            "price": 412.31
+        },
+        "XRP": {
+            "quantity": 1.0,
+            "price": 1.01
+        }
+    }
+}
