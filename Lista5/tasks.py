@@ -46,7 +46,7 @@ def find_best_crypto_market(crypto, quantity, baseCurrency):
         sumGain = 0
         offers = api.get_offers(crypto, baseCurrency)
 
-        if offers is not None and bool(offers):
+        if offers is not None and bool(offers) and offers.get(NORMALIZED_OPERATIONS[0], False):
             offersToSellTo = offers[NORMALIZED_OPERATIONS[0]]
             while leftToSell > 0:
                 offer = offersToSellTo[0]
@@ -99,6 +99,14 @@ def analyze_portfolio(portfolioData, depth, baseCurrency):
                 except ValueError:
                     price = DATA_PROCESSING_ERROR_MESSAGE
                     exchange = DATA_PROCESSING_ERROR_MESSAGE
+
+                result = find_best_crypto_market(entry['symbol'], quantity, "USD")
+                if result is not None and price != DATA_PROCESSING_ERROR_MESSAGE:
+                    basePrice = get_currency_exchange_rate("USD", baseCurrency, apiInfo) * result[0]
+                    if basePrice > price:
+                        price = basePrice
+                        exchange = CRYPTO_APIS[1].get_name().upper()
+
                 currentRow[2] = price
                 currentRow[6] = exchange
 
