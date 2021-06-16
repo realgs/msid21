@@ -1,6 +1,6 @@
 import json
 
-JSON_FILE_PATH = 'D:/Studia/Sem4/Metody Systemowe i Decyzyjne/Labki/lista5/msid21/resources.json'
+JSON_FILE_PATH = 'resources.json'
 
 
 def load_wallet(file_name):
@@ -79,4 +79,3 @@ def print_wallet(file):
         print("volume: " + str(file['cryptocurrencies'][i]['volume']))
         print("price: " + str(file['cryptocurrencies'][i]['price']))
         print(" ")
-

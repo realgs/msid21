@@ -1,12 +1,11 @@
 import requests
-
+import Key
 import Wallet
 from bs4 import BeautifulSoup
 
 URL_BITBAY = "https://bitbay.net/API/Public/"
 ORDER = '/orderbook.json'
-KEY = '4584756fea7c9d623e95c517449fa846'
-URL_MARKETSTACK = f'http://api.marketstack.com/v1/intraday?access_key={KEY}&symbols='
+URL_MARKETSTACK = f'http://api.marketstack.com/v1/intraday?access_key={Key.key}&symbols='
 URL_NBP = "http://api.nbp.pl/api/exchangerates/rates/c/"
 URL_STOOQ = "https://stooq.pl"
 DEPTH = 5

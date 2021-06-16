@@ -5,13 +5,13 @@
     [
       {
         "name": "MSFT",
-        "volume": 50,
+        "volume": 40,
         "price": 250.93,
         "currency": "USD"
       },
       {
         "name": "AMZN",
-        "volume": 30,
+        "volume": 20,
         "price": 3268.56,
         "currency": "USD"
       }
@@ -21,8 +21,8 @@
       {
         "name": "PGE",
         "volume": 5,
-        "price": 10.24,
-        "currency": "PLN"
+        "price": 2.75,
+        "currency": "USD"
       }
     ],
     "currencies": 
@@ -38,13 +38,13 @@
     [
       {
         "name": "BTC",
-        "volume": 0.8,
+        "volume": 0.62,
         "price": 38003.34,
         "currency": "USD"
       },
       {
         "name": "ETH",
-        "volume": 10,
+        "volume": 8,
         "price": 2515.54,
         "currency": "USD"
       }
