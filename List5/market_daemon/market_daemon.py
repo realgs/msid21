@@ -17,7 +17,7 @@ from market_daemon import optimizers, parsers
 
 OrderList = list[tuple[float, float]]
 
-CONFIG_PATH: str = "../api_config.json"
+CONFIG_PATH: str = "D:\\CompSci\\git\\msid21\\List5\\api_config.json"
 
 BASE_CURRENCY: str = "USD"
 DEFAULT_ORDER_NUM: int = 3
@@ -47,7 +47,7 @@ SAMPLE_CONFIG: dict = {
 }
 
 
-def load_config(path="api_config.json"):
+def load_config(path=CONFIG_PATH):
     try:
         with open(path, 'r') as f:
             result = dict(json.load(f))

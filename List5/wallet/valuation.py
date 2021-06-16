@@ -18,7 +18,7 @@ def crypto_valuation(series: pd.Series):
     bitbay_price = bitbay.valuation(series["instrument"], series["volume"], base="USD")
     bittrex_price = bittrex.valuation(series["instrument"], series["volume"], base="USD")
 
-    if bittrex_price == 0.0 and bitbay_price == 0.0:
+    if bittrex_price == 0.0 or bitbay_price == 0.0:
         series["cryptoValuationUsd"] = 0.0
         return series
 

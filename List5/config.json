@@ -1,5 +1,5 @@
 {
-  "base": "PLN",
+  "base": "EUR",
   "api": [
     "bittrex",
     "bitbay"

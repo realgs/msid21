@@ -1,8 +1,7 @@
 import sys
 import traceback
 
-import pandas as pd
-from PyQt5.QtCore import QObject, pyqtSignal, QMutex, QRunnable, pyqtSlot
+from PyQt5.QtCore import QObject, pyqtSignal, QRunnable, pyqtSlot
 
 
 class WorkerSignals(QObject):
@@ -26,7 +25,6 @@ class Worker(QRunnable):
 
     @pyqtSlot()
     def run(self):
-        # Retrieve args/kwargs here; and fire processing using them
         try:
             result = self.fn(*self.args, **self.kwargs)
         except:
@@ -34,6 +32,6 @@ class Worker(QRunnable):
             exctype, value = sys.exc_info()[:2]
             self.signals.error.emit((exctype, value, traceback.format_exc()))
         else:
-            self.signals.result.emit(result)  # Return the result of the processing
+            self.signals.result.emit(result)
         finally:
-            self.signals.finished.emit()  # Done
+            self.signals.finished.emit()

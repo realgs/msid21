@@ -31,12 +31,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.threadpool = QThreadPool()
 
-        # Threaded
-        self.run_valuation()
+        # Startup
+        # self.run_valuation()
 
         self.confirmTransactionButton.clicked.connect(self.on_transaction_dispatched)
         self.runValuationButton.clicked.connect(self.run_valuation)
         self.runFracValuationButton.clicked.connect(self.run_partial_valuation)
+        self.runArbitrageButton.clicked.connect(self.run_arbitrage_valuation)
 
     def update_wallet(self):
         df = read_wallet()
@@ -51,8 +52,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.transactionsTableView.setModel(self.transactionsModel)
         self.transactionsTableView.horizontalHeader().stretchLastSection()
 
-    def update_arbitrage_table(self):
-        df = wallet_arbitrage_summary()
+    @pyqtSlot(pd.DataFrame)
+    def update_arbitrage_table(self, df):
         self.arbitrageTableModel = DataFrameModel(df)
         self.arbitrageTableView.setModel(self.arbitrageTableModel)
 
@@ -75,6 +76,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def frac_valuation_make_active(self):
         self.fracValuationStatus.setText("Ready")
         self.runFracValuationButton.setEnabled(True)
+
+    @pyqtSlot()
+    def arbitrage_make_active(self):
+        self.arbitrageStatus.setText("Ready - available crypto market APIs: bitbay, bittrex")
+        self.runArbitrageButton.setEnabled(True)
 
     @pyqtSlot()
     def on_transaction_dispatched(self):
@@ -105,9 +111,21 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.fracValuationStatus.setText("Running wallet valuation...")
         self.runFracValuationButton.setEnabled(False)
 
-        worker = Worker(wallet_partial_valuation, 0.05)
+        worker = Worker(wallet_partial_valuation, self.fracValuationFraction.value())
         worker.signals.result.connect(self.update_frac_valuation)
         worker.signals.finished.connect(self.frac_valuation_make_active)
+
+        # Execute
+        self.threadpool.start(worker)
+
+    @pyqtSlot()
+    def run_arbitrage_valuation(self):
+        self.arbitrageStatus.setText("Running arbitrage check...")
+        self.runArbitrageButton.setEnabled(False)
+
+        worker = Worker(wallet_arbitrage_summary)
+        worker.signals.result.connect(self.update_arbitrage_table)
+        worker.signals.finished.connect(self.arbitrage_make_active)
 
         # Execute
         self.threadpool.start(worker)
