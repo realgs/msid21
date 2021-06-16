@@ -1,5 +1,6 @@
 from jsonUtilities import load_data_from_json
 from apisUtilities import get_api_response
+from cryptoApis.CryptoApi import CryptoApiInterface
 
 
 def parse_bitbay_currencies(jsonData):
@@ -12,7 +13,7 @@ def parse_bitbay_currencies(jsonData):
     return result
 
 
-class Bitbay:
+class Bitbay(CryptoApiInterface):
     def __init__(self):
         self.__data = load_data_from_json("apis.json")['API']['bitbay']
         self.__fees = load_data_from_json("apis.json")['FEES']["bitbay_fees"]

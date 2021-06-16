@@ -3,6 +3,7 @@ import requests
 import yfinance as yf
 from bs4 import BeautifulSoup
 
+
 NORMALIZED_OPERATIONS = ['bids', 'asks']
 WAITING_TIME = 2
 
@@ -76,6 +77,16 @@ def get_current_foreign_stock_price(stock, baseCurrency, apiInfo):
         raise ValueError(f'Wrong symbol: {stock}')
 
 
+def get_foreign_exchange(stock):
+    # foreign market name is checked using yahoo finance API replacement
+    try:
+        tickerInfo = yf.Ticker(stock).info
+        return tickerInfo['exchange']
+
+    except Exception:
+        raise ValueError(f'Wrong symbol: {stock}')
+
+
 def get_current_pl_stock_price(stock, baseCurrency, apiInfo):
     # due to lack of free API for checking pl stock prices is resolved using HTML scrapping
     stooqUrl = apiInfo["API"]["stooq"]["url_stock"]
@@ -135,10 +146,6 @@ def calculate_arbitrage(sourceStock, targetStock, currency, baseCurrency, fees):
             volume += buyVolume
             spentMoney += buyCost
             gainedMoney += sellGain
-
-            if transferFee > 0 or (transferFee == 0.0 and operationNumber == transferFeePaidNumber):
-                print(f" Checking for negative profit until transfer fee is covered:"
-                      f" {round(gainedMoney - spentMoney, 5)} {baseCurrency}")
 
             offersToSellTo[0][1] -= sellVolume
             if offersToSellTo[0][1] == 0:

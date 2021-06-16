@@ -1,9 +1,9 @@
 from tabulate import tabulate
-from cryptoApis.bitbay import Bitbay
-from cryptoApis.bitrex import Bitrex
+from cryptoApis.Bitbay import Bitbay
+from cryptoApis.Bitrex import Bitrex
 from jsonUtilities import load_data_from_json, save_data_to_json
 from apisUtilities import find_common_currencies_pairs, get_current_foreign_stock_price, get_current_pl_stock_price, \
-    get_currency_exchange_rate, NORMALIZED_OPERATIONS, include_taker_fee, zad6, get_transfer_fees
+    get_currency_exchange_rate, NORMALIZED_OPERATIONS, include_taker_fee, zad6, get_transfer_fees, get_foreign_exchange
 
 CATEGORIES = ["foreignStock", "plStock", "crypto", "currencies"]
 DATA_PROCESSING_ERROR_MESSAGE = "Could not process provided data"
@@ -14,6 +14,7 @@ CRYPTO_APIS = [Bitbay(), Bitrex()]
 def add_item_to_wallet(category, name, quantity, avpPrice, walletData):
     entry = {'symbol': name, 'quantity': quantity, 'avgPrice': avpPrice}
     if category in CATEGORIES:
+        print(f"Successfully added {name} to wallet")
         walletData[category].append(entry)
     else:
         print(f"Invalid category: {category}")
@@ -60,7 +61,7 @@ def find_best_crypto_market(crypto, quantity, baseCurrency):
 
                 del offersToSellTo[0]
 
-            results.append((sumGain / quantity, api.get_name()))
+            results.append((sumGain / quantity, api.get_name().upper()))
 
     res = sorted(results, reverse=True)
     return res[0]
@@ -94,11 +95,12 @@ def analyze_portfolio(portfolioData, depth, baseCurrency):
             if cat == CATEGORIES[0]:
                 try:
                     price = get_current_foreign_stock_price(entry['symbol'], baseCurrency, apiInfo)
+                    exchange = get_foreign_exchange(entry['symbol'])
                 except ValueError:
                     price = DATA_PROCESSING_ERROR_MESSAGE
+                    exchange = DATA_PROCESSING_ERROR_MESSAGE
                 currentRow[2] = price
-                if price != DATA_PROCESSING_ERROR_MESSAGE:
-                    currentRow[6] = "NasdaqGS"
+                currentRow[6] = exchange
 
             elif cat == CATEGORIES[1]:
                 try:
@@ -140,19 +142,19 @@ def analyze_portfolio(portfolioData, depth, baseCurrency):
                 currentRow[2] = price
 
             try:
-                value = price * quantity
+                value = round(price * quantity, 3)
             except TypeError:
                 value = DATA_PROCESSING_ERROR_MESSAGE
             currentRow[3] = value
 
             try:
-                profit = value - entry['avgPrice'] * quantity
+                profit = round(value - entry['avgPrice'] * quantity, 3)
             except TypeError:
                 profit = DATA_PROCESSING_ERROR_MESSAGE
             currentRow[4] = profit
 
             try:
-                netProfit = include_tax(profit)
+                netProfit = round(include_tax(profit), 3)
             except TypeError:
                 netProfit = DATA_PROCESSING_ERROR_MESSAGE
             currentRow[5] = netProfit

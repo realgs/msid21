@@ -31,11 +31,6 @@
             "symbol": "CHF",
             "quantity": 2500,
             "avgPrice": 0.92
-        },
-        {
-            "symbol": "NANA",
-            "quantity": 5.1,
-            "avgPrice": 101.11
         }
     ]
 }

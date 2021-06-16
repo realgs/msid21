@@ -1,5 +1,6 @@
-from jsonUtilities import load_data_from_json
 from apisUtilities import NORMALIZED_OPERATIONS, get_api_response
+from cryptoApis.CryptoApi import CryptoApiInterface
+from jsonUtilities import load_data_from_json
 
 
 def parse_bitrex_orderbook(jsonData):
@@ -36,7 +37,7 @@ def parse_bitrex_currencies(jsonData):
     return result
 
 
-class Bitrex:
+class Bitrex(CryptoApiInterface):
     def __init__(self):
         self.__data = load_data_from_json("apis.json")['API']['bitrex']
 
