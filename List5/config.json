@@ -1,0 +1,39 @@
+{
+  "base": "EUR",
+  "api": [
+    "bittrex",
+    "bitbay"
+  ],
+  "wallet": {
+    "AAPL": {
+      "base": "USD",
+      "volume": 80.2368,
+      "weightedAvgRate": 74.2121258335
+    },
+    "BTC": {
+      "base": "USD",
+      "volume": 3.9738,
+      "weightedAvgRate": 18985.5979180221
+    },
+    "CDR.WSE": {
+      "base": "PLN",
+      "volume": 16.45,
+      "weightedAvgRate": 54454.0
+    },
+    "ETH": {
+      "base": "USD",
+      "volume": 0.501,
+      "weightedAvgRate": 2634.4904742747
+    },
+    "KGH.WSE": {
+      "base": "PLN",
+      "volume": 2.945,
+      "weightedAvgRate": 189.1515151515
+    },
+    "TSLA": {
+      "base": "USD",
+      "volume": 2.0,
+      "weightedAvgRate": 609.0
+    }
+  }
+}
