@@ -5,8 +5,7 @@ from API.NBP import NBP
 
 class EOD(Api):
     def __init__(self):
-        super().__init__("EOD",
-                         "https://eodhistoricaldata.com/api/real-time/")
+        super().__init__("EOD", "https://eodhistoricaldata.com/api/real-time/")
 
     def markets(self):
         pass

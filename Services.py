@@ -18,21 +18,6 @@ API = {
 }
 
 
-def search_bids(bids, quantity):
-    volume = quantity
-    price = 0
-    for bid in bids:
-        if volume >= bid['quantity']:
-            price += bid['quantity'] * bid['rate']
-            volume -= bid['quantity']
-        elif volume > 0:
-            price += volume * bid['rate']
-            volume = 0
-    if volume == 0:
-        pass
-    return price
-
-
 class Service:
     def __init__(self, wallet: Wallet):
         self.__wallet = wallet
@@ -69,10 +54,17 @@ class Service:
             netto = self.tax(best_price, resource_quantity, resource_rate, 100)
             depth_netto = self.tax(depth_best_price, resource_quantity, resource_rate, depth)
 
+            if category == 'crypto_currency':
+                arbitrage = self.__get_arbitrage(resource_name, resource_quantity)
+                arbitrage_str = f'{arbitrage["market"]}, {arbitrage["exchange"]}, {round(arbitrage["value"], 5)}'
+            else:
+                arbitrage_str = ' - '
+
             markings.append(
                 {'name': resource_name, 'quantity': resource_quantity, 'rate': resource_rate,
-                 'price': best_price, 'depth_price': round(depth_best_price, 2), 'with_tax': netto,
-                 'depth_with_tax': depth_netto, 'exchange': exchange_name_best_price})
+                 'price': round(best_price, 2), 'depth_price': round(depth_best_price, 2), 'with_tax': netto,
+                 'depth_with_tax': depth_netto, 'exchange': exchange_name_best_price,
+                 'arbitrage': arbitrage_str if category == 'crypto_currency' else ' - '})
 
         return markings
 
@@ -96,6 +88,20 @@ class Service:
         revenue = round(sell_price - (quantity * (depth / 100) * rate), 2)
         return revenue if revenue < 0 else round(revenue * 0.81, 2)
 
+    @staticmethod
+    def sell_in_bids(bids, quantity):
+        left_volume = quantity
+        price = 0
+        for bid in bids:
+            if left_volume >= bid['quantity']:
+                price += bid['quantity'] * bid['rate']
+                left_volume -= bid['quantity']
+            elif left_volume > 0:
+                price += left_volume * bid['rate']
+                left_volume = 0
+
+        return price
+
     def __sell_resource(self, resource_category, cur_from, quantity, cur_to):
         if resource_category == 'currency':
             return self.__sell_currency(cur_from, quantity, cur_to)
@@ -110,14 +116,13 @@ class Service:
     def __sell_currency(cur_from, quantity, cur_to):
         return API['currency'].convert(cur_from, quantity, cur_to), ' - '
 
-    @staticmethod
-    def __sell_crypto(resource, quantity, base):
+    def __sell_crypto(self, resource, quantity, base):
         value = []
         _, bidsBittrex = API['crypto_currency']['bittrex'].orderbook(resource, 'USD')
         _, bidsBitbay = API['crypto_currency']['bitbay'].orderbook(resource, 'USD')
 
-        r1 = search_bids(bidsBittrex, quantity)
-        r2 = search_bids(bidsBitbay, quantity)
+        r1 = self.sell_in_bids(bidsBittrex, quantity)
+        r2 = self.sell_in_bids(bidsBitbay, quantity)
 
         value.append((API['currency'].convert('USD', r1, base), 'BTX'))
         value.append((API['currency'].convert('USD', r2, base), 'BTB'))
@@ -139,3 +144,74 @@ class Service:
     @staticmethod
     def get_price_sell(volume, rate, taker_fee):
         return volume * (1 - volume * taker_fee) * rate
+
+    @staticmethod
+    def __find_common_pairs(first, second):
+        return list(set(first).intersection(second))
+
+    def __get_arbitrage(self, currency_name, currency_quantity):
+        arbitrage = []
+        common_markets = self.__find_common_pairs(API['crypto_currency']['bitbay'].markets,
+                                                  API['crypto_currency']['bittrex'].markets)
+        if common_markets:
+            available_markets = [market for market in common_markets if market.split('-')[0] in currency_name]
+
+            for market in available_markets:
+                arbitrage.append(self.__find_arbitrage_for_market(market, currency_quantity)[0])
+
+            return max(arbitrage, key=lambda x: x['value'])
+
+    def __find_arbitrage_for_market(self, market, resource_quantity):
+        arbitrage = []
+        own_currency, currency_to_buy = market.split('-')
+        btb_asks, btb_bids = API['crypto_currency']['bitbay'].orderbook(own_currency, currency_to_buy)
+        btx_asks, btx_bids = API['crypto_currency']['bittrex'].orderbook(own_currency, currency_to_buy)
+        arbitrages_btx_bit = self.__all_arbitrages(btb_bids, btx_asks, API['crypto_currency']['bittrex'].taker_fee,
+                                                   API['crypto_currency']['bitbay'].taker_fee,
+                                                   API['crypto_currency']['bittrex'].transfer_fee(currency_to_buy),
+                                                   resource_quantity)
+        arbitrages_bit_btx = self.__all_arbitrages(btx_bids, btb_asks, API['crypto_currency']['bitbay'].taker_fee,
+                                                   API['crypto_currency']['bittrex'].taker_fee,
+                                                   API['crypto_currency']['bitbay'].transfer_fee(currency_to_buy),
+                                                   resource_quantity)
+
+        if arbitrages_btx_bit:
+            arbitrage.append({'market': market, 'exchange': 'BTX-BIT', 'value': arbitrages_btx_bit[0]})
+        if arbitrages_bit_btx:
+            arbitrage.append({'market': market, 'exchange': 'BIT-BTX', 'value': arbitrages_bit_btx[0]})
+
+        if arbitrage:
+            return sorted(arbitrage, key=lambda i: i['value'], reverse=True)
+        else:
+            return {'market': '-', 'exchange': '-', 'value': 0}
+
+    @classmethod
+    def __all_arbitrages(cls, bid_offers, ask_offers, ask_taker, bid_taker, ask_transfer, resource_quantity):
+        possible_arbitrages = []
+        for offer in ask_offers:
+            invest_rate = offer['rate']
+            invest_quantity = offer['quantity']
+
+            if resource_quantity >= invest_quantity:
+                bought_volume = cls.get_price_sell(invest_quantity, invest_rate, ask_taker) - ask_transfer
+                earn = cls.__get_best_sell_price(bid_offers, bid_taker, bought_volume)
+                possible_arbitrages.append(earn - invest_quantity)
+
+        possible_arbitrages.sort()
+        return possible_arbitrages
+
+    @classmethod
+    def __get_best_sell_price(cls, bid_offers, bid_taker, volume_to_sell):
+        earn = 0
+        num_of_offer = 0
+        while volume_to_sell > 0 and num_of_offer < len(bid_offers):
+            volume_to_buy = bid_offers[num_of_offer]['quantity']
+            rate = bid_offers[num_of_offer]['rate']
+            sell_price = cls.get_price_buy(volume_to_buy, rate, bid_taker)
+
+            if volume_to_sell >= sell_price > 0:
+                earn += volume_to_buy
+                volume_to_sell -= sell_price
+
+            num_of_offer += 1
+        return earn

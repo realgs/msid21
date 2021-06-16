@@ -3,16 +3,13 @@ import os
 from flask import Flask, render_template, request
 from werkzeug.utils import secure_filename
 
-from API import const
 from Services import Service
 from Wallet import Wallet
 
 app = Flask(__name__)
 app.config['UPLOAD_PATH'] = 'json_files'
 
-
-def init():
-    const.service = Service(Wallet('json_files/empty_resources.json'))
+service = Service(Wallet('json_files/empty_resources.json'))
 
 
 @app.route('/')
@@ -25,7 +22,7 @@ def add():
     if request.method == 'POST':
         if 'name' in request.form:
             try:
-                const.service.add_resource(request)
+                service.add_resource(request)
                 return render_template("add_resources.html", add_confirm='Resource added.')
             except ValueError:
                 return render_template("add_resources.html", error_message='Invalid argument')
@@ -33,10 +30,10 @@ def add():
             f = request.files['file']
             filename = secure_filename(f.filename)
             f.save(os.path.join(app.config['UPLOAD_PATH'], filename))
-            const.service.read_json(f'json_files/{f.filename}')
+            service.read_json(f'json_files/{f.filename}')
             return render_template("add_resources.html", add_confirm='Portfolio correctly added.')
         else:
-            const.service.save_to_json()
+            service.save_to_json()
             return render_template("add_resources.html", add_confirm='Portfolio saved to json. ')
     return render_template("add_resources.html")
 
@@ -45,13 +42,12 @@ def add():
 def pricing():
     if request.method == 'POST':
         percentage = float(request.form['depth'])
-        markings = const.service.analyse_portfolio(depth=percentage)
-        base_currency = const.service.base_currency
-        return render_template('print_resources.html', markings_list=markings, percentage=percentage,
-                               base_currency=base_currency)
+        markings = service.analyse_portfolio(depth=percentage)
+        base_currency = service.base_currency
+        return render_template('print_resources.html', base_currency=base_currency, markings_list=markings,
+                               percentage=percentage)
     return render_template('print_resources.html')
 
 
 if __name__ == '__main__':
-    init()
     app.run(debug=True)
