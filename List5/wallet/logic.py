@@ -77,10 +77,6 @@ def update_wallet():
 
     update_config(config)
 
-    print(config)
-
-    print(df)
-
 
 def read_wallet() -> pd.DataFrame:
     wallet = load_config()["wallet"]

@@ -7,8 +7,8 @@
   "wallet": {
     "AAPL": {
       "base": "USD",
-      "volume": 86.6868,
-      "weightedAvgRate": 61.3944338165
+      "volume": 80.2368,
+      "weightedAvgRate": 74.2121258335
     },
     "BTC": {
       "base": "USD",

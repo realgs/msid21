@@ -17,7 +17,7 @@ from market_daemon import optimizers, parsers
 
 OrderList = list[tuple[float, float]]
 
-CONFIG_PATH: str = "api_config.json"
+CONFIG_PATH: str = "../api_config.json"
 
 BASE_CURRENCY: str = "USD"
 DEFAULT_ORDER_NUM: int = 3
