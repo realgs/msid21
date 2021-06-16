@@ -1,0 +1,59 @@
+{
+    "base currency": "EUR",
+
+    "cryptocurrencies":
+    {
+        "BTC":
+        {
+            "ammount": 3.02,
+            "buy price": 10200
+        },
+        "ETH":
+        {
+            "ammount": 20,
+            "buy price": 41223
+        },
+        "LTC":
+        {
+            "ammount": 21,
+            "buy price": 321
+        },
+        "ADA":
+        {
+            "ammount": 200,
+            "buy price": 2.1
+        }
+    },
+
+    "currencies":
+    {
+        "PLN":
+        {
+            "ammount": 1000,
+            "buy price": 2
+        },
+        "USD":
+        {
+            "ammount": 1000,
+            "buy price": 0.12
+        }
+    },
+
+    "foreign stocks":
+    {
+        "MSFT":
+        {
+            "ammount": 2,
+            "buy price": 2
+        }
+    },
+
+    "polish stocks":
+    {
+        "CDR":
+        {
+            "ammount": 3.0,
+            "buy price": 5111
+        }
+    }
+}
