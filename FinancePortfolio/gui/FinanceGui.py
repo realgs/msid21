@@ -21,7 +21,6 @@ class FinanceGui(tk.Frame):
         self.parent.protocol("WM_DELETE_WINDOW", self.quit)
         self.createToolbar()
         self.createMenu()
-        self.createMenuHelp()
         self.text = tk.StringVar()
         self.createStatusbar()
         self.createWorkingSpace()
@@ -65,11 +64,6 @@ class FinanceGui(tk.Frame):
         if filename:
             createJsonFile(filename, self.resources_dictionary)
 
-    def displayHelp(self):
-        filename = 'covid_help.txt'
-        if filename:
-            os.system(r'notepad.exe ' + filename)
-
     def quit(self, event=None):
         reply = tk.messagebox.askyesno("End", "Do you really want to end?", parent=self.parent)
         if reply:
@@ -111,19 +105,6 @@ class FinanceGui(tk.Frame):
                 self.parent.bind(shortcut, command)
         self.menubar.add_cascade(label="File", menu=fileMenu, underline=0)
 
-    def createMenuHelp(self):
-        fileMenu = tk.Menu(self.menubar)
-        for label, command, shortcut_text, shortcut in (
-                ("Help", self.displayHelp, "Ctrl+H", "<Control-h>"),
-                (None, None, None, None),
-        ):
-            if label is None:
-                fileMenu.add_separator()
-            else:
-                fileMenu.add_command(label=label, underline=0,
-                                     command=command, accelerator=shortcut_text)
-                self.parent.bind(shortcut, command)
-        self.menubar.add_cascade(label="Help", menu=fileMenu, underline=0)
 
     def createStatusbar(self):
         self.statusbar = Label(self.parent, textvariable=self.text, anchor=W)

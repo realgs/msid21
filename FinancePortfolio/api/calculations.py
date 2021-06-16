@@ -1,7 +1,6 @@
 import itertools
 import json
 
-from tabulate import tabulate
 
 from FinancePortfolio.api.BitbayApi import BitbayApi
 from FinancePortfolio.api.BittrexApi import BittrexApi
