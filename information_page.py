@@ -65,6 +65,7 @@ class InformationPage(Frame):
             qu = wl[type][name][constants.QUANTITY]
             pr = wl[type][name][constants.PRICE]
             cost = qu*pr
+            cost_part = qu*pr*float(percent)/100
             Label(self, text=name, background=constants.TABLE_BACKGROUND, foreground=constants.TABLE_FOREGROUND, borderwidth=constants.BORDER_WIDTH).grid(row=r + 1, column=0)
             Label(self, text=qu, background=constants.TABLE_BACKGROUND, foreground=constants.TABLE_FOREGROUND, borderwidth=constants.BORDER_WIDTH).grid(row=r + 1,
                                                                                                           column=1)
@@ -105,16 +106,18 @@ class InformationPage(Frame):
             elif type == constants.CRYPTOCURRENCIES and rate[constants.STATUS] == constants.OK:
                 price = helpers.valuation(self.bit, name, qu)
                 price_bin = helpers.valuation(self.bin, name, qu)
+                price_part = helpers.valuation(self.bit, name, qu * float(percent)/100)
                 if price[constants.STATUS] == constants.OK:
                     if price_bin[constants.STATUS] == constants.OK:
                         rec = 'BIN' if price_bin[constants.V_VALUE] > price[constants.V_VALUE] else 'BIT'
                     else:
                         rec = '-'
                     value = round(rate[constants.VALUE] * price[constants.V_VALUE], 2)
-                    value_part = round(value * float(percent) / 100, 2)
+                    value_part = round(rate[constants.VALUE] * price_part[constants.V_VALUE], 2)
                     tax = 0 if cost > value else 0.19 * (value - cost)
+                    tax_part = 0 if cost_part > value_part else 0.19 * (value_part - cost_part)
                     netto = round(value - tax, 2)
-                    netto_part = round(netto * float(percent) / 100, 2)
+                    netto_part = round(value_part - tax_part, 2)
 
                     for crypto in wl[constants.CRYPTOCURRENCIES]:
                         earn = helpers.calc_arbitrage(self.bit, self.bin, (crypto, name))[constants.CA_EARNINGS]
