@@ -107,12 +107,6 @@ def getTable(file, depth):
     del resources[0]  # deleting pl_stock
     del resources[0]  # deleting us_stock
 
-    #depth = int(input('Enter percentage to calculate: '))
-    #depth = 10  # value for testing
-
-    #table_lines.append(['Name', 'Quantity', 'Price(last transaction)', 'Value', 'Net value', 'Best exchange',
-     #                   f'Value {depth}%', f'Net value {depth}%', 'Best exchange', 'Arbitrage'])
-
     owned_cryptocurrencies = []
 
     total_value_all = 0
@@ -138,25 +132,22 @@ def getTable(file, depth):
         for item in resource[1]:
             value_all = calculateValue(base_currency, resource[0], item['symbol'], item['quantity'], 100)
             net_value_all = calculateNetValue(item['average_price'], item['quantity'], value_all[3], 100)
+
             value_depth = calculateValue(base_currency, resource[0], item['symbol'], item['quantity'], depth)
             net_value_depth = calculateNetValue(item['average_price'], item['quantity'], value_depth[3], depth)
 
-            #if value_all[3] != "-":
             total_value_all += round(value_all[3], 2)
             total_net_value_all += round(net_value_all, 2)
-            #if value_depth[3] != "-":
+
             total_value_depth += round(value_depth[3], 2)
             total_net_value_depth += round(net_value_depth, 2)
+
             table_lines.append([value_all[0], value_all[1],
                             round(value_all[2], 2), round(value_all[3], 2), round(net_value_all, 2), value_depth[4],
                             round(value_depth[3], 2), round(net_value_depth, 2), value_all[4], ''])
     table_lines.append(['Total:', '', '', '%.2f'%total_value_all, '%.2f'%total_net_value_all, '', '%.2f'%total_value_depth,
                         '%.2f'%total_net_value_depth, '', ''])
-    #table_lines.append(['', '', '', '', '', '', '', '', '', ''])
-
     return table_lines
-    #for line in table_lines:
-     #   print(line)
 
 
 def getMarketsIntersection(markets_1, markets_2):
@@ -301,12 +292,3 @@ def getArbitrageInfo(buy_sell_info, currency_1, currency_2):
     info_bitbay_bittrex = BITBAY.shortName, BITTREX.shortName, arbitrage_profit_bitbay_bittrex, currency_1, currency_2
     info_bittrex_bitbay = BITTREX.shortName, BITBAY.shortName, arbitrage_profit_bittrex_bitbay, currency_1, currency_2
     return info_bitbay_bittrex, info_bittrex_bitbay
-
-
-# test
-if __name__ == "__main__":
-    #displayTable(CONFIG_FILE, 10)
-    print(tabulate(getTable(CONFIG_FILE, 10)))
-
-
-

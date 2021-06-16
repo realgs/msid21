@@ -41,6 +41,11 @@ class FinanceGui(tk.Frame):
 
     def newFile(self):
         self.createWorkingSpace()
+        self.resources_dictionary = {'base_currency': BASE_CURRENCY[0],
+                                     'pl_stock': [],
+                                     'us_stock': [],
+                                     'cryptocurrencies': [],
+                                     'currencies': []}
 
     def openFile(self):
         directory = (os.path.dirname(self.filename) if self.filename is not None else '.')
@@ -244,7 +249,7 @@ class FinanceGui(tk.Frame):
         result_tree = ttk.Treeview(self.working, columns=headings, show='headings')
 
         for col in headings:
-            result_tree.heading(col, text=col)
+            result_tree.heading(col, text=col, anchor=W)
 
         result_tree.column(0, width=50)
         result_tree.column(1, width=100)

@@ -104,17 +104,3 @@ class BittrexApi(Api):
         data = self.getBestSellBuy(symbol, base_currency)
         best_sell = data[0][1]['rate']
         return best_sell
-
-
-# test
-if __name__ == "__main__":
-    test_bittrex = BittrexApi()
-    #print(test_bittrex.fees)
-    #print(test_bittrex.getMarketsData())
-    #print(test_bittrex.createMarketsList())
-    #print(test_bittrex.getOrderbookData('BTC', 'USD'))
-    #test_bittrex.getOrderbookData('ABC', 'USD')
-    #print(test_bittrex.getBestSellBuy('LTC', 'EUR'))
-    print(test_bittrex.getResourceValue('BTC', 'PLN', 0.04))
-    #print(test_bittrex.getLastBuyOfferPrice('BTC', 'USD'))
-

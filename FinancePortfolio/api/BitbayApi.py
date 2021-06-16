@@ -111,15 +111,3 @@ class BitbayApi(Api):
         data = self.getBestSellBuy(symbol, base_currency)
         best_sell = data[0][1]['ra']
         return best_sell
-
-
-# test
-if __name__ == "__main__":
-    test_bitbay = BitbayApi()
-    #print(test_bitbay.getMarketsData())
-    #print(test_bitbay.createMarketsList())
-    #print(test_bitbay.getOrderbookData('BTC', 'USD'))
-    #print(test_bitbay.getOrderbookData('ABC', 'USD'))
-    #print(test_bitbay.getBestSellBuy('BTC', 'USD'))
-    #print(test_bitbay.getResourceValue('LTC', 'PLN', 0.022))
-    #test_bitbay.getLastBuyOfferPrice('BTC', 'USD')

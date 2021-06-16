@@ -29,10 +29,3 @@ class EndofdayApi(Api):
                 return data
         else:
             return None
-
-
-# test
-if __name__ == "__main__":
-    test_eod = EndofdayApi()
-    #print(test_eod.getRateInfo('AAPL', 'US'))
-    print(test_eod.getRateInfo('JSW', 'WAR'))

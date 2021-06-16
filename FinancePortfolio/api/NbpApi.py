@@ -29,14 +29,3 @@ class NbpApi(Api):
         else:
             result = self.convertCurrency(currency_from, 'PLN', amount)
             return self.convertCurrency('PLN', currency_to, result)
-
-
-# test
-if __name__ == "__main__":
-    test_nbp = NbpApi()
-    print(test_nbp.convertCurrency('PLN', 'USD', 10))
-    print(test_nbp.convertCurrency('USD', 'PLN', 10))
-    print(test_nbp.convertCurrency('USD', 'EUR', 10))
-    print(test_nbp.getApiResponse(f'{test_nbp.baseUrl}c/USD/'))
-    print(test_nbp.getApiResponse(f'{test_nbp.baseUrl}c/EUR/'))
-
