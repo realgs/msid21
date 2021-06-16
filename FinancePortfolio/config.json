@@ -1,0 +1,46 @@
+{
+  "base_currency": "USD",
+  "pl_stock": [
+    {
+      "symbol": "CDR",
+      "quantity": 30,
+      "average_price": 27.23
+    },
+    {
+      "symbol": "JSW",
+      "quantity": 53,
+      "average_price": 30.15
+    }
+    ],
+  "us_stock": [
+    {
+      "symbol": "MSFT",
+      "quantity": 20,
+      "average_price": 200.65
+    },
+    {
+      "symbol": "AAPL",
+      "quantity": 16,
+      "average_price": 93.23
+    }
+  ],
+  "cryptocurrencies": [
+    {
+      "symbol": "BTC",
+      "quantity": 0.038156,
+      "average_price": 35512.26
+    },
+    {
+      "symbol": "LTC",
+      "quantity": 0.845261,
+      "average_price": 150.13
+    }
+  ],
+  "currencies": [
+    {
+      "symbol": "EUR",
+      "quantity": 500.0,
+      "average_price": 1.15
+    }
+  ]
+}

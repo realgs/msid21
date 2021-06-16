@@ -1,0 +1,13 @@
+{
+    "base_currency": "USD",
+    "pl_stock": [],
+    "us_stock": [],
+    "cryptocurrencies": [],
+    "currencies": [
+        {
+            "symbol": "EUR",
+            "quantity": 1000.0,
+            "average_price": 1.22
+        }
+    ]
+}
