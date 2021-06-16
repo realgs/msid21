@@ -1,6 +1,8 @@
 import json
 import math
 from collections import deque
+from tkinter import END
+
 from tabulate import tabulate
 import APIs.API_list
 import finalGui
@@ -36,9 +38,10 @@ def calculateProfitArbitrage(quantity, rate, apiName):
     return float(rate) * float(quantity) * (1 - float(apiName.takerFee))
 
 
-def calculateDifference(buy, sell, withdrawalFee, transactionFee, api):
-    quantity = (min(float(buy['quantity']), float(sell[api.quantity]) - withdrawalFee))
-    return {'rate': (float(sell[api.rate]) - float(buy['rate'])) * (1 - float(transactionFee)), 'quantity': quantity}
+def calculateMinRateQuantity(buy, sell, transferFee, takerFee, api):
+    quantity = (min(float(buy['quantity']) + transferFee, float(sell[api.quantity])))
+    rate = (float(sell[api.rate]) - float(buy['rate'])) * (1 - float(takerFee))
+    return {'rate': rate, 'quantity': quantity}
 
 
 def calculateDifferenceInPercents(first, second):
@@ -57,7 +60,7 @@ def getMarketsForArbitrage(assetSymbol):
     return markets
 
 
-def calculateProfit(api, assetSymbol, currency, price, quantity):
+def calculateProfit(api, assetSymbol, currency, avgPrice, currentVolume):
     conversionRate = 1
     if currency != BASE_CURRENCY:
         conversionRate = convertToBaseCurrency(currency)
@@ -69,29 +72,23 @@ def calculateProfit(api, assetSymbol, currency, price, quantity):
         if ticker is None:
             return {}
         tickerPrice = ticker['rate']
-        return (tickerPrice - price) * quantity * conversionRate
+        return (tickerPrice - avgPrice) * currentVolume * conversionRate
 
     if orderbook != 0:
-        queue = deque(
-            sorted(orderbook['bid'], key=lambda order1: order1[api.rate]))
+        queue = deque(orderbook['bid'])
         profit = 0
         transferFee = api.transferFee(assetSymbol)
         takerFee = api.takerFee
-        while quantity > 0 and len(queue) > 0:
-            order = queue.pop()
-            difference = calculateDifference(
-                {'rate': price, 'quantity': float(quantity)},
-                order,
-                transferFee,
-                takerFee,
-                api
-            )
+        while currentVolume > 0 and len(queue) > 0:
+            bidOffer = queue.pop()
+            difference = calculateMinRateQuantity(
+                {'rate': avgPrice, 'quantity': float(currentVolume)}, bidOffer, transferFee, takerFee, api)
+
             if difference['quantity'] < 0 and difference['rate'] < 0:
                 profit -= difference['rate'] * difference['quantity']
             else:
                 profit += difference['rate'] * difference['quantity']
-            quantity -= abs(min(float(quantity), float(order[api.quantity])))
-
+            currentVolume -= abs(min(float(currentVolume), float(bidOffer[api.quantity])))
         return profit * conversionRate
     else:
         return None
@@ -193,6 +190,7 @@ def getPortfolio(wallet, percent=10):
     headers = ["Symbol", "Average price", "Volume", "API",
                "Profit", "Profit netto", f"Profit {percent}%", f"Profit {percent}% netto", "Arbitrage"]
     sumOfProfits = ["Sum", "---", "---", "---", 0, 0, 0, 0, "---"]
+    profitSum, profitSumPercent = 0, 0
 
     for assetType in wallet['assets']:
         for asset in wallet['assets'][assetType]:
@@ -214,20 +212,19 @@ def getPortfolio(wallet, percent=10):
                 asset['avg_price'],
                 asset['volume'],
                 bestProfit['name'],
-                f"{bestProfit['profit']:.2f}zł",
-                f"{(bestProfit['profit'] * (1 - PROFIT_TAX)):.2f}zł",
-                f"{bestProfitPercent['profit']:.2f}zł",
-                f"{(bestProfitPercent['profit'] * (1 - PROFIT_TAX)):.2f}zł",
+                f"{bestProfit['profit']:.2f} {BASE_CURRENCY}",
+                f"{(bestProfit['profit'] * (1 - PROFIT_TAX)):.2f} {BASE_CURRENCY}",
+                f"{bestProfitPercent['profit']:.2f} {BASE_CURRENCY}",
+                f"{(bestProfitPercent['profit'] * (1 - PROFIT_TAX)):.2f} {BASE_CURRENCY}",
                 arbitragePrint
             ])
+            profitSum += float(bestProfit['profit'])
+            profitSumPercent += float(bestProfitPercent['profit'])
 
-            sumOfProfits[4] += float(bestProfit['profit'])
-            sumOfProfits[5] += float(bestProfit['profit'] * 0.81)
-            sumOfProfits[6] += float(bestProfitPercent['profit'])
-            sumOfProfits[7] += float(bestProfitPercent['profit'] * 0.81)
-
-    table.append([sumOfProfits[0], sumOfProfits[1], sumOfProfits[2], sumOfProfits[3], f"{sumOfProfits[4]:.2f}zł",
-                  f"{sumOfProfits[5]:.2f}zł", f"{sumOfProfits[6]:.2f}zł", f"{sumOfProfits[7]:.2f}zł", sumOfProfits[8]])
+    table.append(['Sum', '---', '---', sumOfProfits[3], f"{profitSum:.2f} {BASE_CURRENCY}",
+                  f"{(profitSum * (1 - PROFIT_TAX)):.2f} {BASE_CURRENCY}",
+                  f"{profitSumPercent:.2f} {BASE_CURRENCY}",
+                  f"{(profitSumPercent * (1 - PROFIT_TAX)):.2f} {BASE_CURRENCY}", '---'])
 
     print(tabulate(table, headers=headers, tablefmt="github"))
     return tabulate(table, headers=headers, tablefmt="github")
@@ -245,38 +242,37 @@ def updateResources(assetType, assetName, quantity, avg_price, currency, path=PO
 
 
 def addAssetToWallet():
-    assetType = GUI.asset_type.get()
+    assetType = GUI.assetType.get()
     assetName = GUI.asset.get()
     currency = GUI.currency.get()
     try:
-        quantity = float(GUI.volume.get())
-        if quantity < 0:
-            raise ValueError
+        volume = float(GUI.volume.get())
         avg_price = float(GUI.price.get())
-        if avg_price < 0:
+        if volume < 0 or avg_price < 0:
             raise ValueError
-        updateResources(assetType, assetName, quantity, avg_price, currency)
+        updateResources(assetType, assetName, volume, avg_price, currency)
         pushWalletToGui()
     except ValueError:
-        finalGui.show_error('Error', 'Wrong asset data!')
+        finalGui.throwError('Error', 'Wrong asset data!')
 
 
 def pushPortfolioToGui():
-    GUI.button_show_portfolio['state'] = 'disable'
+    GUI.buttonShowPortfolio['state'] = 'disable'
     try:
         percent = int(GUI.percent.get())
-        if not(0 < percent <= 100):
+        if not (0 < percent <= 100):
             raise ValueError
     except ValueError:
-        finalGui.show_error('Error', 'Wrong percent number!')
+        finalGui.throwError('Error', 'Wrong percent number!')
         percent = 10
     try:
         portfolio = getPortfolio(WALLET, percent)
     except Exception:
         portfolio = 'No access to portfolio'
-    GUI.text.delete(1.0, 'end')
-    GUI.text.insert(1.0, portfolio)
-    GUI.button_show_portfolio['state'] = 'normal'
+    GUI.text.insert(END, '\n')
+    GUI.text.insert(END, portfolio)
+    GUI.text.insert(END, '\n')
+    GUI.buttonShowPortfolio['state'] = 'normal'
 
 
 def getWallet(investments):
@@ -296,27 +292,27 @@ def getWallet(investments):
 
 
 def pushWalletToGui():
-    GUI.button_show_wallet['state'] = 'disable'
+    GUI.buttonShowWallet['state'] = 'disable'
     try:
         table = getWallet(WALLET)
     except Exception:
         table = 'No access to wallet!'
-    GUI.text.delete(1.0, 'end')
-    GUI.text.insert(1.0, table)
-    GUI.button_show_wallet['state'] = 'normal'
+    GUI.text.insert(END, '\n')
+    GUI.text.insert(END, table)
+    GUI.text.insert(END, '\n')
+    GUI.buttonShowWallet['state'] = 'normal'
 
 
 def initializeGui():
-    finalGui.set_button_command(GUI.button_add, addAssetToWallet)
-    finalGui.set_button_command(GUI.button_show_portfolio, pushPortfolioToGui)
-    finalGui.set_button_command(GUI.button_show_wallet, pushWalletToGui)
+    finalGui.configButtonCommand(GUI.buttonAdd, addAssetToWallet)
+    finalGui.configButtonCommand(GUI.buttonShowPortfolio, pushPortfolioToGui)
+    finalGui.configButtonCommand(GUI.buttonShowWallet, pushWalletToGui)
     GUI.mainloop()
 
 
-BASE_CURRENCY = loadJsonFromFile(PORTFOLIO_PATH)['base_currency']
 WALLET = loadJsonFromFile(PORTFOLIO_PATH)
+BASE_CURRENCY = WALLET['base_currency']
 
 if __name__ == '__main__':
     # printInvestments(get_json_from_file(PORTFOLIO_PATH), 20)
     initializeGui()
-
