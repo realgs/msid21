@@ -1,5 +1,6 @@
 from abc import ABC
 from APIs.API import Api
+from myKeys import YAHOO_KEY
 
 
 class Yahoo(Api, ABC):
@@ -22,7 +23,7 @@ class Yahoo(Api, ABC):
         currency = symbol.split('-')[1]
         querystring = {"symbol": f'{stock}', "region": "US"}
         headers = {
-            'x-rapidapi-key': "d8ca471437mshf1f4c0a33939a4ap1aef02jsnd0656acd8f28",
+            'x-rapidapi-key': YAHOO_KEY,
             'x-rapidapi-host': "apidojo-yahoo-finance-v1.p.rapidapi.com"
         }
         try:
