@@ -1,10 +1,18 @@
+import pandas as pd
+
 from wallet.logic import read_wallet
 from wallet.markets import wallet_valuation, wallet_partial_valuation, wallet_arbitrage_summary
 
 CONFIG_PATH = "api_config.json"
 
 if __name__ == "__main__":
-    # Zad 1 - config.json
+    pd.set_option('display.max_rows', 500)
+    pd.set_option('display.max_columns', 500)
+    pd.set_option('display.width', 1000)
+
+    print("Zad 1")
+    wallet = read_wallet()
+    print(wallet)
 
     print("Zad 2")
     ww = wallet_valuation()
@@ -19,8 +27,5 @@ if __name__ == "__main__":
     print("Zad 6")
     arbitrage = wallet_arbitrage_summary()
     print(arbitrage)
-
-    wallet = read_wallet()
-    print(wallet)
 
     # Zad 7 - MainWindow.py

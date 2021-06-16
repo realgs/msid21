@@ -1,12 +1,11 @@
 import itertools
 
 import pandas as pd
+from currency_converter import CurrencyConverter
 
 import market_daemon as md
 from wallet.logic import transactions_to_wallet, load_config, read_wallet
 from wallet.tax import tax_estimate
-from currency_converter import CurrencyConverter
-
 from wallet.valuation import get_price, crypto_valuation
 
 
@@ -62,7 +61,7 @@ def wallet_partial_valuation(fraction: float):
 
 
 def _valuation(df: pd.DataFrame) -> pd.DataFrame:
-    print("I Calculating wallet valuation with wallet...")
+    print("I Calculating wallet valuation...")
 
     df = df.apply(get_price, axis=1)
     df["yahooValuationUsd"] = df["rateUsd"] * df["volume"]

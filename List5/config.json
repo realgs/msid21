@@ -25,6 +25,11 @@
       "volume": 0.501,
       "weightedAvgRate": 2634.4904742747
     },
+    "GOOG": {
+      "base": "USD",
+      "volume": 0.7,
+      "weightedAvgRate": 2478.454
+    },
     "KGH.WSE": {
       "base": "PLN",
       "volume": 2.945,
