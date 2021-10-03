@@ -17,10 +17,12 @@ if __name__ == "__main__":
     print("Zad 2")
     ww = wallet_valuation()
     print(ww)
+    print(ww.sum()[["valuationEur", "netValuationEur"]])
 
     print("Zad 3")
-    wpw = wallet_partial_valuation(fraction=0.1)
+    wpw = wallet_partial_valuation(fraction=0.01)
     print(wpw)
+    print(wpw.sum()[["valuationEur", "netValuationEur"]])
 
     # Zad 4, 5 - uwzględniono powyżej
 
